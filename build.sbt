@@ -6,6 +6,8 @@ lazy val contributors = Seq(
  "pchlupacek" -> "Pavel Chlupáček"
 )
 
+scalaVersion in ThisBuild := "2.11.8"
+
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
    scalaVersion := "2.11.8",
@@ -26,7 +28,10 @@ lazy val commonSettings = Seq(
    scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
    libraryDependencies ++= Seq(
      "org.scodec" %% "scodec-bits" % "1.1.0"
-     ,"org.scodec" %% "scodec-core" % "1.10.2"
+     , "org.scodec" %% "scodec-core" % "1.10.2"
+
+     , "org.scalatest" %% "scalatest" % "3.0.0-M16-SNAP4" % "test"
+     , "org.scalacheck" %% "scalacheck" % "1.13.1" % "test"
    ),
    scmInfo := Some(ScmInfo(url("https://github.com/Spinoco/protocol"), "git@github.com:Spinoco/protocol.git")),
    homepage := None,
@@ -112,6 +117,19 @@ lazy val stun =
   .settings(
     name := "protocol-stun"
   ).dependsOn(common)
- 
- 
 
+
+
+lazy val kafka =
+  project.in(file("kafka"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-kafka"
+    , libraryDependencies ++= Seq(
+      "org.xerial.snappy" % "snappy-java" % "1.1.2.1"  // for supporting a Snappy compression of message sets
+      , "org.apache.kafka" %% "kafka" % "0.10.0.0" % "test"
+    )
+  ).dependsOn(
+    common
+    , common % "test->test"
+  )
