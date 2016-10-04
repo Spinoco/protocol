@@ -45,13 +45,13 @@ object MetadataCodec {
         ("Isr"              | kafkaArray(int32))
       ).xmap(
         { case error :: pid :: leader :: replicas :: isrs :: HNil =>
-          val leaderOption = if (leader == -1) None else Some(tag[BrokerId](leader))
+          val leaderOption = if (leader == -1) None else Some(tag[Broker](leader))
           PartitionMetadata(
             error = error
             , id = tag[PartitionId](pid)
             , leader = leaderOption
-            , replicas = replicas.asInstanceOf[Vector[Int @@ BrokerId]] // unsafe but saves vector traversal
-            , isr = isrs.asInstanceOf[Vector[Int @@ BrokerId]] // unsafe but saves vector traversal
+            , replicas = replicas.asInstanceOf[Vector[Int @@ Broker]] // unsafe but saves vector traversal
+            , isr = isrs.asInstanceOf[Vector[Int @@ Broker]] // unsafe but saves vector traversal
           )
         }
         , pm => pm.error :: (pm.id:Int) :: pm.leader.getOrElse(-1) :: (pm.replicas:Vector[Int]) :: (pm.isr:Vector[Int]) :: HNil

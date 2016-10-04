@@ -14,9 +14,9 @@ class FetchCodecSpec extends CodecSpec {
   val sRequest = RequestMessage(
     version = ProtocolVersion.Kafka_0_10
     , correlationId = kRequest.correlationId
-    , clientId = Option(kRequest.clientId)
+    , clientId = kRequest.clientId
     , request = FetchRequest(
-      replica = tag[BrokerId](kRequest.replicaId)
+      replica = tag[Broker](kRequest.replicaId)
       , maxWaitTime = kRequest.maxWait.millis
       , minBytes = kRequest.minBytes
       , topics = Vector(

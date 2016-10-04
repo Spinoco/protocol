@@ -11,6 +11,6 @@ package spinoco.protocol.kafka
 case class RequestMessage(
   version:ProtocolVersion.Value
   , correlationId:Int
-  , clientId: Option[String]
+  , clientId: String
   , request: Request
 )

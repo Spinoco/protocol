@@ -50,10 +50,16 @@ object Request {
     *
     */
   case class ProduceRequest(
-    requiredAcks: Int
+    requiredAcks: RequiredAcks.Value
     , timeout: FiniteDuration
     , messages: Vector[(String @@ TopicName,Vector[(Int @@ PartitionId,Vector[Message])])]
   ) extends Request
+
+  object RequiredAcks extends Enumeration {
+    val NoResponse = Value(0)   // do not send response for this message
+    val LocalOnly = Value(1)    // only commit in local node
+    val Quorum = Value(-1)      // await full quorum of in sync replicas to confirm the message
+  }
 
 
   /**
@@ -90,7 +96,7 @@ object Request {
     *                         max bytes to read, that bounds message size received.
     */
   case class FetchRequest(
-   replica: Int @@ BrokerId
+   replica: Int @@ Broker
    , maxWaitTime: FiniteDuration
    , minBytes: Int
    , topics:Vector[(String @@ TopicName,Vector[(Int @@ PartitionId, Long @@ Offset, Int)])]

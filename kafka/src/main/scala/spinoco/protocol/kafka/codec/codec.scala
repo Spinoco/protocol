@@ -68,16 +68,8 @@ package object codec {
   val kafkaOffset:Codec[Long @@ Offset] =
     int64.xmap(tag[Offset](_), l => l:Long)
 
-  val kafkaBrokerId:Codec[Int @@ BrokerId] =
-    int32.xmap(tag[BrokerId](_), i => i:Int)
+  val kafkaBrokerId:Codec[Int @@ Broker] =
+    int32.xmap(tag[Broker](_), i => i:Int)
 
-
-  def XXX[A](codec:Codec[A]):Codec[A] = {
-    logBuilder[A]((a,enc) => println(s"XXXG a: $a, bv: $enc"), (bv,att) => println(s"XXXM a:$att, bv: $bv"))(codec)
-  }
-
-  def XXXT[A](t:String)(codec:Codec[A]):Codec[A] = {
-    logBuilder[A]((a,enc) => println(s"XXXG $t a: $a, bv: $enc"), (bv,att) => println(s"XXXM $t a:$att, bv: $bv"))(codec)
-  }
 
 }

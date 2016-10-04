@@ -7,7 +7,7 @@ import scodec.bits.BitVector
 import scodec.{Attempt, DecodeResult}
 import shapeless.tag.@@
 import shapeless.{the => The}
-import spinoco.protocol.kafka.Request.ProduceRequest
+import spinoco.protocol.kafka.Request.{ProduceRequest, RequiredAcks}
 import spinoco.protocol.kafka._
 
 import scala.concurrent.duration.FiniteDuration
@@ -26,7 +26,6 @@ class ProduceCodecSpec extends CodecSpec {
           kafka2spinoco(req)
           , BitVector.empty
         ))
-
     }
 
 
@@ -39,9 +38,6 @@ class ProduceCodecSpec extends CodecSpec {
       kafka2spinoco(ProducerRequest.readFrom(serialized.bytes.drop(4+2).toByteBuffer)) shouldBe rq
 
     }
-
-
-
   }
 
 
@@ -49,9 +45,9 @@ class ProduceCodecSpec extends CodecSpec {
   def kafka2spinoco(in:ProducerRequest):RequestMessage = RequestMessage(
     version =  ProtocolVersion(in.versionId)
     , correlationId = in.correlationId
-    , clientId = Some(in.clientId)
+    , clientId = in.clientId
     , request = ProduceRequest(
-      requiredAcks = in.requiredAcks
+      requiredAcks = RequiredAcks(in.requiredAcks)
       , timeout = FiniteDuration(in.ackTimeoutMs, TimeUnit.MILLISECONDS)
       , messages = SerializationTestUtils.kafka2SpinocoData(in.data)
     )

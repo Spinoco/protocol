@@ -22,15 +22,15 @@ class MetadataCodecSpec extends CodecSpec {
   "Metadata API" - {
 
     "De-Serializes request" in forAll {
-      (pv: ProtocolVersion.Value, clientId:Option[String], topics:Vector[String], correlation:Int) =>
+      (pv: ProtocolVersion.Value, clientId:String, topics:Vector[String], correlation:Int) =>
 
       MessageCodec.requestCodec.decode(
-        serializeRequest(TopicMetadataRequest(pv.id.toShort,correlation,clientId.orNull,topics))
+        serializeRequest(TopicMetadataRequest(pv.id.toShort,correlation,clientId,topics))
       ) shouldBe Attempt.successful(DecodeResult(
         RequestMessage(
           version = pv
           , correlationId = correlation
-          , clientId= clientId
+          , clientId = clientId
           , MetadataRequest(topics.map(tag[TopicName](_)))
         )
         , BitVector.empty
@@ -39,7 +39,7 @@ class MetadataCodecSpec extends CodecSpec {
     }
 
     "Serializes request" in forAll {
-      (pv: ProtocolVersion.Value, clientId:Option[String], topics:Vector[String], correlation:Int) =>
+      (pv: ProtocolVersion.Value, clientId:String, topics:Vector[String], correlation:Int) =>
 
 
       val msg = RequestMessage(

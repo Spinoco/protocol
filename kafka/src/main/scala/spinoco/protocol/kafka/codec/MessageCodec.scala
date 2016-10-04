@@ -12,7 +12,7 @@ object MessageCodec {
 
   /** enodes supplied request **/
   val requestCodec:Codec[RequestMessage] =
-    variableSizeBytes(XXXT("SIZE")(int32), impl.requestContentCodec)
+    variableSizeBytes(int32, impl.requestContentCodec)
 
   /**
     * Decodes response correlation id plus the bytes of the response
@@ -46,26 +46,21 @@ object MessageCodec {
         , k => Attempt.successful(k.id)
       )
 
-    type RequestHeader = ApiKey.Value :: ProtocolVersion.Value :: Int :: Option[String] :: HNil
+    type RequestHeader = ApiKey.Value :: ProtocolVersion.Value :: Int :: String :: HNil
     val requestHeaderCodec : Codec[RequestHeader] = {
       "Request Header" | (
         ("Api Key"        | apiKeyCodec) ::
         ("Api Version"    | versionCodec) ::
         ("Correlation Id" | int32) ::
-        ("Client Id"      | kafkaOptionalString)
+        ("Client Id"      | kafkaRequiredString)
       )
     }
 
     val requestContentCodec:Codec[RequestMessage] = {
       def encode(rm:RequestMessage):(RequestHeader, Request) = {
-        import Request._
-        val key =
-          rm.request match {
-            case _: MetadataRequest => ApiKey.MetadataRequest
-            case _: ProduceRequest => ApiKey.ProduceRequest
-            case _: FetchRequest => ApiKey.FetchRequest
-          }
-        (key :: rm.version :: rm.correlationId :: rm.clientId :: HNil, rm.request)
+        val key = ApiKey.forRequest(rm.request)
+        val version = rm.version// kafka requires the for Fetch, Metadata and Produce requests
+        (key :: version :: rm.correlationId :: rm.clientId :: HNil, rm.request)
       }
       def decode(header:RequestHeader, request:Request):RequestMessage = {
         val version :: correlation :: clientId :: HNil = header.tail

@@ -27,7 +27,7 @@ case class TopicMetadata(
 case class PartitionMetadata(
   error: Option[ErrorType.Value]
   , id: Int @@ PartitionId
-  , leader: Option[Int @@ BrokerId]
-  , replicas: Vector[Int @@ BrokerId]
-  , isr: Vector[Int @@ BrokerId]
+  , leader: Option[Int @@ Broker]
+  , replicas: Vector[Int @@ Broker]
+  , isr: Vector[Int @@ Broker]
 )

@@ -6,7 +6,7 @@ import scodec.Codec
 import scodec.codecs._
 import shapeless.{::, HNil}
 import shapeless.tag._
-import spinoco.protocol.kafka.Request.ProduceRequest
+import spinoco.protocol.kafka.Request.{ProduceRequest, RequiredAcks}
 import spinoco.protocol.kafka._
 import spinoco.protocol.common.codec._
 import spinoco.protocol.kafka.Response.{PartitionProduceResult, ProduceResponse}
@@ -19,7 +19,7 @@ object ProduceCodec {
 
   val requestCodec : Codec[ProduceRequest] = {
     "Produce Request" | (
-      ("Required Acks"      | int16) ::
+      ("Required Acks"      | enumerated(int16,RequiredAcks)) ::
       ("Timeout"            | durationIntMs(int32)) ::
       ("Topic Messages"     | impl.topicMessagesCodec )
     ).xmap(
@@ -41,15 +41,15 @@ object ProduceCodec {
 
     val partitionMessagesCodec: Codec[Vector[(Int @@ PartitionId,Vector[Message])]] = {
       kafkaArray(
-        ("Partition Id"     | XXXT("PARTITION ID")(kafkaPartitionId)) ~
+        ("Partition Id"     | kafkaPartitionId)  ~
         ( "Messages"        | variableSizeBytes("Message Set Size" | int32, MessageSetCodec.messageSetCodec))
       )
     }
 
     val topicMessagesCodec : Codec[Vector[(String @@ TopicName,Vector[(Int @@ PartitionId,Vector[Message])])]] = {
       kafkaArray(
-        ("Topic Name"           | XXXT("TOPIC NAME")(kafkaTopicName)) ~
-          ("Partition Messages"   | partitionMessagesCodec)
+        ("Topic Name"           | kafkaTopicName) ~
+        ("Partition Messages"   | partitionMessagesCodec)
       )
     }
 
