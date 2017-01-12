@@ -119,6 +119,14 @@ lazy val stun =
   ).dependsOn(common)
 
 
+lazy val webSocket =
+  project.in(file("websocket"))
+    .settings(commonSettings)
+    .settings(
+      name := "protocol-websocket"
+    ).dependsOn(common)
+
+
 
 lazy val kafka =
   project.in(file("kafka"))
