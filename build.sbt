@@ -29,7 +29,6 @@ lazy val commonSettings = Seq(
    libraryDependencies ++= Seq(
      "org.scodec" %% "scodec-bits" % "1.1.0"
      , "org.scodec" %% "scodec-core" % "1.10.2"
-
      , "org.scalatest" %% "scalatest" % "3.0.0-M16-SNAP4" % "test"
      , "org.scalacheck" %% "scalacheck" % "1.13.1" % "test"
    ),
@@ -124,6 +123,13 @@ lazy val webSocket =
     .settings(commonSettings)
     .settings(
       name := "protocol-websocket"
+    ).dependsOn(common)
+
+lazy val http =
+  project.in(file("http"))
+    .settings(commonSettings)
+    .settings(
+      name := "protocol-http"
     ).dependsOn(common)
 
 
