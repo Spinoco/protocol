@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 import org.scalacheck.Prop._
 import org.scalacheck.{Prop, Properties}
-import scodec.bits.BitVector
+import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, DecodeResult}
 import spinoco.protocol.http.Uri.{Path, Query}
 import spinoco.protocol.http.codec.HttpHeaderCodec
@@ -363,6 +363,47 @@ property("Accept-Ranges Header") = secure {
       , ("Range: bytes=-100" , Range(ByteRange.Suffix(100)) , "Range: bytes=-100")
     ))
   }
+
+  property("Sec-WebSocket-Accept Header") = secure {
+    checkExamples(Seq(
+      ("Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+        , `Sec-WebSocket-Accept`(ByteVector.fromHex("b37a4f2cc0624f1690f64606cf385945b2bec4ea").get)
+        , "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
+    ))
+  }
+
+  property("Sec-WebSocket-Extensions Header") = secure {
+    checkExamples(Seq(
+      ("Sec-WebSocket-Extensions: ext1, ext2"
+        , `Sec-WebSocket-Extensions`(List("ext1", "ext2"))
+        , "Sec-WebSocket-Extensions: ext1, ext2")
+    ))
+  }
+
+  property("Sec-WebSocket-Key Header") = secure {
+    checkExamples(Seq(
+      ("Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=="
+        , `Sec-WebSocket-Key`(ByteVector.fromHex("7468652073616d706c65206e6f6e6365").get)
+        , "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==")
+    ))
+  }
+
+  property("Sec-WebSocket-Protocol Header") = secure {
+    checkExamples(Seq(
+      ("Sec-WebSocket-Protocol: chat"
+        , `Sec-WebSocket-Protocol`(List("chat"))
+        , "Sec-WebSocket-Protocol: chat")
+    ))
+  }
+
+  property("Sec-WebSocket-Version Header") = secure {
+    checkExamples(Seq(
+      ("Sec-WebSocket-Version: 13"
+        , `Sec-WebSocket-Version`(13)
+        , "Sec-WebSocket-Version: 13")
+    ))
+  }
+
 
   property("Server Header") = secure {
     checkExamples(Seq(

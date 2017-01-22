@@ -311,4 +311,12 @@ object helper {
     dateFormatRFC1123.format(ldt.atZone(GMTZone))
   }
 
+
+  val base64Encoded: Codec[ByteVector] = {
+    utf8String.exmap(
+      s => ByteVector.fromBase64(s).map(Attempt.successful).getOrElse(Attempt.failure(Err(s"Invalid BASE64 encoding: $s")))
+      , bv => Attempt.successful(bv.toBase64)
+    )
+  }
+
 }

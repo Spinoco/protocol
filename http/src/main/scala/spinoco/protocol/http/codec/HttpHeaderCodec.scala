@@ -80,6 +80,11 @@ object HttpHeaderCodec {
     , `Transfer-Encoding`.codec
     , `User-Agent`.codec
     , `WWW-Authenticate`.codec
+    , `Sec-WebSocket-Accept`.codec
+    , `Sec-WebSocket-Extensions`.codec
+    , `Sec-WebSocket-Key`.codec
+    , `Sec-WebSocket-Protocol`.codec
+    , `Sec-WebSocket-Version`.codec
   ).map { codec => codec.headerName.toLowerCase -> codec.headerCodec }.toMap
 
 
