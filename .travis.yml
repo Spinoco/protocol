@@ -14,5 +14,7 @@ jdk:
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 "project stun" test
+  - sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 "project http" test
+  - sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 "project webSocket" test
 
 
