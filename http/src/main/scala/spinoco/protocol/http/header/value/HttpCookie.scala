@@ -29,8 +29,8 @@ object HttpCookie {
 
   val codec: Codec[HttpCookie] = {
     val kvTuple:Codec[(String,String)] = { choice (
-        asciiConstant("Secure").exmap ( _ => Attempt.successful("Secure" -> "") , { case (k,_)  => if (k == "Secure") Attempt.successful(()) else Attempt.failure(Err("Secure expected")) })
-        , asciiConstant("HttpOnly").exmap ( _ => Attempt.successful("HttpOnly" -> "") , { case (k,_)  => if (k == "HttpOnly") Attempt.successful(()) else Attempt.failure(Err("HttpOnly expected")) })
+        asciiConstant("secure").exmap ( _ => Attempt.successful("Secure" -> "") , { case (k,_)  => if (k == "Secure") Attempt.successful(()) else Attempt.failure(Err("Secure expected")) })
+        , asciiConstant("httponly").exmap ( _ => Attempt.successful("HttpOnly" -> "") , { case (k,_)  => if (k == "HttpOnly") Attempt.successful(()) else Attempt.failure(Err("HttpOnly expected")) })
         , tuple(_equal, trimmedAsciiString, trimmedAsciiString)
       )
     }

@@ -1,8 +1,10 @@
 package spinoco.protocol.http.header.value
 
-import java.nio.charset.StandardCharsets
+import java.nio.charset.{Charset, StandardCharsets}
 
-import scodec.Codec
+import scodec.{Attempt, Codec}
+
+import spinoco.protocol.common.util._
 
 /**
   * Created by pach on 12/01/17.
@@ -37,5 +39,12 @@ object HttpCharset {
       , _.value.toLowerCase
     )
   }
+
+  def forJavaCharset(charset: Charset):HttpCharset =
+    HttpCharset(charset.name().toUpperCase, Nil)
+
+  def asJavaCharset(charset: HttpCharset): Attempt[Charset] =
+    attempt(Charset.forName(charset.value))
+
 
 }

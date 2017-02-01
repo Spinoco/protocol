@@ -1,6 +1,6 @@
 package spinoco.protocol.websocket
 
-import scodec.bits.{BitVector, ByteVector}
+import scodec.bits.ByteVector
 
 /**
   * RFC 6455 Websocket frame
@@ -16,7 +16,7 @@ case class WebSocketFrame(
   , rsv: (Boolean, Boolean, Boolean)
   , opcode: OpCode.Value
   , payload: ByteVector
-  , mask: Option[BitVector]
+  , mask: Option[Int]
 )
 
 

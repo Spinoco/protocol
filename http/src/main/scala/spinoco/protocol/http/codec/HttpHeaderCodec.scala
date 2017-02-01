@@ -3,8 +3,8 @@ package spinoco.protocol.http.codec
 
 import java.nio.charset.Charset
 
-import scodec.{Attempt, Codec, Err}
-import scodec.bits.{BitVector, ByteVector}
+import scodec.Codec
+import scodec.bits.ByteVector
 import scodec.codecs._
 import spinoco.protocol.http.header._
 import spinoco.protocol.common.codec._
@@ -25,13 +25,11 @@ object HttpHeaderCodec {
     val allCodecs = allHeaderCodecs ++ otherHeaders.map { case (hdr,codec) => hdr.toLowerCase -> codec }.toMap
     implicit val ascii = Charset.forName("ASCII") // only ascii allowed in http header
 
-    takeWhile(ByteVector(':'), ByteVector(':',' '), string, 100).flatZip { name =>
-      allCodecs.get(name.trim.toLowerCase) match {
+    takeWhile(ByteVector(':'), ByteVector(':',' '), string, 1024).flatZip[HttpHeader] { name =>
+      val trimmed = name.trim
+      allCodecs.get(trimmed.toLowerCase) match {
         case Some(codec) => codec
-        case None => Codec[HttpHeader](
-          (_:HttpHeader) => Attempt.failure(Err(s"Unsupported header $name"))
-          , (_:BitVector) => Attempt.failure(Err(s"Unsupported header $name"))
-        )
+        case None => utf8.xmap[GenericHeader](s => GenericHeader(trimmed, s), _.value).upcast[HttpHeader]
       }
     }.xmap (
       { case (name, header) => header }
@@ -74,17 +72,22 @@ object HttpHeaderCodec {
     , `Last-Modified`.codec
     , Location.codec
     , Origin.codec
+    , Pragma.codec
     , Range.codec
+    , Referer.codec
     , Server.codec
     , `Set-Cookie`.codec
-    , `Transfer-Encoding`.codec
-    , `User-Agent`.codec
-    , `WWW-Authenticate`.codec
     , `Sec-WebSocket-Accept`.codec
     , `Sec-WebSocket-Extensions`.codec
     , `Sec-WebSocket-Key`.codec
     , `Sec-WebSocket-Protocol`.codec
     , `Sec-WebSocket-Version`.codec
+    , `Transfer-Encoding`.codec
+    , Upgrade.codec
+    , `Upgrade-Insecure-Requests`.codec
+    , `User-Agent`.codec
+    , `WWW-Authenticate`.codec
+    , `X-Powered-By`.codec
   ).map { codec => codec.headerName.toLowerCase -> codec.headerCodec }.toMap
 
 

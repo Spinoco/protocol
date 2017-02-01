@@ -244,12 +244,12 @@ property("Accept-Ranges Header") = secure {
       , ("Cookie: SESSID=298zf09hf012fh2; Path=/some/path"
         , Cookie(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, Some("/some/path"), false, false, Map.empty))
         , "Cookie: SESSID=298zf09hf012fh2; Path=/some/path")
-      , ("Cookie: SESSID=298zf09hf012fh2; Secure"
+      , ("Cookie: SESSID=298zf09hf012fh2; secure"
         , Cookie(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, None, secure = true, false, Map.empty))
-        , "Cookie: SESSID=298zf09hf012fh2; Secure")
-      , ("Cookie: SESSID=298zf09hf012fh2; HttpOnly"
+        , "Cookie: SESSID=298zf09hf012fh2; secure")
+      , ("Cookie: SESSID=298zf09hf012fh2; httponly"
         , Cookie(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, None, false, httpOnly = true, Map.empty))
-        , "Cookie: SESSID=298zf09hf012fh2; HttpOnly")
+        , "Cookie: SESSID=298zf09hf012fh2; httponly")
     ))
   }
 
@@ -271,7 +271,8 @@ property("Accept-Ranges Header") = secure {
 
   property("Expires Header") = secure {
     checkExamples(Seq(
-      ("Expires: Wed, 21 Oct 2015 07:28:00 GMT", Expires(ZonedDateTime.parse("2015-10-21T07:28:00+00:00").toLocalDateTime), "Expires: Wed, 21 Oct 2015 07:28:00 GMT")
+      ("Expires: Wed, 21 Oct 2015 07:28:00 GMT", Expires(Right(ZonedDateTime.parse("2015-10-21T07:28:00+00:00").toLocalDateTime)), "Expires: Wed, 21 Oct 2015 07:28:00 GMT")
+      , ("Expires: -1", Expires(Left(-1)), "Expires: -1")
     ))
   }
 
@@ -356,11 +357,23 @@ property("Accept-Ranges Header") = secure {
     ))
   }
 
+  property("Pragma Header") = secure {
+    checkExamples(Seq(
+      ("Pragma: no-cache ", Pragma("no-cache"), "Pragma: no-cache")
+    ))
+  }
+
   property("Range Header") = secure {
     checkExamples(Seq(
       ("Range: bytes=0-100" , Range(ByteRange.Slice(0,100)) , "Range: bytes=0-100")
       , ("Range: bytes=100-" , Range(ByteRange.FromOffset(100)) , "Range: bytes=100-")
       , ("Range: bytes=-100" , Range(ByteRange.Suffix(100)) , "Range: bytes=-100")
+    ))
+  }
+
+  property("Referer Header") = secure {
+    checkExamples(Seq(
+      ("Referer: http://127.0.0.1:9090/foo ", Referer(Uri.http("127.0.0.1", 9090, "/foo")), "Referer: http://127.0.0.1:9090/foo")
     ))
   }
 
@@ -429,18 +442,30 @@ property("Accept-Ranges Header") = secure {
       , ("Set-Cookie: SESSID=298zf09hf012fh2; Path=/some/path"
         , `Set-Cookie`(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, Some("/some/path"), false, false, Map.empty))
         , "Set-Cookie: SESSID=298zf09hf012fh2; Path=/some/path")
-      , ("Set-Cookie: SESSID=298zf09hf012fh2; Secure"
+      , ("Set-Cookie: SESSID=298zf09hf012fh2; secure"
         , `Set-Cookie`(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, None, secure = true, false, Map.empty))
-        , "Set-Cookie: SESSID=298zf09hf012fh2; Secure")
-      , ("Set-Cookie: SESSID=298zf09hf012fh2; HttpOnly"
+        , "Set-Cookie: SESSID=298zf09hf012fh2; secure")
+      , ("Set-Cookie: SESSID=298zf09hf012fh2; httponly"
         , `Set-Cookie`(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, None, false, httpOnly = true, Map.empty))
-        , "Set-Cookie: SESSID=298zf09hf012fh2; HttpOnly")
+        , "Set-Cookie: SESSID=298zf09hf012fh2; httponly")
     ))
   }
 
   property("Transfer-Encoding Header") = secure {
     checkExamples(Seq(
       ("Transfer-Encoding: chunked" , `Transfer-Encoding`(List("chunked")) , "Transfer-Encoding: chunked")
+    ))
+  }
+
+  property("Upgrade Header") = secure {
+    checkExamples(Seq(
+      ("Upgrade: websocket" , Upgrade(List(ProductDescription("websocket", None))) , "Upgrade: websocket")
+    ))
+  }
+
+  property("Upgrade-Insecure-Requests Header") = secure {
+    checkExamples(Seq(
+      ("Upgrade-Insecure-Requests: 1 ", `Upgrade-Insecure-Requests`(1), "Upgrade-Insecure-Requests: 1")
     ))
   }
 

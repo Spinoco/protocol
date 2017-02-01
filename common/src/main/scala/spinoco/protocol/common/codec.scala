@@ -97,7 +97,7 @@ object codec {
   def takeWhile[A](
     discriminator: ByteVector
     , encodingDiscriminator: ByteVector
-    , codec:Codec[A]
+    , codec: Codec[A]
     , maxLength: Int = Int.MaxValue
   ):Codec[A] = new Codec[A] {
     def decode(bits: BitVector): Attempt[DecodeResult[A]] = {

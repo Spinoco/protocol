@@ -17,10 +17,43 @@ sealed case class Uri(
   , host: HostPort
   , path: Uri.Path
   , query: Uri.Query
-)
+) { self =>
+  /** replaces query with one specified **/
+  def withQuery(query: Uri.Query): Uri =
+    self.copy(query = query)
+
+  /** appends supplied param to uri **/
+  def withParam(k: String, v: String): Uri =
+    self.copy(query = Uri.Query(self.query.params :+ (k -> v)))
+
+}
 
 
 object Uri {
+
+  def http(host: String, path: String): Uri =
+    Uri(HttpScheme.HTTP, HostPort(host, None), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def http(host: String, port: Int, path: String): Uri =
+    Uri(HttpScheme.HTTP, HostPort(host, Some(port)), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def https(host: String, path: String): Uri =
+    Uri(HttpScheme.HTTPS, HostPort(host, None), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def https(host: String, port: Int, path: String): Uri =
+    Uri(HttpScheme.HTTPS, HostPort(host, Some(port)), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def ws(host: String, path: String): Uri =
+    Uri(HttpScheme.WS, HostPort(host, None), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def ws(host: String, port: Int, path: String): Uri =
+    Uri(HttpScheme.WS, HostPort(host, Some(port)), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def wss(host: String, path: String): Uri =
+    Uri(HttpScheme.WSS, HostPort(host, None), Uri.Path.fromUtf8String(path), Query.empty)
+
+  def wss(host: String, port: Int, path: String): Uri =
+    Uri(HttpScheme.WSS, HostPort(host, Some(port)), Uri.Path.fromUtf8String(path), Query.empty)
 
 
   val pathQueryCodec:Codec[(Uri.Path, Uri.Query)] = {

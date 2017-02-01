@@ -39,7 +39,7 @@ object WebSocketFrameCodec {
      */
 
     val opcodeCodec: Codec[OpCode.Value] = {
-      int(4).exmap(
+      uint(4).exmap(
         {
           case 0 => Attempt.successful(OpCode.Continuation)
           case 1 => Attempt.successful(OpCode.Text)
@@ -60,7 +60,7 @@ object WebSocketFrameCodec {
     // anyhow the max value of the payload supported is Int.MaxValue, that is about 2G
     def payloadLength:Codec[Int] = {
 
-      ("Length Header" | int(7)).flatZip {
+      ("Length Header" | uint(7)).flatZip {
         case sz if sz <= 125 => constant(ByteVector.empty).xmap(_ => sz, (_: Int) => ())
         case sz if sz == 126 =>
           long(32).exmap[Int] (
@@ -84,16 +84,16 @@ object WebSocketFrameCodec {
 
     }
 
-    def unmaskedPayload(sz:Int):Codec[(ByteVector,Option[BitVector])] = {
-      bytes(sz).xmap (
+    def unmaskedPayload(sz:Int):Codec[(ByteVector,Option[Int])] = {
+      ("PAYLOAD-UNMASKED" | bytes(sz)).xmap (
         bs => bs -> None
         , { case (bs, _) => bs }
       )
     }
 
-    def maskedPayload(sz:Int):Codec[(ByteVector,Option[BitVector])] = {
+    def maskedPayload(sz:Int):Codec[(ByteVector,Option[Int])] = {
 
-      def xor(mask:BitVector, payload:ByteVector):ByteVector = {
+      def xor(mask: BitVector, payload:ByteVector):ByteVector = {
         val maskBytes = mask.bytes
         val result = Array.ofDim[Byte](payload.length.toInt)
         var i = 0
@@ -105,12 +105,14 @@ object WebSocketFrameCodec {
         ByteVector.view(result)
       }
 
-      (bits(32) ~ bytes(sz)).exmap(
-        { case (mask,bs) => Attempt.successful((xor(mask, bs), Some(mask))) }
+      (("MASK"        | int(32)) ~
+        ("PAYLOAD"    | bytes(sz))
+      ).exmap(
+        { case (mask,bs) => Attempt.successful((xor(BitVector.fromInt(mask), bs), Some(mask))) }
         ,
         {
           case (bs, None) =>  Attempt.failure(Err("Mask is required, but none specified"))
-          case (bs, Some(mask)) => Attempt.successful((mask, xor(mask, bs)))
+          case (bs, Some(mask)) =>  Attempt.successful((mask, xor(BitVector.fromInt(mask), bs)))
         }
       )
     }
@@ -131,7 +133,7 @@ object WebSocketFrameCodec {
       ("PAYLOAD LEN"  |  payloadLength))
       .flatZip {
         case fin :: rsv :: opcode :: mask :: len :: HNil =>
-          if (! mask) unmaskedPayload(len)
+          if (! mask)  unmaskedPayload(len)
           else maskedPayload(len)
       }.xmap ({ case (fin :: rsv :: opcode :: maskFlag :: len :: HNil, (payload, mask)) =>
         WebSocketFrame(
@@ -142,7 +144,7 @@ object WebSocketFrameCodec {
           , mask = mask.filter(_ => maskFlag)
         )
       }, wsf =>
-        (wsf.fin :: wsf.rsv :: wsf.opcode :: wsf.mask.isEmpty :: wsf.payload.size.toInt :: HNil, (wsf.payload, wsf.mask))
+        (wsf.fin :: wsf.rsv :: wsf.opcode :: wsf.mask.nonEmpty :: wsf.payload.size.toInt :: HNil, (wsf.payload, wsf.mask))
       )
     }
 

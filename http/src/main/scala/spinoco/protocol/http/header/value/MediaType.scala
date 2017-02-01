@@ -3,17 +3,32 @@ package spinoco.protocol.http.header.value
 import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, Codec, Err}
 import spinoco.protocol.common.codec._
+import spinoco.protocol.http.header.value.MediaType._
 
-/**
-  * Created by pach on 12/01/17.
-  */
-sealed trait MediaType
+
+sealed trait MediaType { self =>
+
+  def mainType: String = self match {
+    case DefaultMediaType(mainType, _, _, _, _) => mainType
+    case _:MultipartMediaType  => "multipart"
+    case CustomMediaType(mainType, _) => mainType
+  }
+
+  def subType: String = self match {
+    case DefaultMediaType(_, subType, _, _, _) => subType
+    case MultipartMediaType(subType, _)  => subType
+    case CustomMediaType(_, subType) => subType
+  }
+
+  def isText: Boolean = mainType == "text"
+
+}
 
 object MediaType {
 
-  sealed case class DefaultMediaType(mainType: String, subType: String, compressible: Boolean, binary: Boolean, fileExtension: Seq[String]) extends MediaType
-  sealed case class MultipartMediaType (subType: String, parameters: Map[String, String]) extends MediaType
-  sealed case class CustomMediaType(mainType: String, subType: String) extends MediaType
+  sealed case class DefaultMediaType(main: String, sub: String, compressible: Boolean, binary: Boolean, fileExtension: Seq[String]) extends MediaType
+  sealed case class MultipartMediaType (sub: String, parameters: Map[String, String]) extends MediaType
+  sealed case class CustomMediaType(main: String, sub: String) extends MediaType
 
   private def app(subType: String, compressible: Boolean, binary: Boolean, fileExtensions: String*): DefaultMediaType =
     DefaultMediaType("application", subType, compressible, binary, fileExtensions)
@@ -164,6 +179,7 @@ object MediaType {
   val `text/calendar`             = txt("calendar", "ics", "icz")
   val `text/css`                  = txt("css", "css")
   val `text/csv`                  = txt("csv", "csv")
+  val `text/event-stream`         = txt("event-stream")
   val `text/html`                 = txt("html", "htm", "html", "htmls", "htx")
   val `text/mcf`                  = txt("mcf", "mcf")
   val `text/plain`                = txt("plain", "conf", "text", "txt", "properties")
