@@ -6,7 +6,6 @@ lazy val contributors = Seq(
  "pchlupacek" -> "Pavel Chlupáček"
 )
 
-scalaVersion in ThisBuild := "2.11.8"
 
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
