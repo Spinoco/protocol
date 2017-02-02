@@ -23,13 +23,14 @@ lazy val commonSettings = Seq(
     "-Ywarn-value-discard",
     "-Ywarn-unused-import"
    ),
+   crossScalaVersions := Seq("2.11.8", "2.12.0"),
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
    scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
    libraryDependencies ++= Seq(
-     "org.scodec" %% "scodec-bits" % "1.1.0"
-     , "org.scodec" %% "scodec-core" % "1.10.2"
-     , "org.scalatest" %% "scalatest" % "3.0.0-M16-SNAP4" % "test"
-     , "org.scalacheck" %% "scalacheck" % "1.13.1" % "test"
+     "org.scodec" %% "scodec-bits" % "1.1.2"
+     , "org.scodec" %% "scodec-core" % "1.10.3"
+     , "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+     , "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
    ),
    scmInfo := Some(ScmInfo(url("https://github.com/Spinoco/protocol"), "git@github.com:Spinoco/protocol.git")),
    homepage := None,
@@ -160,5 +161,4 @@ lazy val allProtocols =
    common
    , stun
    , webSocket, http
-   , kafka
  )
