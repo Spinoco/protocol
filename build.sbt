@@ -103,6 +103,14 @@ lazy val releaseSettings = Seq(
   releasePublishArtifactsAction := PgpKeys.publishSigned.value
 )
 
+lazy val noPublish = Seq(
+  publish := (),
+  publishLocal := (),
+  publishSigned := (),
+  publishArtifact := false
+)
+
+
 lazy val common =
   project.in(file("common"))
     .settings(commonSettings)
@@ -147,3 +155,15 @@ lazy val kafka =
     common
     , common % "test->test"
   )
+
+
+lazy val allProtocols =
+  project.in(file("."))
+ .settings(commonSettings)
+ .settings(noPublish)
+ .aggregate(
+   common
+   , stun
+   , webSocket, http
+   , kafka
+ )
