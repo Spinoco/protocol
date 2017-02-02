@@ -72,10 +72,6 @@ lazy val publishingSettings = Seq(
   pomIncludeRepository := { _ => false },
   pomExtra := {
     <url>https://github.com/Spinoco/protocol</url>
-    <scm>
-      <url>git@github.com:Spinoco/protocol.git</url>
-      <connection>scm:git:git@github.com:Spinoco/protocol.git</connection>
-    </scm>
     <developers>
       {for ((username, name) <- contributors) yield
       <developer>
