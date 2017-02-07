@@ -88,7 +88,9 @@ object HttpHeaderCodec {
     , `Upgrade-Insecure-Requests`.codec
     , `User-Agent`.codec
     , `WWW-Authenticate`.codec
+    , `X-Forwarded-For`.codec
     , `X-Powered-By`.codec
+    , `X-Real-IP`.codec
   ).map { codec => codec.headerName.toLowerCase -> codec.headerCodec }.toMap
 
 

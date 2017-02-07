@@ -510,4 +510,20 @@ property("Accept-Ranges Header") = secure {
     ))
   }
 
+
+  property("X-Forwarded-For Header") = secure {
+    checkExamples(Seq(
+      ("X-Forwarded-For: willi.wonka.com, www.spinoco.com, 1.1.2.2:80"
+        , `X-Forwarded-For`(List(HostPort("willi.wonka.com", None), HostPort("www.spinoco.com", None), HostPort("1.1.2.2", Some(80))))
+        , "X-Forwarded-For: willi.wonka.com, www.spinoco.com, 1.1.2.2:80")
+    ))
+  }
+
+  property("X-Real-IP Header") = secure {
+    checkExamples(Seq(
+      ("X-Real-IP: 1.2.3.4" , `X-Real-IP`(HostPort("1.2.3.4", None)) , "X-Real-IP: 1.2.3.4")
+    ))
+  }
+
+
 }

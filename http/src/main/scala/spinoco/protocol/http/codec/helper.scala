@@ -274,7 +274,7 @@ object helper {
         val present = bits.bytes.dropWhile(_.toChar.isWhitespace)
 
         if (present.take(example.size) == example) Attempt.successful(DecodeResult((), present.drop(example.size).bits))
-        else if (! ignoreCase || present.size < example.size) Attempt.failure(Err(s"Expected $const, got ${bits.take(example.size).decodeUtf8}"))
+        else if (! ignoreCase || present.size != example.size) Attempt.failure(Err(s"Expected $const, got ${bits.take(example.size).decodeUtf8}"))
         else {
           present.take(example.size).decodeAscii match {
             case Left(ex) => Attempt.failure(Err(s"Invalid coding of input string: ${ex.getMessage}"))
