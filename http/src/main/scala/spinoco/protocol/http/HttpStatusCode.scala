@@ -1,13 +1,19 @@
 package spinoco.protocol.http
 
 import scodec.{Attempt, Codec, Err}
+import spinoco.protocol.http.HttpStatusCode.Success
 
 
-sealed trait HttpStatusCode {
+sealed trait HttpStatusCode { self =>
   def code: Int
   def label: String
   def description : String
   def longDescription : String
+
+  def isSuccess: Boolean = self match {
+    case _: Success => true
+    case _ => false
+  }
 }
 
 

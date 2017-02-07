@@ -11,7 +11,7 @@ import shapeless.{ ::, HNil }
 object HttpResponseHeaderCodec {
 
   lazy val defaultCodec: Codec[HttpResponseHeader] =
-    codec(HttpHeaderCodec.codec())
+    codec(HttpHeaderCodec.codec(maxHeaderLength = Int.MaxValue))
 
   def codec(headerCodec: Codec[HttpHeader]): Codec[HttpResponseHeader] = {
     val headerLineCodec: Codec[HttpVersion.Value :: HttpStatusCode :: String :: HNil] = {

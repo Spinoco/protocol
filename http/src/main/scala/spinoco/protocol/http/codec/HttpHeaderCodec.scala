@@ -21,11 +21,11 @@ object HttpHeaderCodec {
     *                     This may also override default supplied codecs.
     * @return
     */
-  def codec(otherHeaders: (String, Codec[HttpHeader]) *):Codec[HttpHeader] = {
+  def codec(maxHeaderLength: Int, otherHeaders: (String, Codec[HttpHeader]) *):Codec[HttpHeader] = {
     val allCodecs = allHeaderCodecs ++ otherHeaders.map { case (hdr,codec) => hdr.toLowerCase -> codec }.toMap
     implicit val ascii = Charset.forName("ASCII") // only ascii allowed in http header
 
-    takeWhile(ByteVector(':'), ByteVector(':',' '), string, 1024).flatZip[HttpHeader] { name =>
+    takeWhile(ByteVector(':'), ByteVector(':',' '), string, maxHeaderLength).flatZip[HttpHeader] { name =>
       val trimmed = name.trim
       allCodecs.get(trimmed.toLowerCase) match {
         case Some(codec) => codec
@@ -53,6 +53,7 @@ object HttpHeaderCodec {
     , `Access-Control-Request-Headers`.codec
     , `Access-Control-Request-Method`.codec
     , Age.codec
+    , Authorization.codec
     , `Cache-Control`.codec
     , Connection.codec
     , `Content-Disposition`.codec

@@ -2,9 +2,9 @@ package spinoco.protocol.http
 
 import java.net.{URLDecoder, URLEncoder}
 
-import scodec.Codec
+import scodec.{Attempt, Codec}
 import codec.helper._
-import scodec.bits.ByteVector
+import scodec.bits.{BitVector, ByteVector}
 import spinoco.protocol.common.util._
 import spinoco.protocol.common.codec._
 
@@ -55,6 +55,9 @@ object Uri {
   def wss(host: String, port: Int, path: String): Uri =
     Uri(HttpScheme.WSS, HostPort(host, Some(port)), Uri.Path.fromUtf8String(path), Query.empty)
 
+  /** parse supplied string and receive Uri, if supplied string is valid **/
+  def parse(uriString: String): Attempt[Uri] =
+    codec.decodeValue(BitVector.view(uriString.getBytes))
 
   val pathQueryCodec:Codec[(Uri.Path, Uri.Query)] = {
     parametrized(ByteVector('?'), Path.codec, Query.codec).xmap(

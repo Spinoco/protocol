@@ -12,7 +12,7 @@ import scodec.codecs._
 object HttpRequestHeaderCodec {
 
   lazy val defaultCodec: Codec[HttpRequestHeader] =
-    codec(HttpHeaderCodec.codec())
+    codec(HttpHeaderCodec.codec(maxHeaderLength = Int.MaxValue))
 
   def codec(headerCodec: Codec[HttpHeader]): Codec[HttpRequestHeader] = {
     // split by crlf, then process first line and headers

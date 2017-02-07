@@ -260,25 +260,59 @@ object helper {
     )
   }
 
-  /** encodes by supplied constant. Whitespace is ignored **/
-  def asciiConstant(const:String): Codec[Unit] = {
-    val example = BitVector.view(const.getBytes)
+  /**
+    * Encodes as supplied ascii string constant. Drops any leading whitespace if any.
+    * @param const        Constant to encode // decode
+    * @param ignoreCase   When true, the decoding ignores case
+    * @return
+    */
+  def asciiConstant(const: String, ignoreCase: Boolean = true): Codec[Unit] = {
+    val example = ByteVector.view(const.getBytes)
 
     new Codec[Unit] {
       def decode(bits: BitVector): Attempt[DecodeResult[Unit]] = {
-        val present = bits.bytes.dropWhile(_.toChar.isWhitespace).bits
-        if (present.take(example.size) == example) Attempt.successful(DecodeResult((), present.drop(example.size)))
-        else Attempt.failure(Err(s"Expected $const, got ${bits.take(example.size).decodeUtf8}"))
+        val present = bits.bytes.dropWhile(_.toChar.isWhitespace)
+
+        if (present.take(example.size) == example) Attempt.successful(DecodeResult((), present.drop(example.size).bits))
+        else if (! ignoreCase || present.size < example.size) Attempt.failure(Err(s"Expected $const, got ${bits.take(example.size).decodeUtf8}"))
+        else {
+          present.take(example.size).decodeAscii match {
+            case Left(ex) => Attempt.failure(Err(s"Invalid coding of input string: ${ex.getMessage}"))
+            case Right(s) =>
+              if (const.equalsIgnoreCase(s)) Attempt.successful(DecodeResult((), present.drop(example.size).bits))
+              else Attempt.failure(Err(s"Expected $const, got ${bits.take(example.size).decodeUtf8}"))
+          }
+
+        }
+
       }
-      def encode(value: Unit): Attempt[BitVector] = Attempt.successful(example)
+      def encode(value: Unit): Attempt[BitVector] = Attempt.successful(example.bits)
       def sizeBound: SizeBound = SizeBound.exact(example.size)
     }
   }
 
-  /** codec that strips all whitespace, and encodes as supplied string **/
-  def whitespace(encodeAs:String = " "): Codec[Unit] = {
+  /** codec that decodes until whitespace character is found. Encodes as ascii string **/
+  def asciiStringNoWs: Codec[String] =
+    bytesUntil(! _.toChar.isWhitespace).exmap (
+      bs => asciiString.decodeValue(bs.bits)
+      , s => asciiString.encode(s).map(_.bytes)
+    )
+
+  /** codec that strips all whitespace, and encodes as supplied string. At least one whitespace is mandatory. **/
+  def whitespace(encodeAs: String = " "): Codec[Unit] = {
     val content = ByteVector.view(encodeAs.getBytes)
-    bytesUntil(_.toChar.isWhitespace).xmap(_ => (), _ => content)
+    new Codec[Unit] {
+      def sizeBound: SizeBound = SizeBound.unknown
+      def encode(value: Unit): Attempt[BitVector] = Attempt.successful(content.bits)
+      def decode(bits: BitVector): Attempt[DecodeResult[Unit]] = {
+        val h = bits.bytes.takeWhile(_.toChar.isWhitespace)
+        if (h.size == 0) Attempt.failure(Err(s"Expected whitespace, got ${bits.decodeUtf8}"))
+        else {
+          val t = bits.drop(h.size*8)
+          Attempt.successful(DecodeResult((), t))
+        }
+      }
+    }
   }
 
   /** codec that succeeds, iff star (*) is present **/
@@ -314,7 +348,7 @@ object helper {
 
   val base64Encoded: Codec[ByteVector] = {
     utf8String.exmap(
-      s => ByteVector.fromBase64(s).map(Attempt.successful).getOrElse(Attempt.failure(Err(s"Invalid BASE64 encoding: $s")))
+      s => ByteVector.fromBase64(s.trim).map(Attempt.successful).getOrElse(Attempt.failure(Err(s"Invalid BASE64 encoding: $s")))
       , bv => Attempt.successful(bv.toBase64)
     )
   }
