@@ -60,6 +60,7 @@ object HttpHeaderCodec {
     , `Content-Encoding`.codec
     , `Content-Length`.codec
     , `Content-Location`.codec
+    , `Content-Range`.codec
     , `Content-Type`.codec
     , Cookie.codec
     , Date.codec

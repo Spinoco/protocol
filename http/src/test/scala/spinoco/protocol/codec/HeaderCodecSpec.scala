@@ -171,7 +171,7 @@ property("Accept-Ranges Header") = secure {
         , Authorization(HttpCredentials.OAuth2BearerToken("mF_9.B5f-4.1JqM"))
         , "Authorization: Bearer mF_9.B5f-4.1JqM")
       , ("Authorization: Digest username=\"Mufasa\",\n                 realm=\"testrealm@host.com\",\n                 nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\",\n                 uri=\"/dir/index.html\",\n                 qop=auth,\n                 nc=00000001,\n         cnonce=\"0a4f113b\",\n                 response=\"6629fae49393a05397450978507c4ef1\",\n                 opaque=\"5ccc069c403ebaf9f0171e9517f40e41\""
-        , Authorization(HttpCredentials.DigestHttpCredentials(Map(
+        , Authorization(HttpCredentials.DigestHttpCredentials("Digest", Map(
         "username" -> "Mufasa"
         , "realm" -> "testrealm@host.com"
         , "nonce" -> "dcd98b7102dd2f0e8b11d0f600bfb0c093"
@@ -235,6 +235,15 @@ property("Accept-Ranges Header") = secure {
   property("Content-Location Header") = secure {
     checkExamples(Seq(
       ("Content-Location: /that/location/ ",`Content-Location` (Uri.Path / "that" / "location" /), "Content-Location: /that/location/")
+    ))
+  }
+
+  property("Content-Range Header") = secure {
+    checkExamples(Seq(
+      ("Content-Range: bytes 0-100/1000" , `Content-Range`(0,100,Some(1000)) , "Content-Range: bytes 0-100/1000")
+      , ("Content-Range: bytes 100-200/1000" , `Content-Range`(100,200,Some(1000)) , "Content-Range: bytes 100-200/1000")
+      , ("Content-Range: bytes 500-1000/1000" , `Content-Range`(500,1000,Some(1000)) , "Content-Range: bytes 500-1000/1000")
+      , ("Content-Range: bytes 500-1000/*" , `Content-Range`(500,1000,None) , "Content-Range: bytes 500-1000/*")
     ))
   }
 
