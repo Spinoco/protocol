@@ -1,4 +1,4 @@
-package spinoco.protocol.codec
+package spinoco.protocol.http.codec
 
 import java.time.ZonedDateTime
 
@@ -7,7 +7,6 @@ import org.scalacheck.Properties
 import scodec.{Attempt, DecodeResult}
 import scodec.bits.BitVector
 import spinoco.protocol.http.{HttpResponseHeader, HttpStatusCode, HttpVersion}
-import spinoco.protocol.http.codec.HttpResponseHeaderCodec
 import spinoco.protocol.http.header._
 import spinoco.protocol.http.header.value.{ContentType, MediaType, ProductDescription, ServerProduct}
 
