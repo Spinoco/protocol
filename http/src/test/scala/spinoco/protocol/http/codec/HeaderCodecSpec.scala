@@ -121,10 +121,10 @@ property("Accept-Ranges Header") = secure {
     checkExamples(Seq(
       ("Access-Control-Allow-Origin: *",`Access-Control-Allow-Origin` (HttpOrigin.Any), "Access-Control-Allow-Origin: *")
       , ("Access-Control-Allow-Origin: https://developer.mozilla.org"
-        ,`Access-Control-Allow-Origin` (HttpOrigin.One(HttpScheme.HTTPS, HostPort("developer.mozilla.org", None)))
+        ,`Access-Control-Allow-Origin` (HttpOrigin.One("https", Some(HostPort("developer.mozilla.org", None))))
         , "Access-Control-Allow-Origin: https://developer.mozilla.org")
       , ("Access-Control-Allow-Origin: http://developer.mozilla.org:8080"
-        ,`Access-Control-Allow-Origin` (HttpOrigin.One(HttpScheme.HTTP, HostPort("developer.mozilla.org", Some(8080))))
+        ,`Access-Control-Allow-Origin` (HttpOrigin.One("http", Some(HostPort("developer.mozilla.org", Some(8080)))))
         , "Access-Control-Allow-Origin: http://developer.mozilla.org:8080")
     ))
   }
@@ -384,8 +384,11 @@ property("Accept-Ranges Header") = secure {
   property("Origin Header") = secure {
     checkExamples(Seq(
       ("Origin: https://developer.mozilla.org"
-        , Origin(List(HttpOrigin.One(HttpScheme.HTTPS, HostPort("developer.mozilla.org", None))))
+        , Origin(List(HttpOrigin.One("https", Some(HostPort("developer.mozilla.org", None)))))
         , "Origin: https://developer.mozilla.org")
+      ,  ("Origin: file://"
+        , Origin(List(HttpOrigin.One("file", None)))
+        , "Origin: file://")
     ))
   }
 

@@ -353,4 +353,46 @@ object helper {
     )
   }
 
+  /** codec that decodes to Some(a) when codec decodes or None, when there are no nonempty characters left **/
+  def orEmpty[A](codec:Codec[A]):Codec[Option[A]] = new Codec[Option[A]] {
+    def decode(bits: BitVector): Attempt[DecodeResult[Option[A]]] = {
+      codec.decode(bits).map(_.map(Some(_))) recoverWith {
+        case err =>
+          if (bits.bytes.dropWhile(_.toChar.isWhitespace).isEmpty) Attempt.successful(DecodeResult(None, BitVector.empty))
+          else Attempt.failure(err)
+      }
+    }
+
+    def encode(value: Option[A]): Attempt[BitVector] = {
+      value match {
+        case None => Attempt.successful(BitVector.empty)
+        case Some(a) => codec.encode(a)
+      }
+    }
+
+    def sizeBound: SizeBound = codec.sizeBound.atMost
+  }
+
+  /** decodes as utf8 string, that will return string until pattern is matched **/
+  def utf8StringUntil(until: String):Codec[String] = new Codec[String] {
+    // todo byke this more effective by decoding string as we match the sample
+    def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
+      utf8.decode(bits).flatMap { case dr@DecodeResult(s,rem) =>
+       s.indexOf(until) match {
+         case idx if idx < 0 => Attempt.successful(dr)
+         case idx =>
+           val (h, t) = s.splitAt(idx)
+           Attempt.successful(DecodeResult(h, BitVector.view(t.getBytes) ++ rem))
+       }
+      }
+    }
+
+    def encode(value: String): Attempt[BitVector] =
+      utf8.encode(value)
+
+    def sizeBound: SizeBound = SizeBound.unknown
+  }
+
+
+
 }
