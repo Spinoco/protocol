@@ -16,7 +16,7 @@ object `Content-Range` {
 
     val maybeTotal: Codec[Option[Long]] = choice(
       asciiConstant("*").xmap[None.type](_ => None, _ => ()).upcast
-      , longAsString.xmap[Some[Long]](l => Some(l), sl => sl.x).upcast
+      , longAsString.xmap[Some[Long]](l => Some(l), { case Some(l) => l }).upcast
     )
     val fromTo: Codec[(Long, Long)] =
       tuple(dash, longAsString, longAsString)
