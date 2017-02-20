@@ -63,21 +63,23 @@ object WebSocketFrameCodec {
       ("Length Header" | uint(7)).flatZip {
         case sz if sz <= 125 => constant(ByteVector.empty).xmap(_ => sz, (_: Int) => ())
         case sz if sz == 126 =>
-          long(32).exmap[Int] (
+          long(16).exmap[Int] (
+            lsz => Attempt.successful(lsz.toInt)
+            , i => Attempt.successful(i.toLong)
+          )
+        case sz =>
+          long(64).exmap[Int] (
             lsz => if (lsz <= Int.MaxValue)  Attempt.successful(lsz.toInt) else Attempt.failure(Err(s"Max supported size is ${Int.MaxValue}, got $lsz"))
             , i => Attempt.successful(i.toLong)
           )
 
-        case other => Codec[Int](
-          (_: Int) => Attempt.failure(Err(s"Invalid SZ flag, must be 0 <= 126, is $other. Note: payload sizes larger than Int.MaxValue are not supported"))
-          , (_ : BitVector) => Attempt.failure(Err(s"Invalid SZ flag, must be 0 <= 126, is $other. Note: payload sizes larger than Int.MaxValue are not supported"))
-        )
       }.exmap(
         { case (_, sz) => Attempt.successful(sz)  }
         , {
           case sz if sz <= 125 => Attempt.successful((sz, sz))
-          case sz if sz <= Int.MaxValue => Attempt.successful((126, sz))
-          case sz =>  Attempt.failure(Err("Only payloads size of <= Int.MaxValue are supported"))
+          case sz if sz > 125 && sz <= 65535 => Attempt.successful((126, sz))
+          case sz if sz < Int.MaxValue  => Attempt.successful((127, sz))
+          case _ => Attempt.failure(Err("Only payloads size of <= Int.MaxValue are supported"))
         }
       )
 
