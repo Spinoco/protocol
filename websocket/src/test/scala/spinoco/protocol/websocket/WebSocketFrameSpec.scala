@@ -95,7 +95,7 @@ object WebSocketFrameSpec extends Properties("WebSocketFrame") {
   }
 
   property("binary-256-bytes") = secure {
-    decodeAndEncode("827e00000100" + "aa"*256)(
+    decodeAndEncode("827e0100" + "aa"*256)(
       WebSocketFrame(
         fin = true
         , rsv = (false, false, false)
@@ -106,9 +106,8 @@ object WebSocketFrameSpec extends Properties("WebSocketFrame") {
     )
   }
 
-
   property("binary-65536-bytes") = secure {
-    decodeAndEncode("827e00010000" + "aa"*65536)(
+    decodeAndEncode("827f0000000000010000" + "aa"*65536)(
       WebSocketFrame(
         fin = true
         , rsv = (false, false, false)
@@ -118,7 +117,5 @@ object WebSocketFrameSpec extends Properties("WebSocketFrame") {
       )
     )
   }
-
-
 
 }
