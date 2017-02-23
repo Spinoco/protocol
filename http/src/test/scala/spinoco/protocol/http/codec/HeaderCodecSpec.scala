@@ -55,6 +55,16 @@ object HeaderCodecSpec extends Properties("HeaderCodec") {
       ))
         ,"Accept: text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8"
         )
+      , ("Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2"
+        , Accept(List(
+          HttpMediaRange.One(MediaType.`text/html`, None)
+          , HttpMediaRange.One(MediaType.`image/gif`, None)
+          , HttpMediaRange.One(MediaType.`image/jpeg`, None)
+          , HttpMediaRange.Pattern("*", Some(0.2f))
+          , HttpMediaRange.Pattern("*", Some(0.2f))
+      ))
+        , "Accept: text/html, image/gif, image/jpeg, */*;q=0.2, */*;q=0.2")
+
     ))
   }
 
