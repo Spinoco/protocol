@@ -48,7 +48,7 @@ object HttpRequestHeaderCodec {
       ).exmap(decode,encode _ tupled)
     }
 
-    parametrizedN(crlf, crlf, headerLineCodec, headerCodec).xmap[HttpRequestHeader] (
+    parametrizedN(crlf, crlf, "Request" | headerLineCodec, "Headers" | headerCodec).xmap[HttpRequestHeader] (
       { case ((method, path, query, version), headers) => HttpRequestHeader(method, path, headers, query, version) }
       , h => ((h.method, h.path, h.query, h.version), h.headers)
     )

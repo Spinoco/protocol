@@ -37,6 +37,20 @@ object HttpMediaRange {
 
   val codec : Codec[HttpMediaRange] = {
 
+    val wildcardCodec: Codec[Pattern] = {
+      asciiStringNoWs.exmap(
+        s => {
+          if (s == "*") Attempt.successful(Pattern("*", None)) else
+          Attempt.failure(Err(s"Expected wildcard pattern (*), got $s"))
+        }
+        , p => {
+          if (p.mainType == "*") Attempt.successful("*")
+          else Attempt.failure(Err(s"Expected wildcard pattern, got $p"))
+        }
+
+      )
+    }
+
     val patternCodec: Codec[Pattern] = {
       tuple(slash, trimmedAsciiString, trimmedAsciiString).exmap(
         {
@@ -50,6 +64,7 @@ object HttpMediaRange {
     val patternOrMedia: Codec[HttpMediaRange] = {
       choice(
         patternCodec.upcast
+        , wildcardCodec.upcast
         , MediaType.codec.xmap[One](One(_,None),  _.mediaType).upcast
       )
     }

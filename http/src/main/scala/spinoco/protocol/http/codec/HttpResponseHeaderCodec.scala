@@ -1,6 +1,7 @@
 package spinoco.protocol.http.codec
 
 import scodec.Codec
+import scodec.codecs._
 import spinoco.protocol.http._
 import spinoco.protocol.http.header.HttpHeader
 import spinoco.protocol.common.codec._
@@ -21,7 +22,7 @@ object HttpResponseHeaderCodec {
       utf8String
     }
 
-    parametrizedN(crlf, crlf, headerLineCodec, headerCodec).xmap[HttpResponseHeader] (
+    parametrizedN(crlf, crlf, "Response" | headerLineCodec, "Headers" | headerCodec).xmap[HttpResponseHeader] (
       { case (version :: status :: phrase :: HNil, headers) => HttpResponseHeader(status, phrase, headers, version) }
       , h => ( h.version :: h.status :: h.reason :: HNil, h.headers)
     )
