@@ -114,6 +114,13 @@ lazy val common =
       name := "protocol-common"
     )
 
+lazy val rtp =
+  project.in(file("rtp"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-rtp"
+  ).dependsOn(common)
+
 lazy val stun =
   project.in(file("stun"))
   .settings(commonSettings)
@@ -161,4 +168,5 @@ lazy val allProtocols =
    common
    , stun
    , webSocket, http
+   , rtp
  )

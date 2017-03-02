@@ -293,10 +293,14 @@ object helper {
 
   /** codec that decodes until whitespace character is found. Encodes as ascii string **/
   def asciiStringNoWs: Codec[String] =
-    bytesUntil(! _.toChar.isWhitespace).exmap (
+    asciiStringUntil(! _.isWhitespace)
+
+  def asciiStringUntil(f: Char => Boolean): Codec[String] = {
+    bytesUntil(b => f(b.toChar)).exmap (
       bs => asciiString.decodeValue(bs.bits)
       , s => asciiString.encode(s).map(_.bytes)
     )
+  }
 
   /** codec that strips all whitespace, and encodes as supplied string. At least one whitespace is mandatory. **/
   def whitespace(encodeAs: String = " "): Codec[Unit] = {

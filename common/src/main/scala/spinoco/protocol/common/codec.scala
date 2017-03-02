@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit
 import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import scodec.codecs._
+import shapeless.tag
+import shapeless.tag.@@
 
 import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 
@@ -183,6 +185,9 @@ object codec {
   lazy val bitsWsRemoved: Codec[BitVector] =
     bytesWsRemoved.xmap(_.bits,_.bytes)
 
+  /** tags value `A` with `T` **/
+  def tagged[A, T](codec: Codec[A]):Codec[A @@ T] =
+    codec.xmap(tag[T](_), a => a)
 
 
   implicit class ByteVectorCodecSyntax(val self: Codec[ByteVector]) extends AnyVal {
