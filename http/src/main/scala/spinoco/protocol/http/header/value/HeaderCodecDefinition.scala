@@ -23,7 +23,7 @@ object HeaderCodecDefinition {
     new HeaderCodecDefinition[HttpHeader] {
       def headerName: String =  nameFromClass(ev.runtimeClass)
 
-      def headerCodec: Codec[HttpHeader] = codec.asInstanceOf[Codec[HttpHeader]]
+      def headerCodec: Codec[HttpHeader] = codec.asInstanceOf[Codec[HttpHeader]].withContext(headerName)
     }
 
   def nameFromClass(clz:Class[_]):String = {
