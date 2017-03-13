@@ -145,6 +145,21 @@ lazy val http =
 
 
 
+
+lazy val sdp =
+  project.in(file("sdp"))
+    .settings(commonSettings)
+    .settings(
+      name := "protocol-sdp"
+    ).dependsOn(common)
+
+lazy val mgcp =
+  project.in(file("mgcp"))
+    .settings(commonSettings)
+    .settings(
+      name := "protocol-mgcp"
+    ).dependsOn(common, sdp)
+
 lazy val kafka =
   project.in(file("kafka"))
   .settings(commonSettings)
@@ -169,4 +184,6 @@ lazy val allProtocols =
    , stun
    , webSocket, http
    , rtp
+   , sdp
+   , mgcp
  )

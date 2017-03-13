@@ -34,24 +34,24 @@ object codec {
     * Applies predicate `f` to check whether `A` was decoded successfully, or may be encoded.
     * If `f` yields to String, then this signals failure
     */
-  def predicate[A](c:Codec[A])(f: A => Option[String]):Codec[A] = {
+  def guard[A](c:Codec[A])(f: A => Option[Err]):Codec[A] = {
     c.exmap(
-      a => Attempt.fromErrOption(f(a).map(Err.apply), a)
-    , a => Attempt.fromErrOption(f(a).map(Err.apply), a)
+      a => Attempt.fromErrOption(f(a), a)
+    , a => Attempt.fromErrOption(f(a), a)
     )
   }
 
   /** int codec, that allows min/max bounds inclusive **/
   def intBounded(codec:Codec[Int])(min:Int, max:Int):Codec[Int] =
-    predicate(uint16) { i =>
-      if (i < min || i > max) Some(s"int is required to be within bounds [$min,$max] but is $i")
+    guard(uint16) { i =>
+      if (i < min || i > max) Some(Err(s"int is required to be within bounds [$min,$max] but is $i"))
       else None
     }
 
   /** string codec, that allows min/max bounds on size inclusive **/
   def stringBounded(codec:Codec[String])(min:Int,max:Int):Codec[String] =
-    predicate(codec) { s =>
-      if (s.length < min || s.length > max) Some(s"string is required to be within bounds [$min,$max] but is (${s.length}): '$s'")
+    guard(codec) { s =>
+      if (s.length < min || s.length > max) Some(Err(s"string is required to be within bounds [$min,$max] but is (${s.length}): '$s'"))
       else None
     }
 
@@ -149,6 +149,7 @@ object codec {
     )
   }
 
+
   lazy val boolAsString: Codec[Boolean] =
     fromAsciiString[Boolean](_.toBoolean, _.toString).withToString("boolAsString")
 
@@ -190,6 +191,139 @@ object codec {
     codec.xmap(tag[T](_), a => a)
 
 
+
+  /** takes bytes until `f` holds, then decodes via `codec` **/
+  def takeWhile[A](codec: Codec[A])(f: Byte => Boolean):Codec[A] = {
+    new Codec[A] {
+      def decode(bits: BitVector): Attempt[DecodeResult[A]] = {
+        val toDecode = bits.bytes.takeWhile(f)
+        codec.decode(toDecode.bits).map { _.mapRemainder(_ ++ bits.drop(toDecode.size * 8)) }
+      }
+
+      def encode(value: A): Attempt[BitVector] = codec.encode(value)
+
+      def sizeBound: SizeBound = SizeBound.unknown
+    }
+  }
+
+  /** takes bytes until char or chars are encountered **/
+  def takeWhileChar[A](codec: Codec[A])(char:Char, chars: Char*):Codec[A] = {
+    if (chars.isEmpty) {
+      val b = char.toByte
+      takeWhile(codec)(_ != b)
+    } else {
+      val bs = (char.toByte +: chars.map(_.toByte)).toSet
+      takeWhile(codec)(b => ! bs.contains(b))
+    }
+
+  }
+
+  /** codec that decodes codec, until EOL signature is found. EOL is defined as crlf or lf only**/
+  def untilEOL[A](codec: Codec[A], encodeNewLine: BitVector = BitVector.view("\r\n".getBytes)): Codec[A] = {
+    new Codec[A] {
+      val cr: Byte = '\r'
+      val lf: Byte = '\n'
+      def decode(bits: BitVector): Attempt[DecodeResult[A]] = {
+        val untilEOL = bits.bytes.takeWhile(b => !((b == cr) || (b == lf)))
+        val bsSize = untilEOL.size*8
+        if (bsSize == bits.size) codec.decode(untilEOL.bits)
+        else {
+          val rem = bits.drop(bsSize)
+
+          if (rem.getByte(0) == cr && rem.getByte(1) == lf) codec.decode(untilEOL.bits).map { _.mapRemainder(_ ++ rem.drop(16)) }
+          else if (rem.getByte(0) == lf) codec.decode(untilEOL.bits).map { _.mapRemainder(_ ++ rem.drop(8)) }
+          else Attempt.failure(Err(s"End of line must be terminated with \\n or \\r, but is with ${rem.take(16).decodeUtf8}"))
+        }
+      }
+      def encode(value: A): Attempt[BitVector] = codec.encode(value).map { _ ++ encodeNewLine }
+      def sizeBound: SizeBound = SizeBound.unknown
+}
+  }
+
+  /** codec that takes until any whitespace and then this applies supplied codec **/
+  def untilWs[A](codec: Codec[A]):Codec[A] =
+    takeWhile(codec)(! _.toChar.isWhitespace)
+
+
+  /** drops while `f` holds. Then when encoding uses `encodeAs` **/
+  def dropWhile(encodeAs: BitVector)(f: Byte => Boolean):Codec[Unit] = {
+    new Codec[Unit] {
+      def decode(bits: BitVector): Attempt[DecodeResult[Unit]] =
+        Attempt.successful(DecodeResult((),bits.bytes.dropWhile(f).bits))
+      def encode(value: Unit): Attempt[BitVector] = Attempt.successful(encodeAs)
+      def sizeBound: SizeBound = SizeBound.unknown
+    }
+  }
+
+  /** like Recover codec, but with fixed encode **/
+  def recover2(codec:Codec[Unit]): Codec[Boolean] = new Codec[Boolean] {
+    def encode(value: Boolean): Attempt[BitVector] =
+      if (!value) Attempt.successful(BitVector.empty)
+      else codec.encode(())
+    def sizeBound: SizeBound = codec.sizeBound
+    def decode(bits: BitVector): Attempt[DecodeResult[Boolean]] =
+      codec.decode(bits).map { _.map { _ => true } }
+      .recover { case _ => DecodeResult(false, bits) }
+  }
+
+  /** correct version of lookahead that won't encode `codec` when encoding **/
+  def lookahead2(codec:Codec[Unit]):Codec[Boolean] = new Codec[Boolean] {
+    def encode(value: Boolean): Attempt[BitVector] = Attempt.successful(BitVector.empty)
+    def sizeBound: SizeBound = SizeBound.unknown
+    def decode(bits: BitVector): Attempt[DecodeResult[Boolean]] =
+      codec.decode(bits).map { _.map { _ => true }.mapRemainder(_ => bits) }
+      .recover { case _ => DecodeResult(false, bits) }
+  }
+
+
+
+  def constantString(s:String):Codec[Unit] =
+    constant(BitVector.view(s.getBytes))
+
+  def stringEnumerated(discriminator: Codec[String], enumeration: Enumeration) =
+    mappedEnum(discriminator, enumeration.values.map(e => e -> e.toString).toMap)
+
+
+  /**
+    * When decoding takes up bytes if open and close character are found. if there are multiple
+    * open characters found, this decodes until matching close characters are found.
+    * When encoding wraps the result of codec to open and close characters
+    */
+  def enclosedBy[A](open: Char, close: Char)(codec:Codec[A]):Codec[A] = {
+    new Codec[A] {
+      val p = open.toByte
+      val s = close.toByte
+      val prefix = BitVector(p)
+      val suffix = BitVector(s)
+      def sizeBound: SizeBound = SizeBound.unknown
+      def encode(value: A): Attempt[BitVector] = codec.encode(value).map { bs => prefix ++ bs ++ suffix }
+      def decode(bits: BitVector): Attempt[DecodeResult[A]] = {
+        if (bits.size < 8) Attempt.failure(Err(s"Expected $open, but no character is supplied: $bits"))
+        else if (bits.getByte(0) != p) Attempt.failure(Err(s"Expected $open, but got ${bits.getByte(0).toChar}"))
+        else {
+          val bs = bits.bytes
+          var open = 0
+          val chunk = bs.takeWhile { b =>
+            if (b == p) { open = open + 1; true }
+            else if (b != s) true
+            else {
+              if (open == 1) false
+              else { open = open - 1; true }
+            }
+          }
+
+          if (chunk.size == bs.size) Attempt.failure(Err(s"Expected $open matcher by $close, but no matching pairs were found"))
+          else {
+            lazy val rem = bs.drop(chunk.size + 1) // drop close byte
+            codec.decode(chunk.tail.bits).map { // drop the open byte
+              _.mapRemainder { _ => rem.bits }
+            }
+          }
+        }
+      }
+    }
+  }
+
   implicit class ByteVectorCodecSyntax(val self: Codec[ByteVector]) extends AnyVal {
 
     def codedAs[A](aCodec: Codec[A]):Codec[A] = new Codec[A] {
@@ -207,6 +341,12 @@ object codec {
     }
 
   }
+
+  implicit class UnitCodecSyntax(val self: Codec[Unit]) extends AnyVal {
+    def decodeAs[A](a: A):Codec[A] = self.xmap(_ => a, _ => ())
+  }
+
+
 
 
 }
