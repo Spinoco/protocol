@@ -7,8 +7,10 @@ import scodec.codecs._
 import scodec.{Attempt, Codec, Err}
 import spinoco.protocol.common.util.attempt
 import spinoco.protocol.http.codec.helper._
+import spinoco.protocol.common.codec.takeWhile
 
 import scala.concurrent.duration._
+import scala.collection.immutable.HashSet
 
 /**
   * see http://tools.ietf.org/html/rfc6265
@@ -27,11 +29,23 @@ sealed case class HttpCookie(
 
 object HttpCookie {
 
+  object rfc2616 {
+    val controls: Seq[Byte] = (0 to 31).map(_.toByte) :+ 127.toByte
+    val separators = Seq[Byte]('=', ')', '(', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '{', '}', ' ', 9.toByte)
+    val nonTokens = HashSet.empty[Byte] ++ separators ++ controls
+
+    val token: Codec[String] = takeWhile(asciiString) { b => nonTokens.contains(b) == false }
+  }
+
+  val cookiePair: Codec[(String,String)] =
+    (rfc2616.token :: constant(_equal) :: trimmedAsciiString).as[(String,String)]
+  // https://tools.ietf.org/html/rfc6265#section-5.3
+
   val codec: Codec[HttpCookie] = {
     val kvTuple:Codec[(String,String)] = { choice (
         asciiConstant("secure").exmap ( _ => Attempt.successful("Secure" -> "") , { case (k,_)  => if (k == "Secure") Attempt.successful(()) else Attempt.failure(Err("Secure expected")) })
         , asciiConstant("httponly").exmap ( _ => Attempt.successful("HttpOnly" -> "") , { case (k,_)  => if (k == "HttpOnly") Attempt.successful(()) else Attempt.failure(Err("HttpOnly expected")) })
-        , tuple(_equal, trimmedAsciiString, trimmedAsciiString)
+        , cookiePair
       )
     }
 

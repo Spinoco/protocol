@@ -199,7 +199,7 @@ object helper {
 
   /**
     * Tuple A, B separated by `discriminator`. This will first search for discriminator, and if match
-    * will apply `A` codec nad `B` codec to remaining bits, if any.
+    * will apply `A` codec and `B` codec to remaining bits, if any.
     */
   def tuple[A, B](discriminator:ByteVector, acodec:Codec[A], bCodec:Codec[B]):Codec[(A, B)] = {
     def encode(in:(A, B)):Attempt[List[BitVector]] = {
