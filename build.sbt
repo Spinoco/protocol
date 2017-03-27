@@ -10,7 +10,7 @@ lazy val contributors = Seq(
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
    scalaVersion := "2.11.8",
-   crossScalaVersions := Seq("2.11.8"),
+  crossScalaVersions := Seq("2.11.8", "2.12.0"),
    scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -23,7 +23,6 @@ lazy val commonSettings = Seq(
     "-Ywarn-value-discard",
     "-Ywarn-unused-import"
    ),
-   crossScalaVersions := Seq("2.11.8", "2.12.0"),
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
    scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
    libraryDependencies ++= Seq(
