@@ -98,7 +98,7 @@ object MGCPParameterCodec {
       val withLocalPart =
         (
           ("LocalName" | takeWhileChar(localEndpointNameCodec)('@') <~ constantString("@"))
-            .xmap[Some[LocalEndpointName]](Some(_), _.x).upcast[Option[LocalEndpointName]] ::
+            .xmap[Some[LocalEndpointName]](Some(_), _.value).upcast[Option[LocalEndpointName]] ::
             ("Domain" | takeWhileChar(domainCodec)(':')) ::
             ("Port" | optional(recover2(constant(BitVector(":".getBytes))), intAsString))
           ).as[EntityName]
@@ -142,7 +142,7 @@ object MGCPParameterCodec {
     val gainControlCodec: Codec[GainControl] =
       choice[Option[Int]](
         constant(BitVector.view("auto".getBytes)).xmap[None.type](_ => None, _ => ()).upcast
-        , intAsString.xmap[Some[Int]](Some(_), _.x).upcast
+        , intAsString.xmap[Some[Int]](Some(_), _.value).upcast
       ).as[GainControl]
 
     val silenceSuppressionCodec: Codec[SilenceSuppression] =
