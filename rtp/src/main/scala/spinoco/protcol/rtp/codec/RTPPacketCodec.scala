@@ -37,7 +37,7 @@ object RTPPacketCodec {
       vectorOfN(provide(h(3) /* CC */), int(32))
     }.flatAppend { h =>
       val x = h(2) // X
-      if (x) impl.headerExtension.xmap[Some[RTPHeaderExtension]](Some(_), _.x).upcast[Option[RTPHeaderExtension]]
+      if (x) impl.headerExtension.xmap[Some[RTPHeaderExtension]](Some(_), _.get).upcast[Option[RTPHeaderExtension]]
       else provide(None).upcast[Option[RTPHeaderExtension]]
     } :+ bytes)
     .xmap (
