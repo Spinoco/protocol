@@ -292,6 +292,9 @@ property("Accept-Ranges Header") = secure {
       , ("Cookie: SESSID=298zf09hf012fh2; httponly"
         , Cookie(HttpCookie("SESSID", "298zf09hf012fh2", None, None, None, None, false, httpOnly = true, Map.empty))
         , "Cookie: SESSID=298zf09hf012fh2; httponly")
+      , ("Cookie: __utmz=118721.140907.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); Currency=%22usd%22"
+        , Cookie(HttpCookie("__utmz", "118721.140907.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)", None, None, None, None, false, false, Map("Currency" -> "%22usd%22")))
+        , "Cookie: __utmz=118721.140907.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); Currency=%22usd%22")
     ))
   }
 
