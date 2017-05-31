@@ -2,9 +2,9 @@ package spinoco.protocol.http
 
 import java.net.{URLDecoder, URLEncoder}
 
-import scodec.{Attempt, Codec}
+import scodec.{codecs, Attempt, Codec}
 import codec.helper._
-import scodec.bits.{BitVector, ByteVector}
+import scodec.bits.BitVector
 import spinoco.protocol.common.util._
 import spinoco.protocol.common.codec._
 
@@ -60,16 +60,21 @@ object Uri {
     codec.decodeValue(BitVector.view(uriString.getBytes))
 
   val pathQueryCodec:Codec[(Uri.Path, Uri.Query)] = {
-    parametrized(ByteVector('?'), Path.codec, Query.codec).xmap(
-      { case (p,q) => p -> q.getOrElse(Query.empty) }
-      , { case (p,q) => p -> (if (q.params.isEmpty) None else Some(q)) }
-    )
+    val queryCodec: Codec[Query] = {
+      val d = (codecs.byte.unit('?') ~> Query.codec)
+      Codec(q => if (q.params.isEmpty) attempt(BitVector.empty) else d.encode(q), d.decode _)
+    }
+
+    bytesUntil(_ != '?').codedAs(Path.codec) ~
+    codecs.optional(codecs.bitsRemaining, queryCodec).xmap(_.getOrElse(Query.empty), Some(_))
   }
+
+  val hostPortCodec: Codec[HostPort] = bytesUntil(_ != '/').codedAs(HostPort.codec)
 
   val codec: Codec[Uri] = {
 
     val hostPathQueryCodec:Codec[(HostPort, Uri.Path, Uri.Query)] = {
-      (bytesUntil(_ != '/').codedAs(HostPort.codec) ~ pathQueryCodec).xmap(
+      (bytesUntil(b => b != '/' && b != '?').codedAs(HostPort.codec) ~ pathQueryCodec).xmap(
         { case (hp, (path, query)) => (hp, path, query) }
         , { case (hp, path, query)  =>  (hp, (path, query)) }
       )
@@ -131,7 +136,7 @@ object Uri {
     }
 
     val Root: Path = Path(initialSlash = true, segments = Nil, trailingSlash = false)
-
+    val Empty: Path = Path(initialSlash = false, segments = Nil, trailingSlash = false)
   }
 
 
