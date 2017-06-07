@@ -19,8 +19,10 @@ object MetadataCodec {
   }
 
   val metadataResponseCodec:Codec[MetadataResponse] = {
-
-    (kafkaArray(impl.brokerCodec) ~ kafkaArray(impl.topicMetadataCodec))
+    (
+    ("Brokers" | kafkaArray(impl.brokerCodec)) ~
+    ( "Topics" |  kafkaArray(impl.topicMetadataCodec))
+    )
     .xmap(MetadataResponse.apply _ tupled, mr => (mr.brokers, mr.topics))
   }
 

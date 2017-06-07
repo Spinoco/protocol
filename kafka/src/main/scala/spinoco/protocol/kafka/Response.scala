@@ -82,4 +82,28 @@ object Response {
  )
 
 
+  /**
+    * Response to the offset query. Response for topic queries by client
+    * @param data Data containing reposne to offset query
+    */
+  case class OffsetResponse(
+    data: Vector[(String @@ TopicName, Vector[PartitionOffsetResponse])]
+  ) extends Response
+
+
+  /**
+    * Reposne data for Offset query for an partition
+    * @param partitionId  Id of partition
+    * @param error        If nonempty, reposne failed
+    * @param timestamp    If query contained a timestamp, this will indicate offset for given timestamp. 0 in case of protocolV9
+    * @param offsets      Offsets of chunks for given partition
+    */
+  case class PartitionOffsetResponse(
+    partitionId: Int @@ PartitionId
+    , error: Option[ErrorType.Value]
+    , timestamp: Date
+    , offsets: Vector[Long @@ Offset]
+  )
+
+
 }

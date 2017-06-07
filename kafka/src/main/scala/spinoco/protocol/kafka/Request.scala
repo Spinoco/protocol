@@ -1,5 +1,7 @@
 package spinoco.protocol.kafka
 
+import java.util.Date
+
 import shapeless.tag.@@
 
 import scala.concurrent.duration.FiniteDuration
@@ -103,8 +105,20 @@ object Request {
    ) extends Request
 
 
-
-
+  /**
+    * Requests actual last known offsets for topic and partition. This allows to query last offset that has been
+    * committed to the broker.
+    * @param topics           Query for given topics and partitions. Supplied time (kafka 0.10.1+) is used to ask for all messages before a certain time (ms). FOr earlier versions this is ignored.
+    *                         There are two special values.
+    *                         Specify -1 to receive the latest offset (i.e. the offset of the next coming message) and -2 to receive the earliest available offset.
+    *                         The last Int indicates maximum number of offset chunks to return. Only availabel for kafka protocol 0.8 and 0.9.
+    *                         This applies to all versions of the API. Note that because offsets are pulled in descending order, asking for the earliest offset will always return you a single element.
+    * @param replicaId        Supply -1 for client requests
+    */
+  case class OffsetsRequest(
+    replicaId: Int @@ Broker
+    , topics: Vector[(String @@ TopicName, Vector[(Int @@ PartitionId, Date, Option[Int])])]
+  ) extends Request
 
 
 

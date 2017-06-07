@@ -2,7 +2,7 @@ package spinoco.protocol.kafka.codec
 
 import java.nio.ByteBuffer
 
-import kafka.api.{FetchRequest, ProducerRequest, RequestOrResponse, TopicMetadataRequest}
+import kafka.api._
 import org.scalacheck.{Arbitrary, Gen}
 import scodec.bits.{BitVector, ByteVector}
 import spinoco.protocol.common.ProtocolSpec
@@ -23,6 +23,7 @@ class CodecSpec extends ProtocolSpec {
         case _: TopicMetadataRequest => ApiKey.MetadataRequest.id
         case _: ProducerRequest => ApiKey.ProduceRequest.id
         case _: FetchRequest => ApiKey.FetchRequest.id
+        case _: OffsetRequest => ApiKey.OffsetRequest.id
       }
 
     rq.writeTo(buffer)

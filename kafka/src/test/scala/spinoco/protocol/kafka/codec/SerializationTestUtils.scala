@@ -4,7 +4,7 @@ import java.util.Date
 
 import kafka.api._
 import kafka.cluster.{Broker, EndPoint}
-import kafka.common.{OffsetAndMetadata, OffsetMetadata, OffsetMetadataAndError, TopicAndPartition}
+import kafka.common.{OffsetAndMetadata, OffsetMetadata, TopicAndPartition}
 import kafka.controller.LeaderIsrAndControllerEpoch
 import kafka.message._
 import kafka.utils.SystemTime
@@ -178,18 +178,21 @@ object SerializationTestUtils {
       TopicAndPartition(topic1, 1) -> Errors.NONE.code))
   }
 
-  def createTestOffsetFetchRequest: OffsetFetchRequest = {
-    new OffsetFetchRequest("group 1", Seq(
-      TopicAndPartition(topic1, 0),
-      TopicAndPartition(topic1, 1)
-    ))
+  def createTestOffsetFetchRequest: OffsetRequest = {
+    new OffsetRequest(
+      requestInfo = Map(
+        TopicAndPartition(topic1, 1) -> PartitionOffsetRequestInfo(-1l, 10)
+      )
+    )
   }
 
-  def createTestOffsetFetchResponse: OffsetFetchResponse = {
-    new OffsetFetchResponse(collection.immutable.Map(
-      TopicAndPartition(topic1, 0) -> OffsetMetadataAndError(42L, "some metadata", Errors.NONE.code),
-      TopicAndPartition(topic1, 1) -> OffsetMetadataAndError(100L, OffsetMetadata.NoMetadata, Errors.UNKNOWN_TOPIC_OR_PARTITION.code)
-    ))
+  def createTestOffsetFetchResponse: OffsetResponse = {
+    new OffsetResponse(
+      correlationId = 1
+      , partitionErrorAndOffsets =  Map[TopicAndPartition, PartitionOffsetsResponse](
+        TopicAndPartition(topic1, 1) -> PartitionOffsetsResponse(Errors.NONE.code, Seq(0l, 10l, 20l) )
+      )
+    )
   }
 
   def createConsumerMetadataRequest: GroupCoordinatorRequest = {

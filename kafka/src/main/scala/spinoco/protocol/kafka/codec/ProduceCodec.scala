@@ -32,7 +32,8 @@ object ProduceCodec {
     version match {
       case ProtocolVersion.Kafka_0_8 => "Produce Response V0" | impl.produceResponseV0
       case ProtocolVersion.Kafka_0_9 => "Produce Response V1" | impl.produceResponseV1
-      case ProtocolVersion.Kafka_0_10 => "Produce Response V2" | impl.produceResponseV2
+      case ProtocolVersion.Kafka_0_10 |
+           ProtocolVersion.Kafka_0_10_1 => "Produce Response V2" | impl.produceResponseV2
     }
   }
 

@@ -6,6 +6,7 @@ import scodec.codecs._
 import shapeless.{::, HNil}
 import spinoco.protocol.kafka._
 import spinoco.protocol.common.util._
+import spinoco.protocol.kafka.Request.{FetchRequest, MetadataRequest, OffsetsRequest, ProduceRequest}
 
 
 object MessageCodec {
@@ -28,6 +29,7 @@ object MessageCodec {
       case ApiKey.FetchRequest => FetchCodec.responseCodec(version).upcast
       case ApiKey.MetadataRequest => MetadataCodec.metadataResponseCodec.upcast
       case ApiKey.ProduceRequest => ProduceCodec.produceResponseCodec(version).upcast
+      case ApiKey.OffsetRequest => OffsetCodec.responseCodec(version).upcast
     }
   }
 
@@ -40,17 +42,13 @@ object MessageCodec {
         , k => Attempt.successful(k.id)
       )
 
-    val versionCodec:Codec[ProtocolVersion.Value] =
-      int16.exmap(
-        code => attempt(ProtocolVersion(code))
-        , k => Attempt.successful(k.id)
-      )
 
-    type RequestHeader = ApiKey.Value :: ProtocolVersion.Value :: Int :: String :: HNil
+
+    type RequestHeader = ApiKey.Value :: Int :: Int :: String :: HNil
     val requestHeaderCodec : Codec[RequestHeader] = {
       "Request Header" | (
         ("Api Key"        | apiKeyCodec) ::
-        ("Api Version"    | versionCodec) ::
+        ("Api Version"    | int16) ::
         ("Correlation Id" | int32) ::
         ("Client Id"      | kafkaRequiredString)
       )
@@ -59,21 +57,51 @@ object MessageCodec {
     val requestContentCodec:Codec[RequestMessage] = {
       def encode(rm:RequestMessage):(RequestHeader, Request) = {
         val key = ApiKey.forRequest(rm.request)
-        val version = rm.version// kafka requires the for Fetch, Metadata and Produce requests
+        val version: Int = rm.request match {
+          case _: ProduceRequest => rm.version match {
+            case ProtocolVersion.Kafka_0_8 => 0
+            case ProtocolVersion.Kafka_0_9 => 1
+            case ProtocolVersion.Kafka_0_10 | ProtocolVersion.Kafka_0_10_1 => 2
+          }
+
+          case _: FetchRequest => rm.version match {
+            case ProtocolVersion.Kafka_0_8 => 0
+            case ProtocolVersion.Kafka_0_9 => 1
+            case ProtocolVersion.Kafka_0_10 | ProtocolVersion.Kafka_0_10_1 => 2
+          }
+
+          case _: MetadataRequest => 0
+
+          case _: OffsetsRequest => 0
+        }
         (key :: version :: rm.correlationId :: rm.clientId :: HNil, rm.request)
       }
-      def decode(header:RequestHeader, request:Request):RequestMessage = {
+      def decode(header:RequestHeader, request:Request): RequestMessage = {
         val version :: correlation :: clientId :: HNil = header.tail
-        RequestMessage(version,correlation,clientId,request)
+        val protocolVersion = request match {
+          case _: ProduceRequest => version match {
+            case 0 => ProtocolVersion.Kafka_0_8
+            case 1 => ProtocolVersion.Kafka_0_9
+            case _ => ProtocolVersion.Kafka_0_10
+          }
+          case _: FetchRequest =>  version match {
+            case 0 => ProtocolVersion.Kafka_0_8
+            case 1 => ProtocolVersion.Kafka_0_9
+            case _ => ProtocolVersion.Kafka_0_10
+          }
+          case _: MetadataRequest => ProtocolVersion.Kafka_0_8
+          case _: OffsetsRequest => ProtocolVersion.Kafka_0_8
+        }
+        RequestMessage(protocolVersion, correlation, clientId, request)
       }
 
       requestHeaderCodec.flatZip[Request] {
         case api :: version :: _ =>
-          import ApiKey._
           api match {
-            case ProduceRequest => ProduceCodec.requestCodec.upcast
-            case FetchRequest => FetchCodec.requestCodec.upcast
-            case MetadataRequest => MetadataCodec.requestCodec.upcast
+            case ApiKey.ProduceRequest => ProduceCodec.requestCodec.upcast
+            case ApiKey.FetchRequest => FetchCodec.requestCodec.upcast
+            case ApiKey.MetadataRequest => MetadataCodec.requestCodec.upcast
+            case ApiKey.OffsetRequest => OffsetCodec.requestCodec(version).upcast
           }
       }.xmap(decode _ tupled,encode)
     }

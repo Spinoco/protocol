@@ -1,5 +1,7 @@
 package spinoco.protocol.kafka
 
+import java.util.Date
+
 import scodec.{Attempt, Codec, Err}
 import scodec.bits.ByteVector
 import scodec.codecs._
@@ -70,6 +72,9 @@ package object codec {
 
   val kafkaBrokerId:Codec[Int @@ Broker] =
     int32.xmap(tag[Broker](_), i => i:Int)
+
+  val kafkaDate: Codec[Date]  =
+    int64.xmap(new Date(_), _.getTime)
 
 
 }

@@ -37,7 +37,9 @@ object FetchCodec {
       case ProtocolVersion.Kafka_0_8 =>
         "FetchResponse V0" | impl.fetchResponse.xmap(FetchResponse(_,None), _.data)
 
-      case ProtocolVersion.Kafka_0_10 | ProtocolVersion.Kafka_0_9 =>
+      case ProtocolVersion.Kafka_0_10 |
+           ProtocolVersion.Kafka_0_10_1 |
+           ProtocolVersion.Kafka_0_9 =>
         (
           ("ThrottleTime"     | durationIntMs(int32) ) ~
           ("data"             | impl.fetchResponse)
