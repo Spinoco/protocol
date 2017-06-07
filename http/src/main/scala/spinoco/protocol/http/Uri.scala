@@ -143,21 +143,31 @@ object Uri {
   }
 
   object Query {
+    import scodec.codecs._
 
     val empty = Query(List.empty)
 
     val codec:Codec[Query] = {
       val param: Codec[(String, String)] = {
-        tuple(_equal, utf8String, utf8String).exmap(
-          { case (k,v) => attempt { URLDecoder.decode(v.trim, "UTF-8") }.map { k.trim -> _ } }
-          , { case (k,v) => attempt { URLEncoder.encode(v, "UTF-8") }.map { k.trim -> _ } }
+        listDelimited(BitVector.fromValidHex("3d"), utf8String).exmap[(String, String)](
+          {
+            case a::b::Nil => attempt { (a, urlDecode(b)) }
+            case a::Nil => attempt { (a, "") }
+            case other => Attempt.failure(scodec.Err(s"Cannot decode query parameter into key-value pair: $other"))
+          },
+          {
+            case (a,b) => attempt {
+              if (b.isEmpty) List(a) else List(a,urlEncode(b))
+            }
+          }
         )
       }
 
       delimitedBy(amp,amp, param).xmap(Query(_), _.params)
     }
 
-
+    private def urlDecode(s: String) = URLDecoder.decode(s.trim, "UTF-8")
+    private def urlEncode(s: String) = URLEncoder.encode(s, "UTF-8")
 
   }
 

@@ -36,6 +36,27 @@ object UriSpec extends Properties("Uri") {
         , Uri(HttpScheme.HTTP, HostPort("127.0.0.1", Some(8080)), Uri.Path.Root, Uri.Query.empty)
         , "http://127.0.0.1:8080/"
       )
+      , ("http://www.spinoco.com/?q=1&w=2"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "w" -> "2")))
+        , "http://www.spinoco.com/?q=1&w=2"
+      )
+      , ("http://www.spinoco.com/?q=1&q=2"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "q" -> "2")))
+        , "http://www.spinoco.com/?q=1&q=2"
+      )
+      , ("http://www.spinoco.com/?q=&w=2"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "", "w" -> "2")))
+        , "http://www.spinoco.com/?q&w=2"
+      )
+      , ("http://www.spinoco.com/?q&w=2"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "", "w" -> "2")))
+        , "http://www.spinoco.com/?q&w=2"
+      )
+      , ("http://www.spinoco.com/?q=1&w"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "w" -> "")))
+        , "http://www.spinoco.com/?q=1&w"
+      )
+
     )
 
     examples.foldLeft(proved) {
