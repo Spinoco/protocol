@@ -12,7 +12,7 @@ import spinoco.protocol.kafka.Request.{FetchRequest, MetadataRequest, OffsetsReq
 object MessageCodec {
 
   /** enodes supplied request **/
-  val requestCodec:Codec[RequestMessage] =
+  val requestCodec: Codec[RequestMessage] =
     variableSizeBytes(int32, impl.requestContentCodec)
 
   /**
@@ -54,20 +54,24 @@ object MessageCodec {
       )
     }
 
-    val requestContentCodec:Codec[RequestMessage] = {
+    val requestContentCodec: Codec[RequestMessage] = {
       def encode(rm:RequestMessage):(RequestHeader, Request) = {
         val key = ApiKey.forRequest(rm.request)
         val version: Int = rm.request match {
           case _: ProduceRequest => rm.version match {
             case ProtocolVersion.Kafka_0_8 => 0
             case ProtocolVersion.Kafka_0_9 => 1
-            case ProtocolVersion.Kafka_0_10 | ProtocolVersion.Kafka_0_10_1 => 2
+            case ProtocolVersion.Kafka_0_10 |
+                 ProtocolVersion.Kafka_0_10_1 |
+                 ProtocolVersion.Kafka_0_10_2 => 2
           }
 
           case _: FetchRequest => rm.version match {
             case ProtocolVersion.Kafka_0_8 => 0
             case ProtocolVersion.Kafka_0_9 => 1
-            case ProtocolVersion.Kafka_0_10 | ProtocolVersion.Kafka_0_10_1 => 2
+            case ProtocolVersion.Kafka_0_10 |
+                 ProtocolVersion.Kafka_0_10_1 => 2
+            case ProtocolVersion.Kafka_0_10_2 => 3
           }
 
           case _: MetadataRequest => 0
@@ -87,7 +91,8 @@ object MessageCodec {
           case _: FetchRequest =>  version match {
             case 0 => ProtocolVersion.Kafka_0_8
             case 1 => ProtocolVersion.Kafka_0_9
-            case _ => ProtocolVersion.Kafka_0_10
+            case 2 => ProtocolVersion.Kafka_0_10
+            case 3 | _ => ProtocolVersion.Kafka_0_10_2
           }
           case _: MetadataRequest => ProtocolVersion.Kafka_0_8
           case _: OffsetsRequest => ProtocolVersion.Kafka_0_8
@@ -99,7 +104,7 @@ object MessageCodec {
         case api :: version :: _ =>
           api match {
             case ApiKey.ProduceRequest => ProduceCodec.requestCodec.upcast
-            case ApiKey.FetchRequest => FetchCodec.requestCodec.upcast
+            case ApiKey.FetchRequest => FetchCodec.requestCodec(version).upcast
             case ApiKey.MetadataRequest => MetadataCodec.requestCodec.upcast
             case ApiKey.OffsetRequest => OffsetCodec.requestCodec(version).upcast
           }

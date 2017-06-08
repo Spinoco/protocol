@@ -94,6 +94,9 @@ object Request {
     *                         (e.g. setting MaxWaitTime to 100 ms and setting MinBytes to 64k would allow the server
     *                         to wait up to 100ms to try to accumulate 64k of data before responding).
     *
+    * @param maxBytes         If specified, contains max bytes of the fetch request to return, across all topics//partitions.
+    *                         Only available in Kafka 0.10.2+
+    *
     * @param topics          Specifies name of topic, its partition and offset to read from. The last Int specifies
     *                         max bytes to read, that bounds message size received.
     */
@@ -101,6 +104,7 @@ object Request {
    replica: Int @@ Broker
    , maxWaitTime: FiniteDuration
    , minBytes: Int
+   , maxBytes: Option[Int]
    , topics:Vector[(String @@ TopicName,Vector[(Int @@ PartitionId, Long @@ Offset, Int)])]
    ) extends Request
 

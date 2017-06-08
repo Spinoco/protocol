@@ -14,7 +14,7 @@ class CodecSpec extends ProtocolSpec {
 
   implicit val pvGen = Arbitrary(Gen.oneOf(ProtocolVersion.values.toSeq))
 
-  def serializeRequest(rq:RequestOrResponse):BitVector = {
+  def serializeRequest(rq:RequestOrResponse): BitVector = {
     val sz = rq.sizeInBytes
     val buffer = ByteBuffer.allocate(sz)
 
@@ -34,7 +34,7 @@ class CodecSpec extends ProtocolSpec {
   }
 
 
-  def serializeResponse(resp:RequestOrResponse):BitVector = {
+  def serializeResponse(resp:RequestOrResponse): BitVector = {
     val sz = resp.sizeInBytes
     val buffer = ByteBuffer.allocate(sz)
     resp.writeTo(buffer)

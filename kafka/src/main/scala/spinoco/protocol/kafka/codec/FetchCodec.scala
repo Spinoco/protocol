@@ -17,17 +17,37 @@ import scala.concurrent.duration._
 object FetchCodec {
 
 
-  val requestCodec:Codec[FetchRequest] = {
+  def requestCodec(version: Int):Codec[FetchRequest] = version match {
+    case 0 | 1 | 2 => requestCodecV1_2
+    case 3 | _ => requestCodecV3
+  }
+
+  val requestCodecV1_2: Codec[FetchRequest] = {
     (
       ("ReplicaId"          | kafkaBrokerId ) ::
-      ("MaxWaitTime"        | durationIntMs(int32)) ::
-      ("MinBytes"           | int32) ::
-      ("Topics"             | impl.topics)
-    ).xmap(
+        ("MaxWaitTime"        | durationIntMs(int32)) ::
+        ("MinBytes"           | int32) ::
+        ("Topics"             | impl.topics)
+      ).xmap(
       { case replicaId :: maxWaitTime :: minBytes :: topics :: HNil =>
-        FetchRequest(replicaId, maxWaitTime, minBytes, topics)
+        FetchRequest(replicaId, maxWaitTime, minBytes, None, topics)
       }
       , rq => rq.replica :: rq.maxWaitTime :: rq.minBytes :: rq.topics :: HNil
+    )
+  }
+
+  val requestCodecV3: Codec[FetchRequest] = {
+    (
+      ("ReplicaId"          | kafkaBrokerId ) ::
+        ("MaxWaitTime"        | durationIntMs(int32)) ::
+        ("MinBytes"           | int32) ::
+        ("MaxBytes"           | int32) ::
+        ("Topics"             | impl.topics)
+      ).xmap(
+      { case replicaId :: maxWaitTime :: minBytes :: maxBytes :: topics :: HNil =>
+        FetchRequest(replicaId, maxWaitTime, minBytes, Some(maxBytes), topics)
+      }
+      , rq => rq.replica :: rq.maxWaitTime :: rq.minBytes :: rq.maxBytes.getOrElse(Int.MaxValue) :: rq.topics :: HNil
     )
   }
 
@@ -39,6 +59,7 @@ object FetchCodec {
 
       case ProtocolVersion.Kafka_0_10 |
            ProtocolVersion.Kafka_0_10_1 |
+           ProtocolVersion.Kafka_0_10_2 |
            ProtocolVersion.Kafka_0_9 =>
         (
           ("ThrottleTime"     | durationIntMs(int32) ) ~

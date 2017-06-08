@@ -166,7 +166,7 @@ lazy val kafka =
     name := "protocol-kafka"
     , libraryDependencies ++= Seq(
       "org.xerial.snappy" % "snappy-java" % "1.1.2.1"  // for supporting a Snappy compression of message sets
-      , "org.apache.kafka" %% "kafka" % "0.10.0.0" % "test"
+      , "org.apache.kafka" %% "kafka" % "0.10.2.0" % "test"
     )
   ).dependsOn(
     common
@@ -185,4 +185,5 @@ lazy val allProtocols =
    , rtp
    , sdp
    , mgcp
+   , kafka
  )

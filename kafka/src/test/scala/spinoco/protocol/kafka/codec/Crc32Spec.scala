@@ -2,7 +2,8 @@ package spinoco.protocol.kafka.codec
 
 import java.util.zip.CRC32
 
-import kafka.utils.CoreUtils
+
+import org.apache.kafka.common.utils.Crc32
 import spinoco.protocol.common.ProtocolSpec
 
 /**
@@ -17,10 +18,11 @@ class Crc32Spec extends ProtocolSpec {
   }
 
 
+
   "Crc32" - {
 
     "is computed correctly as in kafka utils"  in forAll { array: Array[Byte] =>
-      val kafka = (CoreUtils.crc32(array) & 0xffffffffL).toInt
+      val kafka = (Crc32.crc32(array) & 0xffffffffL).toInt
       val crc = MessageSetCodec.impl.computeCrc(array)
       kafka shouldBe crc
     }

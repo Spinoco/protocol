@@ -12,24 +12,27 @@ class FetchCodecSpec extends CodecSpec {
 
   val kRequest = SerializationTestUtils.createTestFetchRequest
   val sRequest = RequestMessage(
-    version = ProtocolVersion.Kafka_0_10
+    version = ProtocolVersion.Kafka_0_10_2
     , correlationId = kRequest.correlationId
     , clientId = kRequest.clientId
     , request = FetchRequest(
       replica = tag[Broker](kRequest.replicaId)
       , maxWaitTime = kRequest.maxWait.millis
       , minBytes = kRequest.minBytes
+      , maxBytes = Some(Int.MaxValue)
       , topics = Vector(
-        (tag[TopicName]("test2"), Vector(
-          (tag[PartitionId](3),tag[Offset](4000),100)
-          , (tag[PartitionId](0),tag[Offset](1000),100)
-          , (tag[PartitionId](2),tag[Offset](3000),100)
-          , (tag[PartitionId](1),tag[Offset](2000),100)))
-        , (tag[TopicName]("test1"), Vector(
-          (tag[PartitionId](3),tag[Offset](4000),100)
+        (tag[TopicName]("test1"), Vector(
+          (tag[PartitionId](0),tag[Offset](1000),100)
           , (tag[PartitionId](1),tag[Offset](2000),100)
           , (tag[PartitionId](2),tag[Offset](3000),100)
-          , (tag[PartitionId](0),tag[Offset](1000),100)))
+          , (tag[PartitionId](3),tag[Offset](4000),100)
+        ))
+        , (tag[TopicName]("test2"), Vector(
+          (tag[PartitionId](0),tag[Offset](1000),100)
+          , (tag[PartitionId](1),tag[Offset](2000),100)
+          , (tag[PartitionId](2),tag[Offset](3000),100)
+          , (tag[PartitionId](3),tag[Offset](4000),100)
+        ))
       )
     )
   )
@@ -48,6 +51,7 @@ class FetchCodecSpec extends CodecSpec {
         )
       )
     }
+
 
     "Serializes request" in {
       MessageCodec.requestCodec.encode(sRequest).map(bv => kafka.api.FetchRequest.readFrom(bv.bytes.drop(4+2).toByteBuffer)) shouldBe

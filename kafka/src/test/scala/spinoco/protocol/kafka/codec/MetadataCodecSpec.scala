@@ -22,13 +22,13 @@ class MetadataCodecSpec extends CodecSpec {
   "Metadata API" - {
 
     "De-Serializes request" in forAll {
-      (pv: ProtocolVersion.Value, clientId:String, topics:Vector[String], correlation:Int) =>
+      (pv: ProtocolVersion.Value, clientId: String, topics: Vector[String], correlation: Int) =>
 
       MessageCodec.requestCodec.decode(
         serializeRequest(TopicMetadataRequest(pv.id.toShort,correlation,clientId,topics))
       ) shouldBe Attempt.successful(DecodeResult(
         RequestMessage(
-          version = pv
+          version = ProtocolVersion.Kafka_0_8
           , correlationId = correlation
           , clientId = clientId
           , MetadataRequest(topics.map(tag[TopicName](_)))
@@ -55,7 +55,7 @@ class MetadataCodecSpec extends CodecSpec {
         .mapErr(err => fail(s"encoding failed $err"))
         .map { encoded =>
           MessageCodec.requestCodec.decode(encoded) shouldBe Attempt.successful(
-            DecodeResult(msg, BitVector.empty)
+            DecodeResult(msg.copy(version = ProtocolVersion.Kafka_0_8), BitVector.empty)
           )
         }
     }

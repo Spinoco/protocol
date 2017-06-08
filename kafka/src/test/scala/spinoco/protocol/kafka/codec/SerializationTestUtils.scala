@@ -7,13 +7,13 @@ import kafka.cluster.{Broker, EndPoint}
 import kafka.common.{OffsetAndMetadata, OffsetMetadata, TopicAndPartition}
 import kafka.controller.LeaderIsrAndControllerEpoch
 import kafka.message._
-import kafka.utils.SystemTime
+import org.apache.kafka.common.network.ListenerName
 import org.apache.kafka.common.protocol.{Errors, SecurityProtocol}
 import org.apache.kafka.common.record.TimestampType
 import scodec.bits.ByteVector
 import shapeless.tag
 import shapeless.tag.@@
-import spinoco.protocol.kafka.{Compression, PartitionId, TimeData, TopicName, MessageVersion}
+import spinoco.protocol.kafka.{Compression, MessageVersion, PartitionId, TimeData, TopicName}
 
 /**
   * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,7 +49,7 @@ object SerializationTestUtils {
     val groupedData = Array(topic1, topic2).flatMap(topic =>
       partitionDataFetchResponseMap.map(partitionAndData =>
         (TopicAndPartition(topic, partitionAndData._1), partitionAndData._2)))
-    collection.immutable.Map(groupedData:_*)
+    groupedData.toSeq
   }
 
   private val partitionDataMessage0 = new ByteBufferMessageSet(new Message("first message".getBytes))
@@ -68,7 +68,7 @@ object SerializationTestUtils {
     collection.mutable.Map(groupedData:_*)
   }
 
-  private val requestInfos = collection.immutable.Map(
+  private val requestInfos = Seq(
     TopicAndPartition(topic1, 0) -> PartitionFetchInfo(1000, 100),
     TopicAndPartition(topic1, 1) -> PartitionFetchInfo(2000, 100),
     TopicAndPartition(topic1, 2) -> PartitionFetchInfo(3000, 100),
@@ -79,10 +79,14 @@ object SerializationTestUtils {
     TopicAndPartition(topic2, 3) -> PartitionFetchInfo(4000, 100)
   )
 
-  private val brokers = List(new Broker(0, Map(SecurityProtocol.PLAINTEXT -> EndPoint("localhost", 1011, SecurityProtocol.PLAINTEXT))),
-    new Broker(1, Map(SecurityProtocol.PLAINTEXT -> EndPoint("localhost", 1012, SecurityProtocol.PLAINTEXT))),
-    new Broker(2, Map(SecurityProtocol.PLAINTEXT -> EndPoint("localhost", 1013, SecurityProtocol.PLAINTEXT))))
-  private val brokerEndpoints = brokers.map(_.getBrokerEndPoint(SecurityProtocol.PLAINTEXT))
+  val listenerName =  ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT)
+
+  private val brokers = List(
+    new Broker(0, Seq(EndPoint("localhost", 1011, listenerName,  SecurityProtocol.PLAINTEXT)), rack = None),
+    new Broker(1, Seq(EndPoint("localhost", 1012, listenerName, SecurityProtocol.PLAINTEXT)), rack = None),
+    new Broker(2, Seq(EndPoint("localhost", 1013, listenerName, SecurityProtocol.PLAINTEXT)), rack = None)
+  )
+  private val brokerEndpoints = brokers.map(_.getBrokerEndPoint(listenerName))
 
   private val partitionMetaData0 = new PartitionMetadata(0, Some(brokerEndpoints.head), replicas = brokerEndpoints, isr = brokerEndpoints, errorCode = 0)
   private val partitionMetaData1 = new PartitionMetadata(1, Some(brokerEndpoints.head), replicas = brokerEndpoints, isr = brokerEndpoints.tail, errorCode = 1)
@@ -146,7 +150,7 @@ object SerializationTestUtils {
   def createTestOffsetCommitRequestV2: OffsetCommitRequest = {
     new OffsetCommitRequest(
       groupId = "group 1",
-      retentionMs = SystemTime.milliseconds,
+      retentionMs = System.currentTimeMillis(),
       requestInfo=collection.immutable.Map(
         TopicAndPartition(topic1, 0) -> OffsetAndMetadata(42L, "some metadata"),
         TopicAndPartition(topic1, 1) -> OffsetAndMetadata(100L, OffsetMetadata.NoMetadata)
@@ -158,8 +162,8 @@ object SerializationTestUtils {
       versionId = 1,
       groupId = "group 1",
       requestInfo = collection.immutable.Map(
-        TopicAndPartition(topic1, 0) -> OffsetAndMetadata(42L, "some metadata", SystemTime.milliseconds),
-        TopicAndPartition(topic1, 1) -> OffsetAndMetadata(100L, OffsetMetadata.NoMetadata, SystemTime.milliseconds)
+        TopicAndPartition(topic1, 0) -> OffsetAndMetadata(42L, "some metadata", System.currentTimeMillis()),
+        TopicAndPartition(topic1, 1) -> OffsetAndMetadata(100L, OffsetMetadata.NoMetadata, System.currentTimeMillis())
       ))
   }
 
@@ -200,7 +204,7 @@ object SerializationTestUtils {
   }
 
   def createConsumerMetadataResponse: GroupCoordinatorResponse = {
-    GroupCoordinatorResponse(Some(brokers.head.getBrokerEndPoint(SecurityProtocol.PLAINTEXT)), Errors.NONE.code, 0)
+    GroupCoordinatorResponse(Some(brokers.head.getBrokerEndPoint(listenerName)), Errors.NONE.code, 0)
   }
 
 
