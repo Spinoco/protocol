@@ -56,7 +56,22 @@ object UriSpec extends Properties("Uri") {
         , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "w" -> "")))
         , "http://www.spinoco.com/?q=1&w"
       )
-
+      , ("http://www.spinoco.com?q=1"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Empty, Uri.Query(List("q" -> "1")))
+        , "http://www.spinoco.com?q=1"
+      )
+      , ("http://www.spinoco.com"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Empty, Uri.Query.empty)
+        , "http://www.spinoco.com"
+      )
+      , ("http://www.spinoco.com?"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Empty, Uri.Query.empty)
+        , "http://www.spinoco.com"
+      )
+      , ("http://www.spinoco.com/?"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query.empty)
+        , "http://www.spinoco.com/"
+      )
     )
 
     examples.foldLeft(proved) {
