@@ -1,12 +1,12 @@
 package spinoco.protocol.kafka.codec
 
-import scodec.bits.BitVector
+import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, DecodeResult}
 import shapeless.tag
 import spinoco.protocol.kafka.Request.FetchRequest
 import spinoco.protocol.kafka._
 
-import concurrent.duration._
+import scala.concurrent.duration._
 
 class FetchCodecSpec extends CodecSpec {
 
@@ -52,10 +52,23 @@ class FetchCodecSpec extends CodecSpec {
       )
     }
 
-
     "Serializes request" in {
       MessageCodec.requestCodec.encode(sRequest).map(bv => kafka.api.FetchRequest.readFrom(bv.bytes.drop(4+2).toByteBuffer)) shouldBe
       Attempt.successful { kRequest }
+    }
+
+    "De-Serialize large request with incomplete message" in {
+      /** largeIncompleteResponse contains 22026 messages and 1 incomplete**/
+      val stream: java.net.URL = getClass.getResource("/largeIncompleteResponse")
+      val lines = scala.io.Source.fromURL(stream).getLines().toSeq
+      lines.headOption.map { line =>
+        val bv: ByteVector = ByteVector.fromValidHex(line)
+        val codec = FetchCodec.responseCodec(ProtocolVersion.Kafka_0_8)
+        val result = codec.decode(bv.drop(4).bits).map(_.value.data.flatMap(_._2.map(_.messages.size)))
+        result shouldBe Attempt.successful(Vector(22026))
+      } getOrElse {
+        fail("Failed to read large input from mega file.")
+      }
     }
 
   }

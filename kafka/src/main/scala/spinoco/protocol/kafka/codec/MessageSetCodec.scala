@@ -3,8 +3,8 @@ package spinoco.protocol.kafka.codec
 import java.util.Date
 import java.util.zip.CRC32
 
-import scodec.{Attempt, Codec, Err}
-import scodec.bits.ByteVector
+import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
+import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
 import shapeless.{::, HNil}
 import spinoco.protocol.kafka._
@@ -16,18 +16,23 @@ import spinoco.protocol.kafka.Message.{CompressedMessages, SingleMessage}
   */
 object MessageSetCodec {
 
-  /** Codec for set of messages expressed as vector of messages. Encodes both V0 and V1 format **/
-  val  messageSetCodec:Codec[Vector[Message]] = {
+  /**
+    * Codec for set of messages expressed as vector of messages. Encodes both V0 and V1 format
+    * Incomplete message (with offset == -1) is filtered out from the result
+    */
+  val  messageSetCodec: Codec[Vector[Message]] = {
     val entry:Codec[Message] =
       "Message Entry" | (
-        ("Offset"       | int64 ) ~
-          variableSizeBytes("Message Size"| int32 , impl.messageCodec)
+        ("Offset"       | int64 ) ~ impl.variableSizeMessageCodec
       ).xmap(
-        { case (offset, msg) => msg.updateOffset(offset) }
+        { case (offset, msg) => if (msg.offset == -1) msg else msg.updateOffset(offset) }
         , msg => (msg.offset,msg)
       )
 
-    vector(entry)
+    vector(entry).xmap({msgs =>
+      if (msgs.lastOption.exists(_.offset == -1)) msgs.init
+      else msgs
+    }, identity)
   }
 
   object impl {
@@ -139,6 +144,32 @@ object MessageSetCodec {
         }.xmap(_._2,m => magicOf(m) -> m)
       )
     }
+
+    /**
+      * Incomplete message is decoded with offset = -1
+      */
+    val variableSizeMessageCodec = new Codec[Message] {
+      private val msgCodec = impl.messageCodec
+      private val variableSizeCodec = variableSizeBytes("Message Size" | int32, msgCodec)
+
+      def encode(value: Message): Attempt[BitVector] = variableSizeCodec.encode(value)
+
+      def sizeBound: SizeBound = variableSizeCodec.sizeBound
+
+      def decode(bits: BitVector): Attempt[DecodeResult[Message]] = {
+        ("Message Size" | int32).decode(bits).flatMap(result =>
+          if (result.value * 8 > result.remainder.size) {
+            Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
+
+          } else {
+            msgCodec.decode(result.remainder.take(result.value * 8)).map[DecodeResult[Message]] { res2 =>
+              DecodeResult(res2.value, result.remainder.drop(result.value * 8))
+            }
+          }
+        )
+      }
+    }
+
 
 
     def v0Codec:Codec[Message] = {
