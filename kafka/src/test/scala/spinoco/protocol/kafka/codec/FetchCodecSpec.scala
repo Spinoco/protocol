@@ -67,7 +67,7 @@ class FetchCodecSpec extends CodecSpec {
         val result = codec.decode(bv.drop(4).bits).map(_.value.data.flatMap(_._2.map(_.messages.size)))
         result shouldBe Attempt.successful(Vector(22026))
       } getOrElse {
-        fail("Failed to read large input from mega file.")
+        fail("Failed to read largeIcnompleteResponse.")
       }
     }
 
