@@ -68,7 +68,6 @@ object FetchCodec {
           { case (time, resp) => FetchResponse(resp,Some(time))}
           , resp => resp.throttleTime.getOrElse(0.millis) -> resp.data
         )
-
     }
   }
 

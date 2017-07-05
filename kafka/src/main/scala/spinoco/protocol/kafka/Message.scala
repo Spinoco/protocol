@@ -53,6 +53,11 @@ sealed trait Message { self =>
     case cm: CompressedMessages => cm.copy(offset = newOffset)
   }
 
+  private[kafka] def bytes: Int = self match {
+    case sm: SingleMessage => sm.value.size.toInt
+    case cm: CompressedMessages => cm.messages.map(_.bytes).sum
+  }
+
 }
 
 
