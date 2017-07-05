@@ -317,6 +317,7 @@ property("Accept-Ranges Header") = secure {
   property("Expires Header") = secure {
     checkExamples(Seq(
       ("Expires: Wed, 21 Oct 2015 07:28:00 GMT", Expires(Right(ZonedDateTime.parse("2015-10-21T07:28:00+00:00").toLocalDateTime)), "Expires: Wed, 21 Oct 2015 07:28:00 GMT")
+      , ("Expires: mon, 26 jul 1997 05:00:00 gmt", Expires(Left(0)), "Expires: 0")  // invalid format, respective date
       , ("Expires: -1", Expires(Left(-1)), "Expires: -1")
     ))
   }

@@ -32,6 +32,7 @@ object Expires {  val codec =
           case Expires(Right(dt)) => Attempt.failure(Err("No date, or int supplied"))
         }
       )
+      , asciiString.unit("0").xmap(_ => Expires(Left(0)), _ => ())
     )
 
   )
