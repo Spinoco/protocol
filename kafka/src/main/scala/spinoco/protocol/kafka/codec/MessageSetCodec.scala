@@ -21,13 +21,7 @@ object MessageSetCodec {
     * Incomplete message (with offset == -1) is filtered out from the result
     */
   val  messageSetCodec: Codec[Vector[Message]] = {
-    val entry:Codec[Message] =
-      "Message Entry" | (
-        ("Offset"       | int64 ) ~ impl.variableSizeMessageCodec
-      ).xmap(
-        { case (offset, msg) => if (msg.offset == -1) msg else msg.updateOffset(offset) }
-        , msg => (msg.offset,msg)
-      )
+    val entry:Codec[Message] = "Message Entry" | impl.variableSizeMessageCodecWithOffset
 
     vector(entry).xmap({msgs =>
       if (msgs.lastOption.exists(_.offset == -1)) msgs.init
@@ -148,25 +142,32 @@ object MessageSetCodec {
     /**
       * Incomplete message is decoded with offset = -1
       */
-    val variableSizeMessageCodec = new Codec[Message] {
+    val variableSizeMessageCodecWithOffset = new Codec[Message] {
       private val msgCodec = impl.messageCodec
+      private val offsetCodec = "Offset" | int64
       private val variableSizeCodec = variableSizeBytes("Message Size" | int32, msgCodec)
 
-      def encode(value: Message): Attempt[BitVector] = variableSizeCodec.encode(value)
+      def encode(value: Message): Attempt[BitVector] = (offsetCodec ~ variableSizeCodec).encode(value.offset -> value)
 
-      def sizeBound: SizeBound = variableSizeCodec.sizeBound
+      def sizeBound: SizeBound = variableSizeCodec.sizeBound + offsetCodec.sizeBound
 
       def decode(bits: BitVector): Attempt[DecodeResult[Message]] = {
-        ("Message Size" | int32).decode(bits).flatMap(result =>
-          if (result.value * 8 > result.remainder.size) {
-            Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
-
-          } else {
-            msgCodec.decode(result.remainder.take(result.value * 8)).map[DecodeResult[Message]] { res2 =>
-              DecodeResult(res2.value, result.remainder.drop(result.value * 8))
-            }
+        if (offsetCodec.sizeBound.upperBound.exists(_ > bits.size)) {
+          Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
+        } else {
+          offsetCodec.decode(bits).flatMap { offsetResult =>
+            val offset = offsetResult.value
+            ("Message Size" | int32).decode(offsetResult.remainder).flatMap(result =>
+              if (result.value * 8 > result.remainder.size) {
+                Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
+              } else {
+                msgCodec.decode(result.remainder.take(result.value * 8)).map[DecodeResult[Message]] { res2 =>
+                  DecodeResult(res2.value.updateOffset(offset), result.remainder.drop(result.value * 8))
+                }
+              }
+            )
           }
-        )
+        }
       }
     }
 
