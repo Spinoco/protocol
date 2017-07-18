@@ -155,27 +155,17 @@ object MessageSetCodec {
       def sizeBound: SizeBound = variableSizeCodec.sizeBound + offsetCodec.sizeBound
 
       def decode(bits: BitVector): Attempt[DecodeResult[Message]] = {
-        if (offsetCodec.sizeBound.upperBound.exists(_ > bits.size)) {
-          incompleteAttempt
-        } else {
-          offsetCodec.decode(bits).flatMap { offsetResult =>
-            val offset = offsetResult.value
-            if (msgSizeCodec.sizeBound.upperBound.exists(_ > offsetResult.remainder.size)) {
-              incompleteAttempt
-            } else {
-              msgSizeCodec.decode(offsetResult.remainder).flatMap(result =>
-                if (result.value * 8 > result.remainder.size) {
-                  incompleteAttempt
-                } else {
-                  val (msg, remainder) = result.remainder.splitAt(result.value*8)
-                  msgCodec.decode(msg).map[DecodeResult[Message]] { res2 =>
-                    DecodeResult(res2.value.updateOffset(offset), remainder)
-                  }
-                }
-              )
+        (offsetCodec ~ msgSizeCodec).decode(bits).fold(_ => incompleteAttempt, { result =>
+          val (offset, msgSize) = result.value
+          if (msgSize * 8 > result.remainder.size) {
+            incompleteAttempt
+          } else {
+            val (msg, remainder) = result.remainder.splitAt(msgSize * 8)
+            msgCodec.decode(msg).map[DecodeResult[Message]] { res2 =>
+              DecodeResult(res2.value.updateOffset(offset), remainder)
             }
           }
-        }
+        })
       }
     }
 
