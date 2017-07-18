@@ -145,29 +145,27 @@ object MessageSetCodec {
     val variableSizeMessageCodecWithOffset = new Codec[Message] {
       private val msgCodec = impl.messageCodec
       private val offsetCodec = "Offset" | int64
-      private val variableSizeCodec = variableSizeBytes("Message Size" | int32, msgCodec)
+      private val msgSizeCodec = "Message Size" | int32
+      private val variableSizeCodec = variableSizeBytes(msgSizeCodec, msgCodec)
+
+      val incompleteAttempt = Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
 
       def encode(value: Message): Attempt[BitVector] = (offsetCodec ~ variableSizeCodec).encode(value.offset -> value)
 
       def sizeBound: SizeBound = variableSizeCodec.sizeBound + offsetCodec.sizeBound
 
       def decode(bits: BitVector): Attempt[DecodeResult[Message]] = {
-        if (offsetCodec.sizeBound.upperBound.exists(_ > bits.size)) {
-          Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
-        } else {
-          offsetCodec.decode(bits).flatMap { offsetResult =>
-            val offset = offsetResult.value
-            ("Message Size" | int32).decode(offsetResult.remainder).flatMap(result =>
-              if (result.value * 8 > result.remainder.size) {
-                Attempt.Successful(DecodeResult(SingleMessage(-1, MessageVersion.V0, None, ByteVector.empty, ByteVector.empty), BitVector.empty))
-              } else {
-                msgCodec.decode(result.remainder.take(result.value * 8)).map[DecodeResult[Message]] { res2 =>
-                  DecodeResult(res2.value.updateOffset(offset), result.remainder.drop(result.value * 8))
-                }
-              }
-            )
+        (offsetCodec ~ msgSizeCodec).decode(bits).fold(_ => incompleteAttempt, { result =>
+          val (offset, msgSize) = result.value
+          if (msgSize * 8 > result.remainder.size) {
+            incompleteAttempt
+          } else {
+            val (msg, remainder) = result.remainder.splitAt(msgSize * 8)
+            msgCodec.decode(msg).map[DecodeResult[Message]] { res2 =>
+              DecodeResult(res2.value.updateOffset(offset), remainder)
+            }
           }
-        }
+        })
       }
     }
 
