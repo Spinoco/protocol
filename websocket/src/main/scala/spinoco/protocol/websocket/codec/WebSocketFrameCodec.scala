@@ -62,11 +62,7 @@ object WebSocketFrameCodec {
 
       ("Length Header" | uint(7)).flatZip {
         case sz if sz <= 125 => constant(ByteVector.empty).xmap(_ => sz, (_: Int) => ())
-        case sz if sz == 126 =>
-          long(16).exmap[Int] (
-            lsz => Attempt.successful(lsz.toInt)
-            , i => Attempt.successful(i.toLong)
-          )
+        case sz if sz == 126 => uint(16)
         case sz =>
           long(64).exmap[Int] (
             lsz => if (lsz <= Int.MaxValue)  Attempt.successful(lsz.toInt) else Attempt.failure(Err(s"Max supported size is ${Int.MaxValue}, got $lsz"))

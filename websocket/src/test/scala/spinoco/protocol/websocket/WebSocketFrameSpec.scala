@@ -1,6 +1,6 @@
 package spinoco.protocol.websocket
 
-import org.scalacheck.{Prop, Properties}
+import org.scalacheck.{Gen, Prop, Properties}
 import org.scalacheck.Prop._
 import scodec.Attempt
 import scodec.bits.{BitVector, ByteVector}
@@ -94,28 +94,35 @@ object WebSocketFrameSpec extends Properties("WebSocketFrame") {
     )
   }
 
-  property("binary-256-bytes") = secure {
-    decodeAndEncode("827e0100" + "aa"*256)(
-      WebSocketFrame(
-        fin = true
-        , rsv = (false, false, false)
-        , opcode = OpCode.Binary
-        , payload = ByteVector.fromHex("aa"*256).get
-        , mask = None
-      )
-    )
+  private val payloadLengths = {
+    val specialLengths = Seq(124, 125, 126, 127, 128, 256, 257, 65535, 65536, Int.MaxValue)
+
+    Gen.chooseNum(0, Long.MaxValue, specialLengths.map(_.toLong): _*)
   }
 
-  property("binary-65536-bytes") = secure {
-    decodeAndEncode("827f0000000000010000" + "aa"*65536)(
-      WebSocketFrame(
-        fin = true
-        , rsv = (false, false, false)
-        , opcode = OpCode.Binary
-        , payload = ByteVector.fromHex("aa"*65536).get
-        , mask = None
+  property("binary-bytes") = forAll(payloadLengths.filter(_ < BigInt(2).pow(17))) { (length: Long) =>
+    (length >= 0) ==> {
+
+      val prefix = {
+        def lengthToHex(numChars: Int) = s"%${numChars}x".format(length).replace(" ", "0")
+
+        if (length <= 125)        "82" + lengthToHex(2)
+        else if (length <= 65535) "827e" + lengthToHex(4)
+        else                      "827f" + lengthToHex(16)
+      }
+
+      val data = "aa"*length.toInt
+
+      decodeAndEncode(prefix + data)(
+        WebSocketFrame(
+          fin = true
+          , rsv = (false, false, false)
+          , opcode = OpCode.Binary
+          , payload = ByteVector.fromHex(data).get
+          , mask = None
+        )
       )
-    )
+    }
   }
 
 }
