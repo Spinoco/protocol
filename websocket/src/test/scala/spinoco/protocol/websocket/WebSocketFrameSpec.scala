@@ -2,7 +2,7 @@ package spinoco.protocol.websocket
 
 import org.scalacheck.{Gen, Prop, Properties}
 import org.scalacheck.Prop._
-import scodec.Attempt
+import scodec.{Attempt, DecodeResult, Err}
 import scodec.bits.{BitVector, ByteVector}
 import spinoco.protocol.websocket.codec.WebSocketFrameCodec
 
@@ -122,6 +122,31 @@ object WebSocketFrameSpec extends Properties("WebSocketFrame") {
           , mask = None
         )
       )
+    }
+  }
+
+  property("payload-length") = forAll(payloadLengths) { (length: Long) =>
+    (length >= 0) ==> {
+
+      val codec = WebSocketFrameCodec.impl.payloadLength
+
+      val bits = {
+        if (length <= 125)        BitVector.fromInt(length.toInt, 7)
+        else if (length <= 65535) BitVector.fromInt(126, 7) ++ BitVector.fromInt(length.toInt, 16)
+        else                      BitVector.fromInt(127, 7) ++ BitVector.fromLong(length)
+      }
+
+      if (length <= Int.MaxValue) {
+        val decodedLength = codec.decode(bits)
+        val encodedBits = codec.encode(length.toInt)
+
+        val decode = "Decode" |: (decodedLength ?= Attempt.successful(DecodeResult(length.toInt, BitVector.empty)))
+        val encode = "Encode" |: (encodedBits ?= Attempt.successful(bits))
+        decode && encode
+      } else {
+        codec.decodeValue(bits) ?= Attempt.failure(Err(s"Max supported size is ${Int.MaxValue}, got $length"))
+      }
+
     }
   }
 
