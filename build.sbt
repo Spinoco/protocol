@@ -4,7 +4,7 @@ val ReleaseTag = """^release/([\d\.]+a?)$""".r
 
 lazy val contributors = Seq(
  "pchlupacek" -> "Pavel Chlupáček"
-  , "mrauilm" -> "Milan Raulim"
+  , "mraulim" -> "Milan Raulim"
   , "eikek" -> "Eike Kettner"
   , "d6y" -> "Richard Dallaway"
 )
@@ -66,6 +66,7 @@ lazy val publishingSettings = Seq(
    else
      Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
+  useGpg := true,
   credentials ++= (for {
    username <- Option(System.getenv().get("SONATYPE_USERNAME"))
    password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
