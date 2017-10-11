@@ -1,9 +1,9 @@
-package spinoco.protcol.rtp.codec
+package spinoco.protocol.rtp.codec
 
 import scodec.Codec
 import scodec.codecs._
 import shapeless.{::, HNil}
-import spinoco.protcol.rtp.{RTPHeaderExtension, RTPPacket}
+import spinoco.protocol.rtp.{RTPHeaderExtension, RTPPacket}
 
 /**
   * Codec for RTP Packet

@@ -1,6 +1,7 @@
-package spinoco.protcol.rtp
+package spinoco.protocol.rtp
 
 import scodec.bits.ByteVector
+import spinoco.protocol.rtp.codec.RTPVersion
 
 /**
   * RTCP Packet in full

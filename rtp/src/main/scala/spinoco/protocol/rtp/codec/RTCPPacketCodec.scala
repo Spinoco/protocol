@@ -1,11 +1,11 @@
-package spinoco.protcol.rtp.codec
+package spinoco.protocol.rtp.codec
 
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.codecs._
 import shapeless.{::, HNil}
-import spinoco.protcol.rtp.RTCPPacketBody._
-import spinoco.protcol.rtp._
+import spinoco.protocol.rtp.RTCPPacketBody._
+import spinoco.protocol.rtp._
 
 import scala.annotation.tailrec
 

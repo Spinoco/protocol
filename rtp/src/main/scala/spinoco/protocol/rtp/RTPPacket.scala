@@ -1,6 +1,7 @@
-package spinoco.protcol.rtp
+package spinoco.protocol.rtp
 
 import scodec.bits.ByteVector
+import spinoco.protocol.rtp.codec.RTPVersion
 
 
 /**
@@ -89,8 +90,3 @@ case class RTPHeaderExtension(
   flag: Int
   , content: ByteVector
 )
-
-
-object RTPVersion extends Enumeration {
-  val V_2 = Value(2)
-}
