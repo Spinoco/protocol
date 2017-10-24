@@ -12,3 +12,4 @@ Following list of protocols is implemented:
  - RTP and RTCP [RFC3550](https://www.ietf.org/rfc/rfc3550.txt)
  - SDP [RFC4566](https://tools.ietf.org/html/rfc4566)
  - MGCP [RFC3435](https://tools.ietf.org/html/rfc3435)
+ - Email [RFC5322](https://tools.ietf.org/html/rfc5322), [RFC2047](https://tools.ietf.org/html/rfc2047)

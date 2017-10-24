@@ -10,6 +10,7 @@ import scodec.codecs._
 import shapeless.tag
 import shapeless.tag.@@
 
+import scala.annotation.tailrec
 import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 
 
@@ -321,6 +322,35 @@ object codec {
           }
         }
       }
+    }
+  }
+
+  /** codec that allows decodeing of list of `A` separated by `delimited` and ecoding by `encDelimiter` **/
+  def delimitedBy[A](delimited: ByteVector, encDelimiter: ByteVector, codec: Codec[A]): Codec[List[A]] = new Codec[List[A]] {
+    val listDelimited = scodec.codecs.listDelimited(delimited.bits, codec)
+    val encDelimiterBits = encDelimiter.bits
+
+    def sizeBound: SizeBound = SizeBound.unknown
+
+    def decode(bits: BitVector): Attempt[DecodeResult[List[A]]] = listDelimited.decode(bits)
+
+    def encode(value: List[A]): Attempt[BitVector] = {
+      @tailrec
+      def go(rem: List[A], acc: BitVector): Attempt[BitVector] = {
+        rem.headOption match {
+          case Some(a) =>
+            codec.encode(a) match {
+              case Attempt.Successful(bits) =>
+                if (acc.isEmpty) go(rem.tail, bits)
+                else go(rem.tail, acc ++ encDelimiterBits ++ bits)
+
+              case Attempt.Failure(err) => Attempt.failure(err)
+            }
+          case None => Attempt.successful(acc)
+        }
+      }
+
+      go(value, BitVector.empty)
     }
   }
 

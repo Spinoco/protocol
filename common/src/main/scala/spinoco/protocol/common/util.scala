@@ -8,9 +8,17 @@ import shapeless.tag._
   */
 object util {
 
+  /** constructs from layz evaluation `a` catching any exceptions **/
   def attempt[A](a: => A):Attempt[A] = {
     try { Attempt.successful(a) }
     catch { case t: Throwable => Attempt.failure(Err(s"${t.getClass} : ${t.getMessage}"))}
+  }
+
+  /** constructs from Either where on left side is an exception **/
+  def attemptFromEither[A](rslt: Either[Throwable, A]): Attempt[A] = {
+    Attempt.fromEither(rslt.left.map { ex =>
+      Err(s"Unexpected failure: ${ex.getMessage} [${ex.getClass.getName}]")
+    })
   }
 
 

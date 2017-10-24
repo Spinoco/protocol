@@ -4,7 +4,7 @@ val ReleaseTag = """^release/([\d\.]+a?)$""".r
 
 lazy val contributors = Seq(
  "pchlupacek" -> "Pavel Chlupáček"
-  , "mraulim" -> "Milan Raulim"
+  , "mrauilm" -> "Milan Raulim"
   , "eikek" -> "Eike Kettner"
   , "d6y" -> "Richard Dallaway"
 )
@@ -66,7 +66,6 @@ lazy val publishingSettings = Seq(
    else
      Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
-  useGpg := true,
   credentials ++= (for {
    username <- Option(System.getenv().get("SONATYPE_USERNAME"))
    password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
@@ -116,6 +115,13 @@ lazy val common =
     .settings(
       name := "protocol-common"
     )
+
+lazy val email =
+  project.in(file("email"))
+    .settings(commonSettings)
+    .settings(
+      name := "protocol-email"
+  ).dependsOn(common)
 
 lazy val rtp =
   project.in(file("rtp"))
@@ -184,6 +190,7 @@ lazy val allProtocols =
  .settings(noPublish)
  .aggregate(
    common
+   , email
    , stun
    , webSocket, http
    , rtp
