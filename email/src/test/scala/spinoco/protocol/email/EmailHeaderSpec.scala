@@ -109,8 +109,8 @@ object EmailHeaderSpec extends  Properties("EmailAddress") {
     )
 
 
-    EmailHeaderCodec.codec(Int.MaxValue).decodeValue(ByteVector.view(email.getBytes).bits).flatMap { header =>
-      header ?= expect
+    EmailHeaderCodec.codec(Int.MaxValue).decodeValue(ByteVector.view(email.getBytes).bits).map { header =>
+       header ?= expect
     }.fold(err => { println(s"FAILED: $err"); falsified }, identity)
 
 

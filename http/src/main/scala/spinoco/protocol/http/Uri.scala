@@ -168,7 +168,7 @@ object Uri {
         )
       }
 
-      delimitedBy(amp,amp, param).xmap(Query(_), _.params)
+      spinoco.protocol.http.codec.helper.delimitedBy(amp,amp, param).xmap(Query(_), _.params)
     }
 
     private def urlDecode(s: String) = URLDecoder.decode(s.trim, "UTF-8")
