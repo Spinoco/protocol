@@ -6,10 +6,13 @@ import org.scalacheck.Prop._
 import org.scalacheck.{Prop, Properties}
 import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, DecodeResult}
-import spinoco.protocol.http.Uri.{Path, Query}
+import spinoco.protocol.http.header.value.HttpMediaRange
+import spinoco.protocol.http.Uri._
 import spinoco.protocol.http.header._
 import spinoco.protocol.http.header.value._
-import spinoco.protocol.http.{HostPort, HttpMethod, HttpScheme, Uri}
+import spinoco.protocol.http._
+import spinoco.protocol.mime.ContentType._
+import spinoco.protocol.mime._
 
 import scala.concurrent.duration._
 
@@ -72,10 +75,10 @@ object HeaderCodecSpec extends Properties("HeaderCodec") {
     import HttpCharsetRange._
 
     checkExamples(Seq(
-      ("Accept-Charset: iso-8859-1",`Accept-Charset`(List(One(HttpCharset.`ISO-8859-1`, None))),"Accept-Charset: iso-8859-1")
-      , ("Accept-Charset: utf-8, iso-8859-1;q=0.5",`Accept-Charset`(List(One(HttpCharset.`UTF-8`, None), One(HttpCharset.`ISO-8859-1`, Some(0.5f)))),"Accept-Charset: utf-8, iso-8859-1;q=0.5")
-      , ("Accept-Charset: utf-8, iso-8859-1;q=0.5",`Accept-Charset`(List(One(HttpCharset.`UTF-8`, None), One(HttpCharset.`ISO-8859-1`, Some(0.5f)))),"Accept-Charset: utf-8, iso-8859-1;q=0.5")
-      , ("Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1",`Accept-Charset`(List(One(HttpCharset.`UTF-8`, None), One(HttpCharset.`ISO-8859-1`, Some(0.5f)), Any(Some(0.1f)))),"Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1")
+      ("Accept-Charset: iso-8859-1",`Accept-Charset`(List(One(MIMECharset.`ISO-8859-1`, None))),"Accept-Charset: iso-8859-1")
+      , ("Accept-Charset: utf-8, iso-8859-1;q=0.5",`Accept-Charset`(List(One(MIMECharset.`UTF-8`, None), One(MIMECharset.`ISO-8859-1`, Some(0.5f)))),"Accept-Charset: utf-8, iso-8859-1;q=0.5")
+      , ("Accept-Charset: utf-8, iso-8859-1;q=0.5",`Accept-Charset`(List(One(MIMECharset.`UTF-8`, None), One(MIMECharset.`ISO-8859-1`, Some(0.5f)))),"Accept-Charset: utf-8, iso-8859-1;q=0.5")
+      , ("Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1",`Accept-Charset`(List(One(MIMECharset.`UTF-8`, None), One(MIMECharset.`ISO-8859-1`, Some(0.5f)), Any(Some(0.1f)))),"Accept-Charset: utf-8, iso-8859-1;q=0.5, *;q=0.1")
     ))
   }
 
@@ -259,10 +262,10 @@ property("Accept-Ranges Header") = secure {
 
   property("Content-Type Header") = secure {
     checkExamples(Seq(
-      ("Content-Type: audio/ogg",`Content-Type` (ContentType(MediaType.`audio/ogg`, None, None)), "Content-Type: audio/ogg")
-      , ("Content-Type: text/html; charset=utf-8",`Content-Type` (ContentType(MediaType.`text/html`, Some(HttpCharset.`UTF-8`), None)), "Content-Type: text/html; charset=utf-8")
+      ("Content-Type: audio/ogg",`Content-Type` (BinaryContent(MediaType.`audio/ogg`)), "Content-Type: audio/ogg")
+      , ("Content-Type: text/html; charset=utf-8",`Content-Type` (TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`))), "Content-Type: text/html; charset=utf-8")
       , ("Content-Type: multipart/form-data; boundary=something"
-        ,`Content-Type` (ContentType(MediaType.`multipart/form-data`, None, Some("something")))
+        ,`Content-Type` (MultiPartContent(MediaType.`multipart/form-data`.copy(parameters = Map("boundary" -> "something"))))
         , "Content-Type: multipart/form-data; boundary=something"
         )
     ))

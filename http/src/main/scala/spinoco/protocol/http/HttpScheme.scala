@@ -18,7 +18,7 @@ object HttpScheme extends Enumeration {
 
   val codec: Codec[HttpScheme.Value] = {
     import scodec.Attempt._
-    trimmedAsciiString.exmap(
+    trimmedAsciiToken.exmap(
       s => attempt(HttpScheme.withName(s.toLowerCase))
       , s => successful(s.toString)
     )

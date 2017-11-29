@@ -17,7 +17,7 @@ object MGCPCommandCodec {
         ("Command Line" | (untilEOL(
           ("Command Type" | untilWs(mgcpCommandType)) :: WS ::
           ("Tx Id" | untilWs(transactionId)) :: WS ::
-          ("Local Endpoint Name" | takeWhileChar(localEndpointNameCodec)('@')) :: constantString("@") ::
+          ("Local Endpoint Name" | takeWhileChar(localEndpointNameCodec)('@')) :: constantString1("@") ::
           ("Domain" | untilWs(ascii)) :: WS ::
           ("Version" | versionCodec)
           ))

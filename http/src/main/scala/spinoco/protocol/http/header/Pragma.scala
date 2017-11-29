@@ -9,5 +9,5 @@ import spinoco.protocol.http.header.value.HeaderCodecDefinition
 case class Pragma(value:String) extends DefaultHeader
 
 object Pragma { val codec =
-  HeaderCodecDefinition[Pragma](trimmedAsciiString.xmap (Pragma.apply,_.value) )
+  HeaderCodecDefinition[Pragma](trimmedAsciiToken.xmap (Pragma.apply,_.value) )
 }

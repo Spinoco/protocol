@@ -97,7 +97,7 @@ object MGCPParameterCodec {
 
       val withLocalPart =
         (
-          ("LocalName" | takeWhileChar(localEndpointNameCodec)('@') <~ constantString("@"))
+          ("LocalName" | takeWhileChar(localEndpointNameCodec)('@') <~ constantString1("@"))
             .xmap[Some[LocalEndpointName]](Some(_), _.get).upcast[Option[LocalEndpointName]] ::
             ("Domain" | takeWhileChar(domainCodec)(':')) ::
             ("Port" | optional(recover2(constant(BitVector(":".getBytes))), intAsString))
@@ -219,19 +219,19 @@ object MGCPParameterCodec {
     import RequestedEventAction._
     val embeddedEventActionCodec: Codec[EmbeddedRequest] = {
       val RCodec: Codec[List[RequestedEvent]] =
-        constantString("R") ~> guard(enclosedBy('(',')')(lazily(listOfRequestedEventsCodec))) {
+        constantString1("R") ~> guard(enclosedBy('(',')')(lazily(listOfRequestedEventsCodec))) {
           ls => if (ls.isEmpty) Some(Err("Requested Events must not be empty")) else None
         }
       val SCodec: Codec[List[ParametrizedEvent]] =
-        constantString("S") ~> guard(enclosedBy('(',')')(lazily(listOfParametrizedEvents))) {
+        constantString1("S") ~> guard(enclosedBy('(',')')(lazily(listOfParametrizedEvents))) {
           ls => if (ls.isEmpty) Some(Err("Signalled Events must not be empty")) else None
         }
-      val DCodec: Codec[String] = constantString("D") ~> enclosedBy('(',')')(ascii)
+      val DCodec: Codec[String] = constantString1("D") ~> enclosedBy('(',')')(ascii)
 
       type Choice = List[RequestedEvent] :+: List[ParametrizedEvent] :+: String :+: CNil
 
 
-      constantString("E") ~> enclosedBy('(',')')(
+      constantString1("E") ~> enclosedBy('(',')')(
         delimitedByComma2((RCodec :+: SCodec :+: DCodec).choice)
       ).xmap (
         ls => {
@@ -252,18 +252,18 @@ object MGCPParameterCodec {
 
     val actionCodec = "Event Action" |
       choice[RequestedEventAction](
-        constantString("N").decodeAs(NotifyImmediately).upcast
-        , constantString("A").decodeAs(Accumulate).upcast
-        , constantString("D").decodeAs(TreatByDigitMap).upcast
-        , constantString("S").decodeAs(Swap).upcast
-        , constantString("I").decodeAs(Ignore).upcast
-        , constantString("K").decodeAs(KeepActive).upcast
+        constantString1("N").decodeAs(NotifyImmediately).upcast
+        , constantString1("A").decodeAs(Accumulate).upcast
+        , constantString1("D").decodeAs(TreatByDigitMap).upcast
+        , constantString1("S").decodeAs(Swap).upcast
+        , constantString1("I").decodeAs(Ignore).upcast
+        , constantString1("K").decodeAs(KeepActive).upcast
         , "Embeded  " | embeddedEventActionCodec.upcast
       )
     val eventCodec: Codec[RequestedEvent] = {
       (
         takeWhileChar(eventSpecificationCodec)('(', ',') ::
-        ("Event Actions" | optional(lookahead2(constantString("(")), enclosedBy('(', ')')(delimitedByComma2(actionCodec))))
+        ("Event Actions" | optional(lookahead2(constantString1("(")), enclosedBy('(', ')')(delimitedByComma2(actionCodec))))
         .xmap[List[RequestedEventAction]](_.toList.flatten, ls => ls.headOption.map(_ => ls))
       ).as[RequestedEvent]
     }
@@ -279,7 +279,7 @@ object MGCPParameterCodec {
 
     val eventCodec: Codec[ParametrizedEvent] = {
       (eventSpecificationCodec ::
-        ("Actions" | optional(recover2(constantString("(")), takeWhile(ascii)(_ != ')'.asInstanceOf[Byte]) <~ constantString(")") ))
+        ("Actions" | optional(recover2(constantString1("(")), takeWhile(ascii)(_ != ')'.asInstanceOf[Byte]) <~ constantString1(")") ))
         )
         .as[ParametrizedEvent]
     }
@@ -348,10 +348,10 @@ object MGCPParameterCodec {
 
   val capabilitiesCodec: Codec[Capabilities] = {
     val supportedPackagesCodec : Codec[SupportedPackages] =
-      constantString("v:") ~>
+      constantString1("v:") ~>
       listDelimited(BitVector.view(";".getBytes), utf8).as[SupportedPackages]
     val supportedModesCodec: Codec[SupportedModes] =
-      constantString("m:") ~>
+      constantString1("m:") ~>
       listDelimited(BitVector.view(";".getBytes), connectionModeTypeCodec).as[SupportedModes]
 
     val valueCodec =
@@ -368,7 +368,7 @@ object MGCPParameterCodec {
 
   val packageListCodec: Codec[PackageList] = {
     val packageVersionCodec: Codec[PackageVersion] = {
-      (takeWhile(utf8)(_ != ':'.asInstanceOf[Byte]) :: constantString(":") ::
+      (takeWhile(utf8)(_ != ':'.asInstanceOf[Byte]) :: constantString1(":") ::
       ascii).as[PackageVersion]
     }
     listDelimited(BitVector.view(",".getBytes), packageVersionCodec).as[PackageList]

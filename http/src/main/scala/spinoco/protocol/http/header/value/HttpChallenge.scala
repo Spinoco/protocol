@@ -3,6 +3,7 @@ package spinoco.protocol.http.header.value
 import scodec.Codec
 import scodec.bits.ByteVector
 import spinoco.protocol.common.codec._
+import spinoco.protocol.common.Terminator
 import spinoco.protocol.http.codec.helper._
 
 sealed case class HttpChallenge(
@@ -14,7 +15,7 @@ object HttpChallenge {
 
   val codec: Codec[HttpChallenge] = {
     val parameter:Codec[(String,String)] = {
-      tuple[String,String](_equal, trimmedAsciiString, quotedString)
+      terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ eventuallyQuotedUTF8String
     }
 
     bytesWsRemoved.codedAs(
@@ -34,7 +35,7 @@ object HttpChallengeScheme extends Enumeration {
   val codec: Codec[HttpChallengeScheme.Value] = {
     import scodec.Attempt._
     import spinoco.protocol.common.util._
-    trimmedAsciiString.exmap(
+    trimmedAsciiToken.exmap(
       s => attempt(HttpChallengeScheme.withName(s))
       , s => successful(s.toString)
     )

@@ -4,6 +4,7 @@ import scodec.Codec
 import scodec.codecs._
 import spinoco.protocol.http.header.value.HeaderCodecDefinition
 import spinoco.protocol.common.codec._
+import spinoco.protocol.common.Terminator
 
 
 
@@ -19,10 +20,10 @@ object `Content-Range` {
       , longAsString.xmap[Some[Long]](l => Some(l), { case Some(l) => l }).upcast
     )
     val fromTo: Codec[(Long, Long)] =
-      tuple(dash, longAsString, longAsString)
+      terminated(longAsString, Terminator.constantString1("-")) ~ longAsString
 
-    whitespace("") ~> asciiConstant("bytes", ignoreCase = true) ~> whitespace() ~>
-    tuple(slash, fromTo, maybeTotal).xmap (
+    ignoreWS ~> asciiConstant("bytes", ignoreCase = true) ~> whitespace() ~>
+    (terminated(fromTo, Terminator.constantString1("/")) ~ maybeTotal).xmap (
       { case ((from, to), maybeTotal) => `Content-Range`(from, to, maybeTotal) }
       , cr => ((cr.from, cr.to), cr.total)
     )

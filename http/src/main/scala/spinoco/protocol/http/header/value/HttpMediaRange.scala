@@ -2,7 +2,10 @@ package spinoco.protocol.http.header.value
 
 import scodec.codecs._
 import scodec.{Attempt, Codec, Err}
+import spinoco.protocol.common.Terminator
 import spinoco.protocol.http.codec.helper._
+import spinoco.protocol.mime.MediaType
+import spinoco.protocol.common.codec._
 
 sealed trait HttpMediaRange { self =>
   import HttpMediaRange._
@@ -52,7 +55,8 @@ object HttpMediaRange {
     }
 
     val patternCodec: Codec[Pattern] = {
-      tuple(slash, trimmedAsciiString, trimmedAsciiString).exmap(
+      (terminated(trimmedAsciiToken, Terminator.constantString1("/")) ~ trimmedAsciiToken)
+      .exmap(
         {
           case (tpe, "*") => Attempt.successful(Pattern(tpe, None))
           case (tpe, sub) => Attempt.failure(Err(s"Expected wildcard pattern, got $tpe/$sub"))

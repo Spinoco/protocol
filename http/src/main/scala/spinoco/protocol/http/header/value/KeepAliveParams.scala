@@ -1,6 +1,8 @@
 package spinoco.protocol.http.header.value
 
 import scodec.{Attempt, Codec, Err}
+import spinoco.protocol.common.Terminator
+import spinoco.protocol.common.codec.terminated
 import spinoco.protocol.common.util._
 import spinoco.protocol.http.codec.helper._
 
@@ -40,8 +42,11 @@ object KeepAliveParams {
         , "max" -> params.maxConn.toString
       ))
     }
+    val param = {
+      (terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ trimmedAsciiToken)
+    }
 
-    commaDelimitedMin(tuple(_equal, trimmedAsciiString, trimmedAsciiString), 2).exmap(decode,encode)
+    commaDelimitedMin(param, 2).exmap(decode,encode)
   }
 
 }

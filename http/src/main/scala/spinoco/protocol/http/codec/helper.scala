@@ -38,6 +38,8 @@ object helper {
 
   val crlf = ByteVector('\r','\n')
 
+  val trimmedAsciiToken = ignoreWS ~> asciiToken <~ ignoreWS
+
   /**
     * Codec for decoding comma delimited parameters from header.
     * When encoding, the comma is always followed by [SP]
@@ -197,29 +199,7 @@ object helper {
   }
 
 
-  /**
-    * Tuple A, B separated by `discriminator`. This will first search for discriminator, and if match
-    * will apply `A` codec and `B` codec to remaining bits, if any.
-    */
-  def tuple[A, B](discriminator:ByteVector, acodec:Codec[A], bCodec:Codec[B]):Codec[(A, B)] = {
-    def encode(in:(A, B)):Attempt[List[BitVector]] = {
-      in match { case (a, b) =>
-        acodec.encode(a).flatMap { av => bCodec.encode(b).map(bv => List(av,bv)) }
-      }
-    }
 
-    def decode(segments: List[BitVector]):Attempt[(A, B)] = {
-      segments match {
-        case a :: b :: Nil => acodec.decodeValue(a).flatMap { av => bCodec.decodeValue(b).map(av -> _) }
-        case other => Attempt.failure(Err(s"Expected tuple, got ${other.map(_.decodeAscii)}"))
-      }
-    }
-
-    listMultiplexed(
-      _ ++ discriminator.bits ++ _
-      , bits => splitBy(discriminator, bits)
-      , bitsWsRemoved).exmap(decode,encode)
-  }
 
   /** string encoded // decoded as ASCII **/
   val asciiString: Codec[String] = string(StandardCharsets.US_ASCII)
@@ -227,27 +207,14 @@ object helper {
   /** string encoded // decoded as UTF8 **/
   val utf8String: Codec[String] = string(StandardCharsets.UTF_8)
 
-  /** ascii string that is trimmed of WS **/
-  val trimmedAsciiString: Codec[String] = asciiString.xmap(_.trim, _.trim)
+
 
   /** utf8 string that is trimmed of WS **/
   val trimmedUtf8String: Codec[String] = utf8String.xmap(_.trim, _.trim)
 
   private val quotedChars: Set[Char] = "()<>@.,;:\\/[]?={} \t".toSet
 
-  /** coder for strings that may be quoted **/
-  val quotedString: Codec[String] = {
-    utf8String.xmap(
-      s => {
-        val st = s.trim
-        if (st.startsWith("\"") && s.endsWith("\"")) st.drop(1).dropRight(1)
-        else st
-      }
-      , s => {
-        if (s.exists(quotedChars.contains)) "\"" + s + "\"" else s
-      }
-    )
-  }
+
 
   val alwaysQuotedUtf8String: Codec[String] = {
     utf8String.exmap(
@@ -320,7 +287,7 @@ object helper {
   }
 
   /** codec that succeeds, iff star (*) is present **/
-  val starCodec: Codec[Unit] = trimmedAsciiString.exmap(
+  val starCodec: Codec[Unit] = trimmedAsciiToken.exmap(
     s => if (s == "*") Attempt.successful(()) else Attempt.failure(Err("Expected *"))
     , _ => Attempt.successful("*")
   )
@@ -335,7 +302,7 @@ object helper {
        attempt { ZonedDateTime.from(dateFormatRFC1123.parse(s)).toLocalDateTime }
     }
 
-    trimmedAsciiString.exmap(
+    (ignoreWS ~> asciiString).exmap(
       decode
       , ldt => Attempt.successful(localDateTime2String(ldt))
     )

@@ -12,5 +12,5 @@ import spinoco.protocol.http.header.value.HeaderCodecDefinition
 sealed case class `Transfer-Encoding`(value: List[String]) extends DefaultHeader
 
 object `Transfer-Encoding` { val codec =
-  HeaderCodecDefinition[`Transfer-Encoding`](commaDelimitedMin(trimmedAsciiString, 1).xmap (`Transfer-Encoding`.apply,_.value))
+  HeaderCodecDefinition[`Transfer-Encoding`](commaDelimitedMin(trimmedAsciiToken, 1).xmap (`Transfer-Encoding`.apply,_.value))
 }

@@ -14,7 +14,7 @@ sealed case class `Accept-Ranges`(value: Option[RangeUnit.Bytes.type]) extends D
 
 object `Accept-Ranges` { val codec =
   HeaderCodecDefinition[`Accept-Ranges`](
-    trimmedAsciiString.exmap(
+    trimmedAsciiToken.exmap(
       {
         case "none" => Attempt.successful(`Accept-Ranges`(None))
         case "bytes" => Attempt.successful(`Accept-Ranges`(Some(RangeUnit.Bytes)))

@@ -21,7 +21,7 @@ object HeaderCodecDefinition {
 
   def apply[A <: HttpHeader](codec: Codec[A])(implicit ev: ClassTag[A]):HeaderCodecDefinition[HttpHeader] =
     new HeaderCodecDefinition[HttpHeader] {
-      def headerName: String =  nameFromClass(ev.runtimeClass)
+      def headerName: String = nameFromClass(ev.runtimeClass)
 
       def headerCodec: Codec[HttpHeader] = codec.asInstanceOf[Codec[HttpHeader]].withContext(headerName)
     }

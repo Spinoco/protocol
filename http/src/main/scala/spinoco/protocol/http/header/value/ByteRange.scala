@@ -1,9 +1,9 @@
 package spinoco.protocol.http.header.value
 
 import scodec.Codec
-import scodec.bits.ByteVector
 import scodec.codecs._
 import spinoco.protocol.common.codec._
+import spinoco.protocol.common.Terminator
 import spinoco.protocol.http.codec.helper._
 
 /**
@@ -22,7 +22,7 @@ object ByteRange {
 
   val codec : Codec[ByteRange] = {
     asciiConstant("bytes=") ~> bytesWsRemoved.codedAs(choice(
-      tuple(ByteVector('-'),longAsString,longAsString).xmap[Slice](Slice.apply _ tupled, s => s.first -> s.last).upcast
+      (terminated(longAsString, Terminator.constantString1("-")) ~ longAsString).xmap[Slice](Slice.apply _ tupled, s => s.first -> s.last).upcast
       , (bytesUntil(_ != '-').codedAs(longAsString) <~ asciiConstant("-")).xmap[FromOffset](FromOffset.apply, _.offset).upcast
       , (asciiConstant("-") ~> longAsString).xmap[Suffix](Suffix.apply, _.length ).upcast
     ))

@@ -7,6 +7,7 @@ import codec.helper._
 import scodec.bits.BitVector
 import spinoco.protocol.common.util._
 import spinoco.protocol.common.codec._
+import spinoco.protocol.common.Terminator
 
 /**
   * Internet Uri, as defined in http://tools.ietf.org/html/rfc3986
@@ -80,7 +81,7 @@ object Uri {
       )
     }
 
-    tuple[HttpScheme.Value,(HostPort, Uri.Path, Uri.Query)](`://`, HttpScheme.codec, hostPathQueryCodec)
+    (terminated(HttpScheme.codec, Terminator.constantString1("://")) ~ hostPathQueryCodec)
     .xmap(
       { case (scheme, (host, path, query)) => Uri(scheme, host, path, query) }
       , uri => (uri.scheme, (uri.host, uri.path, uri.query))

@@ -20,7 +20,7 @@ object HttpMethod extends Enumeration {
 
   val codec: Codec[HttpMethod.Value] = {
     import scodec.Attempt._
-    trimmedAsciiString.exmap(
+    trimmedAsciiToken.exmap(
       s => attempt(HttpMethod.withName(s))
       , m => successful(m.toString)
     )

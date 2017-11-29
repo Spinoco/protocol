@@ -14,7 +14,7 @@ object PackageEventCodec {
 import impl._
   lazy val codec: Codec[PackageEvent] = {
 
-    discriminated[PackageEvent].by(takeWhileChar(ascii)('/') <~ constantString("/"))
+    discriminated[PackageEvent].by(takeWhileChar(ascii)('/') <~ constantString1("/"))
     .typecase("l", linePackageEventCodec)
     .typecase("L", linePackageEventCodec)
     .typecase("d", dtmfPackageEventCodec)
@@ -102,7 +102,7 @@ import impl._
           else Some(Err(s"Unexpected characters in digitMap: $s"))
         }
 
-        ((constantString("[") ~> guard(takeWhileChar(ascii)(']'))(isDigitMap)) <~ constantString("]")).as[DTMFPackagePatternEvent]
+        ((constantString1("[") ~> guard(takeWhileChar(ascii)(']'))(isDigitMap)) <~ constantString1("]")).as[DTMFPackagePatternEvent]
       }
       val eventCodec: Codec[DTMFEvent] = {
         takeWhileChar(ascii)('(').flatZip {

@@ -8,7 +8,8 @@ import scodec.{Attempt, DecodeResult}
 import scodec.bits.BitVector
 import spinoco.protocol.http.{HttpResponseHeader, HttpStatusCode, HttpVersion}
 import spinoco.protocol.http.header._
-import spinoco.protocol.http.header.value.{ContentType, MediaType, ProductDescription, ServerProduct}
+import spinoco.protocol.http.header.value.{ProductDescription, ServerProduct}
+import spinoco.protocol.mime.{ContentType, MediaType}
 
 
 object HttpResponseHeaderCodecSpec extends Properties("HttpResponseHeaderCodec") {
@@ -34,7 +35,7 @@ object HttpResponseHeaderCodecSpec extends Properties("HttpResponseHeaderCodec")
           , Server(ServerProduct(List(ProductDescription("Apache",Some("2.2.14")))))
           , `Last-Modified`(ZonedDateTime.parse("2009-07-22T19:15:56+00:00").toLocalDateTime)
           , `Content-Length`(88)
-          , `Content-Type`(ContentType(MediaType.`text/html`, None, None))
+          , `Content-Type`(ContentType.TextContent(MediaType.`text/html`, None))
           , Connection(List("Closed"))
         )
         , version = HttpVersion.V1_1
@@ -53,7 +54,7 @@ object HttpResponseHeaderCodecSpec extends Properties("HttpResponseHeaderCodec")
           , Server(ServerProduct(List(ProductDescription("Apache",Some("2.2.14")))))
           , `Last-Modified`(ZonedDateTime.parse("2009-07-22T19:15:56+00:00").toLocalDateTime)
           , `Content-Length`(88)
-          , `Content-Type`(ContentType(MediaType.`text/html`, None, None))
+          , `Content-Type`(ContentType.TextContent(MediaType.`text/html`, None))
           , Connection(List("Closed"))
         )
         , version = HttpVersion.V1_1

@@ -17,7 +17,7 @@ object Connection { val codec =
   HeaderCodecDefinition[Connection](
     choice(
       asciiConstant("close").exmap[List[String]](_ => Attempt.successful(Nil), l => if (l.isEmpty) Attempt.successful(()) else Attempt.failure(Err("nonEmpty")))
-      , commaDelimitedMin(trimmedAsciiString, 1)
+      , commaDelimitedMin(trimmedAsciiToken, 1)
     ).xmap(Connection.apply, _.value)
   )
 }

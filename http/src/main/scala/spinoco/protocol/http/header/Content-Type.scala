@@ -1,6 +1,7 @@
 package spinoco.protocol.http.header
 
-import spinoco.protocol.http.header.value.{ContentType, HeaderCodecDefinition}
+import spinoco.protocol.http.header.value.HeaderCodecDefinition
+import spinoco.protocol.mime.ContentType
 
 
 

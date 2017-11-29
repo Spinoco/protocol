@@ -3,6 +3,7 @@ package spinoco.protocol.http.header.value
 import scodec.Codec
 import scodec.codecs._
 import spinoco.protocol.http.codec.helper._
+import spinoco.protocol.mime.MIMECharset
 
 
 /**
@@ -24,7 +25,7 @@ object HttpCharsetRange {
 
   sealed case class Any(qValue: Option[Float]) extends HttpCharsetRange
 
-  sealed case class One(charset: HttpCharset, qValue: Option[Float]) extends HttpCharsetRange
+  sealed case class One(charset: MIMECharset, qValue: Option[Float]) extends HttpCharsetRange
 
   val `*` = Any(None)
 
@@ -32,7 +33,7 @@ object HttpCharsetRange {
     val chsCodec:Codec[HttpCharsetRange] = {
       choice(
         starCodec.xmap[Any](_ => Any(None), _ => ()).upcast
-        , HttpCharset.codec.xmap[One](enc => One(enc, None), _.charset).upcast
+        , MIMECharset.codec.xmap[One](enc => One(enc, None), _.charset).upcast
       )
     }
 

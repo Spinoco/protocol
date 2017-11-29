@@ -18,7 +18,7 @@ object MGCPResponseCodec {
           ("Command Line" | untilEOL(
           ("Response Code" | untilWs(responseCode)) :: WS ::
           ("Tx Id" | untilWs(transactionId)) :: WS ::
-          ("Package Name" | optional(recover2(constantString("/")), untilWs(utf8) <~ WS)) ::
+          ("Package Name" | optional(recover2(constantString1("/")), untilWs(utf8) <~ WS)) ::
           ("Response String" |  optional(bitsRemaining, utf8))
           )) :+
           ("MGCP Paramater" | list(MGCPParameterCodec.codec))

@@ -7,7 +7,7 @@ import scodec.codecs._
 import scodec.{Attempt, Codec, Err}
 import spinoco.protocol.common.util.attempt
 import spinoco.protocol.http.codec.helper._
-import spinoco.protocol.common.codec.takeWhile
+import spinoco.protocol.common.codec._
 
 import scala.concurrent.duration._
 import scala.collection.immutable.HashSet
@@ -38,7 +38,7 @@ object HttpCookie {
   }
 
   val cookiePair: Codec[(String,String)] =
-    (rfc2616.token :: constant(_equal) :: trimmedAsciiString).as[(String,String)]
+    (rfc2616.token :: constant(_equal) :: (ignoreWS ~> ascii)).as[(String,String)]
   // https://tools.ietf.org/html/rfc6265#section-5.3
 
   val codec: Codec[HttpCookie] = {

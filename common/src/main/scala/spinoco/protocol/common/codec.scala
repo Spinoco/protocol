@@ -1,6 +1,6 @@
 package spinoco.protocol.common
 
-import java.nio.charset.StandardCharsets
+import java.nio.charset.{Charset, StandardCharsets}
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -12,11 +12,168 @@ import shapeless.tag.@@
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.{FiniteDuration, TimeUnit}
-
 import util.attemptFromEither
+import util.attempt
 
 
 object codec {
+
+
+
+  /** codec that ignores any Whitespace when decoding **/
+  val ignoreWS: Codec[Unit] = ignoreBytes(_.toChar.isWhitespace)
+
+  /** codec that encodes/decodes to space **/
+  val SPACE: Codec[Unit] = constantString1(" ")
+
+
+  val asciiToken = token(ascii)
+
+  val utf8Token = token(utf8)
+
+  /**
+    * Decodes to token(string) eventually terminated by `terminator`. Terminator is not customed by this codec.. encodes to codec.
+    * Terminator must be Ascii Char
+    * @param codec          codec to terminate the value
+    * @param terminator     tzerminator
+    * @return
+    */
+  def token(codec: Codec[String], terminator: Char = ' '): Codec[String] = {
+    new Codec[String] {
+      def decode(bits: BitVector) = {
+        val toDecode = bits.bytes.takeWhile(_ != terminator).bits
+        codec.decode(toDecode) flatMap { case DecodeResult(s, rem) =>
+          if (rem.nonEmpty) Attempt.failure(Err(s"Failed to decode token, still characters remaining: ${rem.bytes}"))
+          else Attempt.successful(DecodeResult(s, bits.drop(toDecode.size)))
+        }
+      }
+
+      def encode(value: String) = {
+        if (value.exists(_ == terminator)) Attempt.failure(Err(s"Token may not contain termination character [$terminator]"))
+        else codec.encode(value)
+      }
+
+      def sizeBound = codec.sizeBound
+    }
+  }
+
+  /** converts string to bits, given supplied encoding **/
+  def bitsOfString(s: String, chs: Charset = StandardCharsets.UTF_8):BitVector =
+    BitVector.view(s.getBytes(chs))
+
+
+  /** a codec that will ignore when decoding all bytes until `f` holds, On encoding will encode to empty **/
+  def ignoreBytes(f: Byte => Boolean): Codec[Unit] = {
+    val empty = Attempt.successful(BitVector.empty)
+    new Codec[Unit] {
+      def decode(bits: BitVector): Attempt[DecodeResult[Unit]] = {
+        val bytes = bits.bytes.dropWhile(f)
+        Attempt.successful(DecodeResult((), bytes.bits))
+      }
+
+      def encode(value: Unit): Attempt[BitVector] = empty
+
+      val sizeBound: SizeBound = SizeBound.unknown
+    }
+  }
+
+
+
+  /**
+    * A generic codec to encode quoted string.
+    *
+    * Quoted string starts with Ascii `quote` char and continues with any character, compatible with charset.
+    * Characters may be escaped by `escape` and correct character. Any `quote` char must be escaped.
+    *
+    * @param charset      Charset of the string. Must be ASCII backward compatible, not using first 7 bits of
+    *                     each byte for the characters except the ascii ones.
+    * @param quote        Quote enclosing the string. Must be ascii character
+    * @param escape       Escape char, must be ascii.
+    * @return
+    */
+  def quotedString(charset: Charset, quote: Char = '"', escape: Char = '\\'): Codec[String] = {
+    val quoteByte = quote.toByte
+    val escapeByte = escape.toByte
+    val quoteString = quoteByte.toString
+    val quoteStringEscaped = quoteString + "\""
+    val quoteBits = BitVector.view(Array(quoteByte))
+
+    new Codec[String] {
+      def decode(bits: BitVector) = {
+        if (!bits.startsWith(quoteBits)) Attempt.failure(Err(s"Quoted string does not start with $quote"))
+        else {
+          @tailrec
+          def go(rem: ByteVector, acc: ByteVector): Attempt[(BitVector, BitVector)] = {
+            val clean = rem.takeWhile { b => b != quoteByte && b!= escapeByte }
+            val next = rem.drop(clean.size)
+            next.headOption match {
+              case Some(h) =>
+                if (h != escapeByte) Attempt.successful(((acc ++ clean).bits, next.tail.bits))
+                else go(next.drop(2), acc ++ clean ++ next.drop(1).take(1))
+
+              case None => Attempt.failure(Err(s"Unterminated string constant, required termination with $quote"))
+            }
+          }
+
+          go(bits.bytes.drop(1), ByteVector.empty).flatMap { case (stringBits, rem) =>
+            attempt { charset.decode(stringBits.bytes.toByteBuffer) } map { s => DecodeResult(s.toString, rem) }
+          }
+        }
+      }
+
+      def encode(value: String) = {
+        Attempt.successful {
+          quoteBits ++
+          BitVector.view(value.replace(quoteString, quoteStringEscaped).getBytes(charset)) ++
+          quoteBits
+        }
+      }
+
+      val sizeBound = SizeBound.unknown
+    }
+  }
+
+  /** codec for ascii strings that may be quoted **/
+  val quotedAsciiString: Codec[String] = quotedString(StandardCharsets.US_ASCII)
+  val quotedUTF8String: Codec[String] = quotedString(StandardCharsets.UTF_8)
+
+  private val defaultQuotableChars: Set[Char] = "()<>@.,;:\\/[]?={} \t\"\'".toSet
+
+  /**
+    * Decodes string from eventually quoted string.
+    * If the decoded string was not quoted and contains chars within `quotableChars` the encoding will fail
+    *
+    *
+    * @param quotableChars    Chars that must be quoted
+    * @param quote            A quoting char
+    * @param escape           An escape char used to escape quote and eventually other chars.
+    * @param charset          Charset
+    * @return
+    */
+  def eventuallyQuotedString(quotableChars: Set[Char], quote: Char = '"', escape: Char = '\\', charset: Charset = StandardCharsets.UTF_8): Codec[String] = {
+    val quoted = quotedString(charset, quote, escape)
+    val nonQuoted = string(charset).narrow(s => {
+      if (s.exists(quotableChars.contains)) Attempt.failure(Err(s"String must nor contain any of $quotableChars when not quoted by [$quote]"))
+      else Attempt.successful(s)
+    } , identity[String])
+    new Codec[String] {
+
+      def decode(bits: BitVector) =
+        quoted.decode(bits) orElse nonQuoted.decode(bits)
+
+      def encode(value: String) = {
+        if (value.exists(quotableChars.contains)) quoted.encode(value.replace("\"", "\\\""))
+        else nonQuoted.encode(value)
+      }
+
+      def sizeBound = SizeBound.unknown
+    }
+  }
+
+
+  val eventuallyQuotedAsciiString: Codec[String] = eventuallyQuotedString(defaultQuotableChars, charset = StandardCharsets.US_ASCII)
+  val eventuallyQuotedUTF8String: Codec[String] = eventuallyQuotedString(defaultQuotableChars, charset = StandardCharsets.UTF_8)
+
 
   /**
     * Performs Xor operation of `codec` with `or`
@@ -279,13 +436,16 @@ object codec {
   }
 
 
+
+
   /** codec that encodes and deoces to supplied string **/
-  def constantString(s: String): Codec[Unit] =
+  def constantString1(s: String): Codec[Unit] =
     constant(BitVector.view(s.getBytes))
 
 
-  /** like `constantString` but decodes when matches case insensitive. Works fro ascii only. **/
-  def constantStringCaseInsensitive(s: String): Codec[Unit] = {
+
+  /** like `constantString1` but decodes when matches case insensitive. Works fro ascii only. **/
+  def constantString1CaseInsensitive(s: String): Codec[Unit] = {
     new Codec[Unit] {
       val sBits = BitVector.view(s.getBytes())
       val sizeBound = SizeBound.exact(s.length)
@@ -378,6 +538,40 @@ object codec {
     }
   }
 
+
+
+  /**
+    * A codec, that on decoding will first decode via `terminator` and when that will be successful,
+    * will take all bits returned by `terminator` and passes them to be decoded by `codec`.
+    *
+    * On encoding, this will encode `A` followed by terminator.
+    *
+    * @param codec          Codec that encodes/decodes `A`
+    * @param terminator     Terminator that returns sequence of data for `codec`
+    */
+  def terminated[A](codec: Codec[A], terminator: Terminator[Unit]): Codec[A] = {
+
+    new Codec[A] {
+      val sizeBound = SizeBound.unknown
+
+      def decode(bits: BitVector) = {
+        terminator.decode(bits) flatMap { case DecodeResult((aBits, _), rem) =>
+          codec.decode(aBits) flatMap { case DecodeResult(a, remA) =>
+            if (remA.nonEmpty) Attempt.failure(Err(s"A was decoded, but there were data remaining: ${remA.bytes}"))
+            else Attempt.successful(DecodeResult(a, rem))
+          }
+        }
+      }
+
+      def encode(value: A) =
+        codec.encode(value) flatMap { aBits => terminator.encode((aBits, ())) }
+
+    }
+  }
+
+
+
+
   /**
     * like vector[A], but instead consuming all bytes on decoding will try to consume all bytes that match for `A`
     * and will leave last bytes that did not match as remainder. May encode to Vector.empty if `A` did not match at all.
@@ -419,21 +613,30 @@ object codec {
     }
   }
 
-  /** like `vectorV`, but entries must be delimited by `delimiter` **/
-  def vectorVDelimited[A](delimiter: BitVector, codec: Codec[A]): Codec[Vector[A]] = {
+
+
+  /**
+    * Like VectorV, but the items are delimited by `Delimiter`.
+    * Last item will not be terminated by `delimiter`
+    * @param codec
+    * @param delimiter
+    * @tparam A
+    * @return
+    */
+  def vectorVDelimited[A](codec: Codec[A], delimiter: Codec[Unit]): Codec[Vector[A]] = {
     new Codec[Vector[A]] {
       def sizeBound: SizeBound = SizeBound.unknown
+
+      val withDelimiter = delimiter ~> codec
 
       def encode(value: Vector[A]): Attempt[BitVector] = {
         @tailrec
         def go(rem: Vector[A], acc: BitVector): Attempt[BitVector] = {
           rem.headOption match {
             case Some(a) =>
-              codec.encode(a) match {
-                case Attempt.Successful(bits) =>
-                  if (rem.size != value.size) go(rem.tail, acc ++ delimiter ++ bits)
-                  else go(rem.tail, acc ++ bits)
-
+              val aCodec = if (rem.size == value.size) codec else withDelimiter
+              aCodec.encode(a) match {
+                case Attempt.Successful(bits) => go(rem.tail, acc ++ bits)
                 case Attempt.Failure(err) => Attempt.failure(err)
               }
 
@@ -448,16 +651,11 @@ object codec {
         def go(rem: BitVector, acc: Vector[A]): Attempt[DecodeResult[Vector[A]]] = {
           if (rem.isEmpty) Attempt.successful(DecodeResult(acc, BitVector.empty))
           else {
-
-            if (acc.nonEmpty && !rem.startsWith(delimiter)) Attempt.successful(DecodeResult(acc, rem))
-            else {
-              val in = if (acc.nonEmpty) rem.drop(delimiter.size) else rem
-              codec.decode(in) match {
-                case Attempt.Successful(DecodeResult(a, rem)) => go(rem, acc :+ a)
-                case Attempt.Failure(err) => Attempt.successful(DecodeResult(acc, rem))
-              }
+            val aCodec = if (acc.isEmpty) codec else withDelimiter
+            aCodec.decode(rem) match {
+              case Attempt.Successful(DecodeResult(a, rem)) => go(rem, acc :+ a)
+              case Attempt.Failure(err) => Attempt.successful(DecodeResult(acc, rem))
             }
-
           }
         }
         go(bits, Vector.empty)

@@ -12,8 +12,8 @@ import scala.annotation.tailrec
 
 package object codec {
 
-  val `\r\n`: Codec[Unit] = constantString("\r\n")
-  val `\n`: Codec[Unit] = constantString("\n")
+  val `\r\n`: Codec[Unit] = constantString1("\r\n")
+  val `\n`: Codec[Unit] = constantString1("\n")
   val WS: Codec[Unit] = dropWhile(BitVector(Array[Byte](' ')))(_.toChar.isWhitespace)
   val dropWS: Codec[Unit] = dropWhile(BitVector(Array[Byte]()))(_.toChar.isWhitespace)
 
@@ -77,15 +77,15 @@ package object codec {
 
     val eventOwnerCodec: Codec[EventOwner] = {
       choice(
-        constantString("$").decodeAs(EventOwner.`$`).upcast
-        , constantString("*").decodeAs(EventOwner.`*`).upcast
+        constantString1("$").decodeAs(EventOwner.`$`).upcast
+        , constantString1("*").decodeAs(EventOwner.`*`).upcast
         , connectionIdCodec.as[EventOwner.Connection].upcast
       )
     }
 
     (
       ("Package And Event" | takeWhileChar(PackageEventCodec.codec)('@')) ::
-       ("Event Owner" | optional(recover2(constantString("@")), eventOwnerCodec) )
+       ("Event Owner" | optional(recover2(constantString1("@")), eventOwnerCodec) )
     ).as[EventSpecification]
   }
 

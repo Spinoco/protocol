@@ -12,5 +12,5 @@ sealed case class `Access-Control-Request-Headers`(value: List[String]) extends 
 
 
 object `Access-Control-Request-Headers` { val codec =
-  HeaderCodecDefinition[`Access-Control-Request-Headers`](commaDelimitedMin(trimmedAsciiString, 1).xmap (`Access-Control-Request-Headers`.apply, _.value))
+  HeaderCodecDefinition[`Access-Control-Request-Headers`](commaDelimitedMin(trimmedAsciiToken, 1).xmap (`Access-Control-Request-Headers`.apply, _.value))
 }

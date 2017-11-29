@@ -31,7 +31,7 @@ object CacheDirective {
     import spinoco.protocol.common.codec._
     import spinoco.protocol.http.codec.helper._
 
-    parametrized(_equal, trimmedAsciiString, intAsString)
+    parametrized(_equal, trimmedAsciiToken, intAsString)
     .xmap(
       { case (name, time) => CacheDirective(name.toLowerCase, time.map(_.seconds)) }
       , cd => cd.name -> cd.time.map(_.toSeconds.toInt)

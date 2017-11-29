@@ -12,5 +12,5 @@ case class `Sec-WebSocket-Extensions`(extensions: List[String]) extends DefaultH
 
 
 object `Sec-WebSocket-Extensions` { val codec =
-  HeaderCodecDefinition[`Sec-WebSocket-Extensions`](commaDelimitedMin(trimmedAsciiString, 1).xmap (`Sec-WebSocket-Extensions`.apply,_.extensions))
+  HeaderCodecDefinition[`Sec-WebSocket-Extensions`](commaDelimitedMin(trimmedAsciiToken, 1).xmap (`Sec-WebSocket-Extensions`.apply,_.extensions))
 }

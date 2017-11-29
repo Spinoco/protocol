@@ -12,5 +12,5 @@ case class `Sec-WebSocket-Protocol`(protocols: List[String]) extends DefaultHead
 
 
 object `Sec-WebSocket-Protocol` { val codec =
-  HeaderCodecDefinition[`Sec-WebSocket-Protocol`](commaDelimitedMin(trimmedAsciiString, 1).xmap (`Sec-WebSocket-Protocol`.apply,_.protocols))
+  HeaderCodecDefinition[`Sec-WebSocket-Protocol`](commaDelimitedMin(trimmedAsciiToken, 1).xmap (`Sec-WebSocket-Protocol`.apply,_.protocols))
 }

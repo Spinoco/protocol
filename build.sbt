@@ -29,7 +29,7 @@ lazy val commonSettings = Seq(
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
    scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
    libraryDependencies ++= Seq(
-     "org.scodec" %% "scodec-bits" % "1.1.2"
+     "org.scodec" %% "scodec-bits" % "1.1.5"
      , "org.scodec" %% "scodec-core" % "1.10.3"
      , "org.scalatest" %% "scalatest" % "3.0.0" % "test"
      , "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
@@ -111,46 +111,59 @@ lazy val noPublish = Seq(
 
 lazy val common =
   project.in(file("common"))
-    .settings(commonSettings)
-    .settings(
-      name := "protocol-common"
-    )
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-common"
+  )
 
-lazy val email =
-  project.in(file("email"))
-    .settings(commonSettings)
-    .settings(
-      name := "protocol-email"
-  ).dependsOn(common)
+lazy val mime =
+  project.in(file("mime"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-mime"
+  )
+  .dependsOn(common)
+
+lazy val mail =
+  project.in(file("mail"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-mail"
+  )
+  .dependsOn(common, mime)
 
 lazy val rtp =
   project.in(file("rtp"))
   .settings(commonSettings)
   .settings(
     name := "protocol-rtp"
-  ).dependsOn(common)
+  )
+  .dependsOn(common)
 
 lazy val stun =
   project.in(file("stun"))
   .settings(commonSettings)
   .settings(
     name := "protocol-stun"
-  ).dependsOn(common)
+  )
+  .dependsOn(common)
 
 
 lazy val webSocket =
   project.in(file("websocket"))
-    .settings(commonSettings)
-    .settings(
-      name := "protocol-websocket"
-    ).dependsOn(common)
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-websocket"
+  )
+  .dependsOn(common)
 
 lazy val http =
   project.in(file("http"))
-    .settings(commonSettings)
-    .settings(
-      name := "protocol-http"
-    ).dependsOn(common)
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-http"
+  )
+  .dependsOn(common, mime)
 
 
 
@@ -190,7 +203,8 @@ lazy val allProtocols =
  .settings(noPublish)
  .aggregate(
    common
-   , email
+   , mime
+   , mail
    , stun
    , webSocket, http
    , rtp

@@ -11,7 +11,7 @@ object HostPort {
 
   val codec: Codec[HostPort] = {
 
-    parametrized[String, Int](colon, trimmedAsciiString, intAsString)
+    parametrized[String, Int](colon, trimmedAsciiToken, intAsString)
     .xmap(
       HostPort.apply _ tupled
       , hp => hp.host -> hp.port

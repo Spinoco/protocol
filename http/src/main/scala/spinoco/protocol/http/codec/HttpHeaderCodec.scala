@@ -27,10 +27,11 @@ object HttpHeaderCodec {
 
     takeWhile(ByteVector(':'), ByteVector(':',' '), string, maxHeaderLength).flatZip[HttpHeader] { name =>
       val trimmed = name.trim
-      allCodecs.get(trimmed.toLowerCase) match {
-        case Some(codec) => codec
-        case None => utf8.xmap[GenericHeader](s => GenericHeader(trimmed, s), _.value).upcast[HttpHeader]
-      }
+      ignoreWS ~>
+        (allCodecs.get(trimmed.toLowerCase) match {
+          case Some(codec) => codec
+          case None => utf8.xmap[GenericHeader](s => GenericHeader(trimmed, s), _.value).upcast[HttpHeader]
+        })
     }.xmap (
       { case (name, header) => header }
       , (header:HttpHeader) => header.name -> header

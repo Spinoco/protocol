@@ -3,6 +3,8 @@ package spinoco.protocol.http.header.value
 import scodec.bits.ByteVector
 import scodec.{Attempt, Codec, Err}
 import scodec.codecs._
+import spinoco.protocol.common.codec._
+import spinoco.protocol.common.Terminator
 import spinoco.protocol.http.codec.helper._
 
 
@@ -40,8 +42,8 @@ object HttpCredentials {
   }
 
   val digestCodec: Codec[DigestHttpCredentials] = {
-    ((whitespace("") ~> asciiStringNoWs) ~ (whitespace() ~> commaDelimited(
-      tuple(_equal, trimmedAsciiString, quotedString)
+    ((ignoreWS ~> asciiToken) ~ (whitespace() ~> commaDelimited(
+      terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ eventuallyQuotedUTF8String
     ))).xmap(
       { case (digest, params) => DigestHttpCredentials(digest, params.toMap) }
       , { h => (h.tpe, h.params.toList) }

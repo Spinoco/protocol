@@ -9,6 +9,6 @@ sealed case class HttpEncoding (value: String)
 object HttpEncoding {
 
   val codec: Codec[HttpEncoding] = {
-    trimmedAsciiString.xmap(HttpEncoding.apply, _.value)
+    trimmedAsciiToken.xmap(HttpEncoding.apply, _.value)
   }
 }

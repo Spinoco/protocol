@@ -4,6 +4,8 @@ import scodec.Codec
 import scodec.codecs._
 import spinoco.protocol.http.codec.helper._
 import spinoco.protocol.http.HostPort
+import spinoco.protocol.common.codec._
+import spinoco.protocol.common.Terminator
 
 
 sealed trait HttpOrigin
@@ -15,7 +17,7 @@ object HttpOrigin {
   sealed case class One(scheme: String, host: Option[HostPort]) extends HttpOrigin
 
   val oneCodec: Codec[One] = {
-    ((whitespace("") ~> utf8StringUntil("://") <~ constant(`://`)) ~ orEmpty(HostPort.codec))
+    (ignoreWS ~> terminated(asciiToken, Terminator.constantString1("://")) ~ orEmpty(HostPort.codec))
       .xmap[One](One.apply _ tupled, one => one.scheme -> one.host)
       .withToString("HttpOrigin.One")
   }
