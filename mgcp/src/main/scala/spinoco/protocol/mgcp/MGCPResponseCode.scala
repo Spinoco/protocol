@@ -1,5 +1,6 @@
 package spinoco.protocol.mgcp
 
+import spinoco.protocol.mgcp.MGCPResponseCode.{Provisional, Success}
 
 
 object MGCPResponseCode {
@@ -244,6 +245,9 @@ object MGCPResponseCode {
 
 
 
-sealed trait  MGCPResponseCode {
+sealed trait  MGCPResponseCode { self =>
   val code: Int
+  /** yields true if the code is provisional **/
+  def isProvisional: Boolean = self.isInstanceOf[Provisional]
+  def isSuccess: Boolean = self.isInstanceOf[Success]
 }

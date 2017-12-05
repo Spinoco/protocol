@@ -4,8 +4,7 @@ import org.scalacheck.{Prop, Properties}
 import org.scalacheck.Prop._
 import scodec.{Attempt, DecodeResult}
 import scodec.bits.{BitVector, ByteVector}
-import spinoco.protcol.rtp.{RTPHeaderExtension, RTPPacket,  RTPVersion}
-import spinoco.protcol.rtp.codec.RTPPacketCodec
+import spinoco.protocol.rtp.{RTPHeaderExtension, RTPPacket}
 
 
 object RtpPacketCodecSpec extends Properties("RtpPacketCodec") {

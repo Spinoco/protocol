@@ -4,8 +4,7 @@ import org.scalacheck.{Prop, Properties}
 import org.scalacheck.Prop._
 import scodec.{Attempt, DecodeResult}
 import scodec.bits.{BitVector, ByteVector}
-import spinoco.protcol.rtp._
-import spinoco.protcol.rtp.codec.RTCPPacketCodec
+import spinoco.protocol.rtp._ 
 
 /**
   * Created by pach on 01/03/17.

@@ -1,4 +1,4 @@
-package spinoco.protcol.rtp
+package spinoco.protocol.rtp
 
 import scodec.bits.ByteVector
 import scodec.{Attempt, Codec, Err}

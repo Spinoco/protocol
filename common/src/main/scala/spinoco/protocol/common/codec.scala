@@ -10,7 +10,10 @@ import scodec.codecs._
 import shapeless.tag
 import shapeless.tag.@@
 
+import scala.annotation.tailrec
 import scala.concurrent.duration.{FiniteDuration, TimeUnit}
+
+import util.attemptFromEither
 
 
 object codec {
@@ -276,9 +279,31 @@ object codec {
   }
 
 
-
-  def constantString(s:String):Codec[Unit] =
+  /** codec that encodes and deoces to supplied string **/
+  def constantString(s: String): Codec[Unit] =
     constant(BitVector.view(s.getBytes))
+
+
+  /** like `constantString` but decodes when matches case insensitive. Works fro ascii only. **/
+  def constantStringCaseInsensitive(s: String): Codec[Unit] = {
+    new Codec[Unit] {
+      val sBits = BitVector.view(s.getBytes())
+      val sizeBound = SizeBound.exact(s.length)
+
+      def encode(value: Unit) = Attempt.successful(sBits)
+
+      def decode(bits: BitVector) = {
+        val (h, t) = bits.splitAt(sBits.size)
+        if (h == sBits) Attempt.successful(DecodeResult((), t))
+        else {
+          attemptFromEither(h.decodeAscii) flatMap { s0 =>
+            if (s0.equalsIgnoreCase(s)) Attempt.successful(DecodeResult((), t))
+            else Attempt.failure(Err(s"Expected $s (case insensitive) but got $s0"))
+          }
+        }
+      }
+    }
+  }
 
   def stringEnumerated(discriminator: Codec[String], enumeration: Enumeration) =
     mappedEnum(discriminator, enumeration.values.map(e => e -> e.toString).toMap)
@@ -322,6 +347,141 @@ object codec {
         }
       }
     }
+  }
+
+  /** codec that allows decodeing of list of `A` separated by `delimited` and ecoding by `encDelimiter` **/
+  def delimitedBy[A](delimited: ByteVector, encDelimiter: ByteVector, codec: Codec[A]): Codec[List[A]] = new Codec[List[A]] {
+    val listDelimited = scodec.codecs.listDelimited(delimited.bits, codec)
+    val encDelimiterBits = encDelimiter.bits
+
+    def sizeBound: SizeBound = SizeBound.unknown
+
+    def decode(bits: BitVector): Attempt[DecodeResult[List[A]]] = listDelimited.decode(bits)
+
+    def encode(value: List[A]): Attempt[BitVector] = {
+      @tailrec
+      def go(rem: List[A], acc: BitVector): Attempt[BitVector] = {
+        rem.headOption match {
+          case Some(a) =>
+            codec.encode(a) match {
+              case Attempt.Successful(bits) =>
+                if (acc.isEmpty) go(rem.tail, bits)
+                else go(rem.tail, acc ++ encDelimiterBits ++ bits)
+
+              case Attempt.Failure(err) => Attempt.failure(err)
+            }
+          case None => Attempt.successful(acc)
+        }
+      }
+
+      go(value, BitVector.empty)
+    }
+  }
+
+  /**
+    * like vector[A], but instead consuming all bytes on decoding will try to consume all bytes that match for `A`
+    * and will leave last bytes that did not match as remainder. May encode to Vector.empty if `A` did not match at all.
+    * @param codec  Codec for `A`
+    */
+  def vectorV[A](codec: Codec[A]): Codec[Vector[A]] = {
+    new Codec[Vector[A]] {
+      def sizeBound: SizeBound = SizeBound.unknown
+
+      def encode(value: Vector[A]): Attempt[BitVector] = {
+        @tailrec
+        def go(rem: Vector[A], acc: BitVector): Attempt[BitVector] = {
+          rem.headOption match {
+            case Some(a) =>
+              codec.encode(a) match {
+                case Attempt.Successful(bits) => go(rem.tail, acc ++ bits)
+                case Attempt.Failure(err) => Attempt.failure(err)
+              }
+
+            case None => Attempt.successful(acc)
+          }
+        }
+        go(value, BitVector.empty)
+      }
+
+      def decode(bits: BitVector): Attempt[DecodeResult[Vector[A]]] = {
+        @tailrec
+        def go(rem: BitVector, acc: Vector[A]): Attempt[DecodeResult[Vector[A]]] = {
+          if (rem.isEmpty) Attempt.successful(DecodeResult(acc, BitVector.empty))
+          else {
+            codec.decode(rem) match {
+              case Attempt.Successful(DecodeResult(a, rem)) => go(rem, acc :+ a)
+              case Attempt.Failure(err) => Attempt.successful(DecodeResult(acc, rem))
+            }
+          }
+        }
+        go(bits, Vector.empty)
+      }
+    }
+  }
+
+  /** like `vectorV`, but entries must be delimited by `delimiter` **/
+  def vectorVDelimited[A](delimiter: BitVector, codec: Codec[A]): Codec[Vector[A]] = {
+    new Codec[Vector[A]] {
+      def sizeBound: SizeBound = SizeBound.unknown
+
+      def encode(value: Vector[A]): Attempt[BitVector] = {
+        @tailrec
+        def go(rem: Vector[A], acc: BitVector): Attempt[BitVector] = {
+          rem.headOption match {
+            case Some(a) =>
+              codec.encode(a) match {
+                case Attempt.Successful(bits) =>
+                  if (rem.size != value.size) go(rem.tail, acc ++ delimiter ++ bits)
+                  else go(rem.tail, acc ++ bits)
+
+                case Attempt.Failure(err) => Attempt.failure(err)
+              }
+
+            case None => Attempt.successful(acc)
+          }
+        }
+        go(value, BitVector.empty)
+      }
+
+      def decode(bits: BitVector): Attempt[DecodeResult[Vector[A]]] = {
+        @tailrec
+        def go(rem: BitVector, acc: Vector[A]): Attempt[DecodeResult[Vector[A]]] = {
+          if (rem.isEmpty) Attempt.successful(DecodeResult(acc, BitVector.empty))
+          else {
+
+            if (acc.nonEmpty && !rem.startsWith(delimiter)) Attempt.successful(DecodeResult(acc, rem))
+            else {
+              val in = if (acc.nonEmpty) rem.drop(delimiter.size) else rem
+              codec.decode(in) match {
+                case Attempt.Successful(DecodeResult(a, rem)) => go(rem, acc :+ a)
+                case Attempt.Failure(err) => Attempt.successful(DecodeResult(acc, rem))
+              }
+            }
+
+          }
+        }
+        go(bits, Vector.empty)
+      }
+    }
+  }
+
+
+  /** will encode vectors of `A` with min size of at least `sz`  **/
+  def minItems[A](sz:Int)(codec: Codec[Vector[A]]): Codec[Vector[A]] = {
+    def validate(v: Vector[A]): Attempt[Vector[A]] = {
+      if (v.size >= sz) Attempt.successful(v)
+      else Attempt.failure(Err(s"Expected at least $sz items, got ${v.size}"))
+    }
+    codec.exmap(validate, validate)
+  }
+
+  /** will encode vectors of `A` with at max size of `sz` **/
+  def maxItems[A](sz:Int)(codec: Codec[Vector[A]]): Codec[Vector[A]] = {
+    def validate(v: Vector[A]): Attempt[Vector[A]] = {
+      if (v.size <= sz) Attempt.successful(v)
+      else Attempt.failure(Err(s"Expected at max $sz items, got ${v.size}"))
+    }
+    codec.exmap(validate, validate)
   }
 
   implicit class ByteVectorCodecSyntax(val self: Codec[ByteVector]) extends AnyVal {
