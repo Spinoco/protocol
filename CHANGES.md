@@ -1,3 +1,16 @@
+# 0.3.0
+
+## mail
+- added mail project, IMAP 4v1 support
+
+## mime
+- added mime project, shared between mail and http
+
+## http
+- Improved uri encoding
+- Support for nested uri parameters
+- Uri.stringify introduced
+
 # 0.2.1
 
 ## Http
