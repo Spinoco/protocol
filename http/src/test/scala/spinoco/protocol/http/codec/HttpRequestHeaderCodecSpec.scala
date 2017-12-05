@@ -26,7 +26,7 @@ object HttpRequestHeaderCodecSpec extends Properties("HttpRequestHeaderCodec")  
       HttpRequestHeader(
         method = HttpMethod.GET
         , path = Uri.Path / "hello.htm"
-        , query = Uri.Query(List("a" ->"b", "c" -> "d"))
+        , query = Uri.Query("a","b") :+ ("c","d")
         , headers = List(
           `User-Agent`(AgentVersion("Mozilla/4.0 (compatible; MSIE5.01; Windows NT)"))
           , Host(HostPort("www.tutorialspoint.com", None))
@@ -44,7 +44,7 @@ object HttpRequestHeaderCodecSpec extends Properties("HttpRequestHeaderCodec")  
       HttpRequestHeader(
         method = HttpMethod.GET
         , path = Uri.Path / "hello.htm"
-        , query = Uri.Query(List("a" ->"b", "c" -> "d"))
+        , query = Uri.Query("a","b") :+ ("c","d")
         , headers = List(
           `User-Agent`(AgentVersion("Mozilla/4.0 (compatible; MSIE5.01; Windows NT)"))
           , Host(HostPort("www.tutorialspoint.com", None))

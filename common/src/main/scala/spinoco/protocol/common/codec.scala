@@ -509,7 +509,7 @@ object codec {
     }
   }
 
-  /** codec that allows decodeing of list of `A` separated by `delimited` and ecoding by `encDelimiter` **/
+  /** codec that allows decoding of list of `A` separated by `delimited` and encoding by `encDelimiter` **/
   def delimitedBy[A](delimited: ByteVector, encDelimiter: ByteVector, codec: Codec[A]): Codec[List[A]] = new Codec[List[A]] {
     val listDelimited = scodec.codecs.listDelimited(delimited.bits, codec)
     val encDelimiterBits = encDelimiter.bits

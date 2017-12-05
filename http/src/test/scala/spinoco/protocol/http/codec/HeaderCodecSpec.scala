@@ -381,7 +381,7 @@ property("Accept-Ranges Header") = secure {
     checkExamples(Seq(
       ("Location: /index.html", Location(LocationDefinition.Relative(Path / "index.html", Query.empty)), "Location: /index.html")
       , ("Location: index.html", Location(LocationDefinition.Relative(Path.relative("index.html"), Query.empty)), "Location: index.html")
-      , ("Location: index.html?Q=A&Z=A%22", Location(LocationDefinition.Relative(Path.relative("index.html"), Query(List("Q" -> "A", "Z" -> "A\"")))), "Location: index.html?Q=A&Z=A%22")
+      , ("Location: index.html?Q=A&Z=A%22", Location(LocationDefinition.Relative(Path.relative("index.html"), Query("Q", "A") :+ ("Z", "A\""))), "Location: index.html?Q=A&Z=A%22")
       , ("Location: http://www.spinoco.com/"
         , Location(LocationDefinition.Absolute(Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Path(initialSlash = true, trailingSlash = false, segments = Nil) , Query.empty)))
         , "Location: http://www.spinoco.com/")
@@ -392,7 +392,7 @@ property("Accept-Ranges Header") = secure {
         , Location(LocationDefinition.Absolute(Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", Some(8080)), Path / "index.html", Query.empty)))
         , "Location: http://www.spinoco.com:8080/index.html")
       , ("Location: http://www.spinoco.com:8080/index.html?Q=A"
-        , Location(LocationDefinition.Absolute(Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", Some(8080)), Path / "index.html", Query(List("Q" -> "A")))))
+        , Location(LocationDefinition.Absolute(Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", Some(8080)), Path / "index.html", Query("Q","A"))))
         , "Location: http://www.spinoco.com:8080/index.html?Q=A")
     ))
   }

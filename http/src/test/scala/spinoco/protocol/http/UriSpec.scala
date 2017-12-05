@@ -4,6 +4,7 @@ import org.scalacheck.Properties
 import org.scalacheck.Prop._
 import scodec.Attempt
 import scodec.bits.BitVector
+import spinoco.protocol.http.Uri.QueryParameter
 
 
 object UriSpec extends Properties("Uri") {
@@ -37,27 +38,27 @@ object UriSpec extends Properties("Uri") {
         , "http://127.0.0.1:8080/"
       )
       , ("http://www.spinoco.com/?q=1&w=2"
-        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "w" -> "2")))
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query("q","1") :+ ("w", "2"))
         , "http://www.spinoco.com/?q=1&w=2"
       )
       , ("http://www.spinoco.com/?q=1&q=2"
-        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "q" -> "2")))
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query("q","1") :+ ("q", "2"))
         , "http://www.spinoco.com/?q=1&q=2"
       )
       , ("http://www.spinoco.com/?q=&w=2"
-        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "", "w" -> "2")))
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query("q") :+ ("w", "2"))
         , "http://www.spinoco.com/?q&w=2"
       )
       , ("http://www.spinoco.com/?q&w=2"
-        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "", "w" -> "2")))
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query("q") :+ ("w", "2"))
         , "http://www.spinoco.com/?q&w=2"
       )
       , ("http://www.spinoco.com/?q=1&w"
-        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query(List("q" -> "1", "w" -> "")))
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query("q", "1") :+ "w" )
         , "http://www.spinoco.com/?q=1&w"
       )
       , ("http://www.spinoco.com?q=1"
-        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Empty, Uri.Query(List("q" -> "1")))
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Empty, Uri.Query("q", "1"))
         , "http://www.spinoco.com?q=1"
       )
       , ("http://www.spinoco.com"
@@ -71,6 +72,10 @@ object UriSpec extends Properties("Uri") {
       , ("http://www.spinoco.com/?"
         , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query.empty)
         , "http://www.spinoco.com/"
+      )
+      , ("http://x.com/123?a=1&b=2;c=3"
+        , Uri(HttpScheme.HTTP, HostPort("x.com", None), Uri.Path.Root / "123", Uri.Query("a", "1") :+ (QueryParameter.single("b", "2") :+ ("c", "3")))
+        , "http://x.com/123?a=1&b=2;c=3"
       )
     )
 
