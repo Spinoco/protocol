@@ -55,30 +55,31 @@ object WebSocketFrameCodec {
 
 
 
-    // this supports only size of Long.MaxValue.
-    // In theory we may have size of unsigned long, which aren't supported by this implementation
-    // anyhow the max value of the payload supported is Int.MaxValue, that is about 2G
+    // The maximum payload length is Long.MaxValue due to the spec requiring that the most
+    // significant bit must be 0. This implementation only supports a max payload length of
+    // Int.MaxValue, that is about 2G.
     def payloadLength:Codec[Int] = {
 
       ("Length Header" | uint(7)).flatZip {
         case sz if sz <= 125 => constant(ByteVector.empty).xmap(_ => sz, (_: Int) => ())
-        case sz if sz == 126 =>
-          long(16).exmap[Int] (
-            lsz => Attempt.successful(lsz.toInt)
-            , i => Attempt.successful(i.toLong)
-          )
-        case sz =>
-          long(64).exmap[Int] (
-            lsz => if (lsz <= Int.MaxValue)  Attempt.successful(lsz.toInt) else Attempt.failure(Err(s"Max supported size is ${Int.MaxValue}, got $lsz"))
+        case sz if sz == 126 => uint(16)
+        case _ =>
+          long(64).exmap[Int](
+            {
+              case lsz if lsz < 0 => Attempt.failure(Err(s"The most significant bit must be 0"))
+              case lsz if lsz <= Int.MaxValue => Attempt.successful(lsz.toInt)
+              case lsz => Attempt.failure(Err(s"Max supported size is ${Int.MaxValue}, got $lsz"))
+            }
             , i => Attempt.successful(i.toLong)
           )
 
       }.exmap(
         { case (_, sz) => Attempt.successful(sz)  }
         , {
+          case sz if sz < 0 => Attempt.failure(Err("Negative payload sizes are not allowed"))
           case sz if sz <= 125 => Attempt.successful((sz, sz))
-          case sz if sz > 125 && sz <= 65535 => Attempt.successful((126, sz))
-          case sz if sz < Int.MaxValue  => Attempt.successful((127, sz))
+          case sz if sz <= 65535 => Attempt.successful((126, sz))
+          case sz if sz <= Int.MaxValue => Attempt.successful((127, sz))
           case _ => Attempt.failure(Err("Only payloads size of <= Int.MaxValue are supported"))
         }
       )
