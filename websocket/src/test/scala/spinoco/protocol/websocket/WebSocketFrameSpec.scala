@@ -1,8 +1,8 @@
 package spinoco.protocol.websocket
 
-import org.scalacheck.{Prop, Properties}
+import org.scalacheck.{Gen, Prop, Properties}
 import org.scalacheck.Prop._
-import scodec.Attempt
+import scodec.{Attempt, DecodeResult, Err}
 import scodec.bits.{BitVector, ByteVector}
 import spinoco.protocol.websocket.codec.WebSocketFrameCodec
 
@@ -94,28 +94,60 @@ object WebSocketFrameSpec extends Properties("WebSocketFrame") {
     )
   }
 
-  property("binary-256-bytes") = secure {
-    decodeAndEncode("827e0100" + "aa"*256)(
-      WebSocketFrame(
-        fin = true
-        , rsv = (false, false, false)
-        , opcode = OpCode.Binary
-        , payload = ByteVector.fromHex("aa"*256).get
-        , mask = None
-      )
-    )
+  private val payloadLengths = {
+    val specialLengths = Seq(124, 125, 126, 127, 128, 256, 257, 65535, 65536, Int.MaxValue)
+
+    Gen.chooseNum(0, Long.MaxValue, specialLengths.map(_.toLong): _*)
   }
 
-  property("binary-65536-bytes") = secure {
-    decodeAndEncode("827f0000000000010000" + "aa"*65536)(
-      WebSocketFrame(
-        fin = true
-        , rsv = (false, false, false)
-        , opcode = OpCode.Binary
-        , payload = ByteVector.fromHex("aa"*65536).get
-        , mask = None
+  property("binary-bytes") = forAll(payloadLengths.filter(_ < BigInt(2).pow(17))) { (length: Long) =>
+    (length >= 0) ==> {
+
+      val prefix = {
+        def lengthToHex(numChars: Int) = s"%${numChars}x".format(length).replace(" ", "0")
+
+        if (length <= 125)        "82" + lengthToHex(2)
+        else if (length <= 65535) "827e" + lengthToHex(4)
+        else                      "827f" + lengthToHex(16)
+      }
+
+      val data = "aa"*length.toInt
+
+      decodeAndEncode(prefix + data)(
+        WebSocketFrame(
+          fin = true
+          , rsv = (false, false, false)
+          , opcode = OpCode.Binary
+          , payload = ByteVector.fromHex(data).get
+          , mask = None
+        )
       )
-    )
+    }
+  }
+
+  property("payload-length") = forAll(payloadLengths) { (length: Long) =>
+    (length >= 0) ==> {
+
+      val codec = WebSocketFrameCodec.impl.payloadLength
+
+      val bits = {
+        if (length <= 125)        BitVector.fromInt(length.toInt, 7)
+        else if (length <= 65535) BitVector.fromInt(126, 7) ++ BitVector.fromInt(length.toInt, 16)
+        else                      BitVector.fromInt(127, 7) ++ BitVector.fromLong(length)
+      }
+
+      if (length <= Int.MaxValue) {
+        val decodedLength = codec.decode(bits)
+        val encodedBits = codec.encode(length.toInt)
+
+        val decode = "Decode" |: (decodedLength ?= Attempt.successful(DecodeResult(length.toInt, BitVector.empty)))
+        val encode = "Encode" |: (encodedBits ?= Attempt.successful(bits))
+        decode && encode
+      } else {
+        codec.decodeValue(bits) ?= Attempt.failure(Err(s"Max supported size is ${Int.MaxValue}, got $length"))
+      }
+
+    }
   }
 
 }
