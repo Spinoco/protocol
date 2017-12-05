@@ -36,8 +36,8 @@ object ContentType {
     (mediaTypeCodec ~ optional(
       lookahead2(constantString1(";"))
       , semicolon ~> choice(
-        charset.xmap[Right[Nothing, MIMECharset]](Right(_), _.value).upcast[Either[String, MIMECharset]]
-        , boundary.xmap[Left[String, Nothing]](Left(_), _.value).upcast[Either[String, MIMECharset]]
+        charset.xmap[Right[Nothing, MIMECharset]](Right(_), { case Right(r) => r}).upcast[Either[String, MIMECharset]]
+        , boundary.xmap[Left[String, Nothing]](Left(_), { case Left(l) => l}).upcast[Either[String, MIMECharset]]
       )
     )).narrow[ContentType](
       {
