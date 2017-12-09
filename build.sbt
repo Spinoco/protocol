@@ -12,8 +12,8 @@ lazy val contributors = Seq(
 
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
-   scalaVersion := "2.12.1",
-  crossScalaVersions := Seq("2.11.8"),
+   scalaVersion := "2.12.4",
+  crossScalaVersions := Seq("2.11.11", "2.12.4"),
    scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
