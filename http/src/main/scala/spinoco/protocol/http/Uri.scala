@@ -8,7 +8,7 @@ import scodec.bits.BitVector
 import spinoco.protocol.common.util._
 import spinoco.protocol.common.codec._
 import spinoco.protocol.common.Terminator
-import spinoco.protocol.http.Uri.QueryParameter.Multi
+import spinoco.protocol.http.codec.RFC3986
 
 import scala.annotation.tailrec
 
@@ -116,7 +116,7 @@ object Uri {
     def stringify:String = {
       val sb = new StringBuilder()
       if (self.initialSlash) sb.append("/")
-      sb.append(self.segments.map(s => URLEncoder.encode(s, "UTF-8")).mkString("/"))
+      sb.append(self.segments.map(RFC3986.encodePathSegment).mkString("/"))
       if (self.trailingSlash) sb.append("/")
       sb.toString()
     }
@@ -124,6 +124,8 @@ object Uri {
   }
 
   object Path {
+
+    private val PlusRegex = "\\+".r
 
     /** constructs relative path without initial slash (`/`) **/
     def relative(s: String) : Path =
@@ -137,7 +139,11 @@ object Uri {
 
     def fromUtf8String(path: String):Uri.Path = {
       val trimmed = path.trim
-      val segments = trimmed.split("/").filter(_.nonEmpty).map(s => URLDecoder.decode(s, "UTF-8"))
+      val segments = trimmed.split("/").filter(_.nonEmpty).map { s =>
+        // avoid URLDecoder turning a + into a space
+        val segment = PlusRegex.replaceAllIn(s, "%2B")
+        URLDecoder.decode(segment, "UTF-8")
+      }
       Path(
         initialSlash =  trimmed.startsWith("/")
         , segments = segments
