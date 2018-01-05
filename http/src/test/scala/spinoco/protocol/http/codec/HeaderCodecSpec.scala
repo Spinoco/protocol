@@ -262,7 +262,7 @@ property("Accept-Ranges Header") = secure {
 
   property("Content-Type Header") = secure {
     checkExamples(Seq(
-      ("Content-Type: audio/ogg",`Content-Type` (BinaryContent(MediaType.`audio/ogg`)), "Content-Type: audio/ogg")
+      ("Content-Type: audio/ogg",`Content-Type` (BinaryContent(MediaType.`audio/ogg`, None)), "Content-Type: audio/ogg")
       , ("Content-Type: text/html; charset=utf-8",`Content-Type` (TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`))), "Content-Type: text/html; charset=utf-8")
       , ("Content-Type: multipart/form-data; boundary=something"
         ,`Content-Type` (MultiPartContent(MediaType.`multipart/form-data`.copy(parameters = Map("boundary" -> "something"))))

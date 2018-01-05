@@ -14,7 +14,7 @@ sealed trait ContentType {
 object ContentType {
 
   case class TextContent(mediaType: DefaultMediaType, charset: Option[MIMECharset]) extends ContentType
-  case class BinaryContent(mediaType: DefaultMediaType) extends ContentType
+  case class BinaryContent(mediaType: DefaultMediaType, charset: Option[MIMECharset]) extends ContentType
   case class MultiPartContent(mediaType: MultipartMediaType) extends ContentType
   case class CustomContent(mediaType: CustomMediaType) extends ContentType
 
@@ -44,14 +44,14 @@ object ContentType {
         case (media: MultipartMediaType, Some(Left(boundary))) => Attempt.successful(MultiPartContent(media.copy(parameters = Map("boundary" -> boundary))))
         case (media: MultipartMediaType, _) => Attempt.failure(Err(s"Invalid media type. Parameter boundary is required for multipart media type : $media"))
         case (media: DefaultMediaType, maybeParem) => maybeParem match {
-          case Some(Right(charset)) => if (media.isText) Attempt.successful(TextContent(media, Some(charset))) else Attempt.failure(Err(s"Only text media type supports charset : $media"))
-          case _ => Attempt.successful(if (media.isText) TextContent(media, None) else BinaryContent(media))
+          case Some(Right(charset)) => Attempt.successful(if (media.isText) TextContent(media, Some(charset)) else BinaryContent(media, Some(charset)))
+          case _ => Attempt.successful(if (media.isText) TextContent(media, None) else BinaryContent(media, None))
         }
         case (media: CustomMediaType, _) => Attempt.successful(CustomContent(media))
       }
       , {
         case TextContent(media, charset) => (media, charset.map(Right(_)))
-        case BinaryContent(media) => (media, None)
+        case BinaryContent(media, charset) => (media, charset.map(Right(_)))
         case MultiPartContent(media) => (media, media.parameters.get("boundary").map(Left(_)))
         case CustomContent(media) => (media, None)
       }
