@@ -26,8 +26,9 @@ object CodecSpec extends Properties("CodecSpec") {
     implicit val codec:Codec[ContentType] = ContentType.codec
 
     checkExamples[ContentType](Seq(
-      ("audio/ogg",BinaryContent(MediaType.`audio/ogg`), "audio/ogg")
-      , ("Audio/OGG",BinaryContent(MediaType.`audio/ogg`), "audio/ogg")
+      ("audio/ogg",BinaryContent(MediaType.`audio/ogg`, None), "audio/ogg")
+      , ("Audio/OGG",BinaryContent(MediaType.`audio/ogg`, None), "audio/ogg")
+      , ("application/json; charset=utf-8",BinaryContent(MediaType.`application/json`, Some(MIMECharset.`UTF-8`)), "application/json; charset=utf-8")
       , ("text/html; charset=utf-8",TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`)), "text/html; charset=utf-8")
       , ("multipart/form-data; boundary=something"
         , MultiPartContent(MediaType.`multipart/form-data`.copy(parameters = Map("boundary" -> "something")))
