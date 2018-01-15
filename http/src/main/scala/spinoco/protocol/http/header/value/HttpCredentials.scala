@@ -18,14 +18,14 @@ object HttpCredentials {
 
   sealed case class BasicHttpCredentials(username: String, password: String) extends HttpCredentials
 
-  sealed case class OAuth2BearerToken(token: String) extends HttpCredentials
+  sealed case class OAuthToken(tpe: String, token: String) extends HttpCredentials
 
   sealed case class DigestHttpCredentials(tpe: String, params: Map[String, String]) extends HttpCredentials
 
-  val bearerCodec: Codec[OAuth2BearerToken] =
-    (asciiConstant("Bearer") ~> (whitespace() ~> utf8String)).xmap(
-      { token => OAuth2BearerToken(token)}
-      , _.token
+  val bearerCodec: Codec[OAuthToken] =
+    (utf8String ~ (whitespace() ~> utf8String)).xmap(
+      { case (tpe, token) => OAuthToken(tpe, token)}
+      , oAuth => oAuth.tpe -> oAuth.token
     )
 
   val basicCodec: Codec[BasicHttpCredentials]  = {

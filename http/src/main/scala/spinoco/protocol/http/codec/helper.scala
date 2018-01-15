@@ -299,7 +299,7 @@ object helper {
   val httpDateTimeCodec: Codec[LocalDateTime] = {
     def decode(s:String):Attempt[LocalDateTime] = {
       // todo: support for non rfc 1213 formats
-       attempt { ZonedDateTime.from(dateFormatRFC1123.parse(s)).toLocalDateTime }
+       attempt { ZonedDateTime.from(dateFormatRFC1123.parse(s.replace('-', ' '))).toLocalDateTime }
     }
 
     (ignoreWS ~> asciiString).exmap(

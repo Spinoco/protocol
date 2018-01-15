@@ -8,6 +8,6 @@ import spinoco.protocol.http.header.value.{HeaderCodecDefinition, HttpCredential
   */
 case class Authorization(credentials: HttpCredentials) extends DefaultHeader
 
-object Authorization {val codec =
-  HeaderCodecDefinition[Authorization](HttpCredentials.codec.xmap (Authorization.apply, _.credentials))
+object Authorization {
+  val codec = HeaderCodecDefinition[Authorization](HttpCredentials.codec.xmap (Authorization.apply, _.credentials))
 }
