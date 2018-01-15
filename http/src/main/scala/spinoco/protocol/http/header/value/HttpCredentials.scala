@@ -23,7 +23,7 @@ object HttpCredentials {
   sealed case class DigestHttpCredentials(tpe: String, params: Map[String, String]) extends HttpCredentials
 
   val bearerCodec: Codec[OAuthToken] =
-    (utf8String ~ (whitespace() ~> utf8String)).xmap(
+    (utf8Token ~ (whitespace() ~> utf8String)).xmap(
       { case (tpe, token) => OAuthToken(tpe, token)}
       , oAuth => oAuth.tpe -> oAuth.token
     )
@@ -51,9 +51,9 @@ object HttpCredentials {
   }
 
   val codec : Codec[HttpCredentials] = choice(
-    bearerCodec.upcast[HttpCredentials]
-    , basicCodec.upcast[HttpCredentials]
+    basicCodec.upcast[HttpCredentials]
     , digestCodec.upcast[HttpCredentials]
+    , bearerCodec.upcast[HttpCredentials]
   )
 
 }

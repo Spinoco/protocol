@@ -174,7 +174,7 @@ property("Accept-Ranges Header") = secure {
     ))
   }
 
-  property("Authorization  Header") = secure {
+  property("Authorization Header") = secure {
     checkExamples(Seq(
       ("Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
         , Authorization(HttpCredentials.BasicHttpCredentials("Aladdin", "open sesame"))
