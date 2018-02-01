@@ -12,17 +12,17 @@ import spinoco.protocol.common.util._
 object DateTimeCodec {
 
  val EmailDateFormatter : DateTimeFormatter =
-   DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z")
+   DateTimeFormatter.ofPattern("EEE, d MMM yyyy HH:mm:ss Z")
 
  val EmailDateFormatterNoSec : DateTimeFormatter =
-   DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm Z")
+   DateTimeFormatter.ofPattern("EEE, d MMM yyyy HH:mm Z")
 
 
   val EmailNoDayNameDateFormatter : DateTimeFormatter =
-    DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss Z")
+    DateTimeFormatter.ofPattern("d MMM yyyy HH:mm:ss Z")
 
   val EmailNoDayNameDateFormatterNoSec : DateTimeFormatter =
-    DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm Z")
+    DateTimeFormatter.ofPattern("d MMM yyyy HH:mm Z")
 
 
   val codec: Codec[ZonedDateTime] = {
