@@ -85,6 +85,7 @@ object RFC2047Codec {
                 case ' ' => "_"
                 case '_' => "=5F"
                 case '?' => "=3F"
+                case '=' => "=3D"
                 case c =>
                   if (AsciiEncoder.canEncode(c) && !c.isControl && c != '?') c.toString
                   else ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(Array(c)))).toHex.toUpperCase.grouped(2).flatMap { "=" + _ }.mkString
