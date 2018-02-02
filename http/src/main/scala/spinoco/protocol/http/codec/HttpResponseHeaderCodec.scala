@@ -29,7 +29,13 @@ object HttpResponseHeaderCodec {
 
     parametrizedN(crlf, crlf, "Response" | headerLineCodec, "Headers" | headerCodec).xmap[HttpResponseHeader] (
       { case (version :: status :: phrase :: HNil, headers) => HttpResponseHeader(status, phrase, headers, version) }
-      , h => ( h.version :: h.status :: h.reason :: HNil, h.headers)
+      , h => {
+        val description =
+          if (h.reason.isEmpty) h.status.description
+          else h.reason
+
+        ( h.version :: h.status :: description :: HNil, h.headers)
+      }
     )
   }
 

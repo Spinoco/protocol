@@ -48,7 +48,7 @@ object HttpResponseHeaderCodecSpec extends Properties("HttpResponseHeaderCodec")
     HttpResponseHeaderCodec.defaultCodec.encode(
       HttpResponseHeader(
         status =  HttpStatusCode.Ok
-        , reason = "OK"
+        , reason = "OK localised"
         , headers = List(
           Date(ZonedDateTime.parse("2009-07-27T12:28:53+00:00").toLocalDateTime)
           , Server(ServerProduct(List(ProductDescription("Apache",Some("2.2.14")))))
@@ -61,7 +61,7 @@ object HttpResponseHeaderCodecSpec extends Properties("HttpResponseHeaderCodec")
       )
     ).map(_.decodeAscii) ?= Attempt.successful(Right(
       Seq(
-        "HTTP/1.1 200 OK"
+        "HTTP/1.1 200 OK localised"
         , "Date: Mon, 27 Jul 2009 12:28:53 GMT"
         , "Server: Apache/2.2.14"
         , "Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT"
@@ -119,7 +119,7 @@ object HttpResponseHeaderCodecSpec extends Properties("HttpResponseHeaderCodec")
       )
     ).map(_.decodeAscii) ?= Attempt.successful(Right(
       Seq(
-        "HTTP/1.1 200"
+        "HTTP/1.1 200 OK"
         , "Date: Mon, 27 Jul 2009 12:28:53 GMT"
         , "Server: Apache/2.2.14"
         , "Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT"
