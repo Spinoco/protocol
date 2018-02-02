@@ -1,14 +1,10 @@
 package spinoco.protocol.mail.header
 
-import java.nio.CharBuffer
-import java.nio.charset.Charset
-
 import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import scodec.codecs._
 import shapeless.tag
 import shapeless.tag.@@
-import spinoco.protocol.common.util._
 import spinoco.protocol.common.codec._
 
 import scala.annotation.tailrec
@@ -18,114 +14,10 @@ import scala.annotation.tailrec
   */
 package object codec {
 
-
-  private val AsciiEncoder = Charset.forName("ASCII").newEncoder()
-  private val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
-
-  private[codec] val `=?` = ByteVector.view("=?".getBytes)
-  private[codec] val `?=` = ByteVector.view("?=".getBytes)
-  private[codec] val `?` = ByteVector.view("?".getBytes)
   private[codec] val `,`: ByteVector = ByteVector.view(",".getBytes)
   private[codec] val `, `: ByteVector = ByteVector.view(", ".getBytes)
   private[codec] val foldingComma: ByteVector = ByteVector.view(",\r\n ".getBytes)
   private[codec] val cfws : ByteVector = ByteVector.view("\r\n ".getBytes)
-  private[codec] val `=` : ByteVector = ByteVector.view("=".getBytes)
-
-  /**
-    * According to RFC 2047 decodes non-ascii text. Source must be ascii.
-    *
-    * If the source starts with =? and ands with ?=, the this is considered text
-    * to be encoded by RFC 2047 and will be decoded accordingly.
-    *
-    * Otherwise this will yield to failure. According to rfc this shall then ignore any display of it and act as empty string.
-    *
-    * If invalid format is encountered when decoding the string this will report failure.
-    *
-    * @param from  Source, Ascii string.
-    * @return
-    */
-  def decodeNonAscii(from: String): Attempt[String] = {
-    // todo: implement max size of 75 chars.
-    if (from.startsWith("=?") && from.endsWith("?=")) {
-      val parts = from.drop(2).dropRight(2).split('?')
-      if (parts.size != 3) Attempt.failure(Err(s"Invalid rfc 2047 format: expected =?Encoding?format?text?= got $from"))
-      else {
-        val chsetName = parts(0)
-        val encoding = parts(1)
-
-        if (! Charset.isSupported(chsetName)) Attempt.failure(Err(s"Unsupported character set: $chsetName"))
-        else {
-          attempt(Charset.forName(chsetName)) flatMap { chset =>
-            if (encoding.equalsIgnoreCase("Q")) {
-              @tailrec
-              def go(remain: String, acc: String): Attempt[String] = {
-                if (remain.isEmpty) Attempt.successful(acc)
-                else if (remain(0) == '=') {
-                  @tailrec
-                  def decodeHex(toGo: String, bytes: String): Attempt[(String, String)] = {
-                    if (toGo.nonEmpty && toGo(0) == '=') {
-                      val next = toGo.slice(1, 3)
-                      if (next.size == 2) decodeHex(toGo.drop(3), bytes + next)
-                      else Attempt.failure(Err(s"Invalid byte specification, requires 2 chars, got: $next"))
-                    } else {
-                      if (bytes.isEmpty) Attempt.successful((toGo, ""))
-                      else {
-                        ByteVector.fromHex(bytes.toLowerCase) match {
-                          case None => Attempt.failure(Err(s"Invalid byte specificate: ${bytes} : $from"))
-                          case Some(bs) => attempt(chset.decode(bs.toByteBuffer).toString) map { (toGo, _) }
-                        }
-                      }
-                    }
-                  }
-                  decodeHex(remain, "") match {
-                    case Attempt.Successful((n, append)) =>
-                      go(n, acc + append)
-                    case Attempt.Failure(err) => Attempt.Failure(err)
-                  }
-                } else {
-                  val chunk = remain.takeWhile(c => c != '=')
-                  go(remain.drop(chunk.size), acc + chunk.replace('_', ' '))
-                }
-              }
-              go(parts(2), "")
-            } else if (encoding.equalsIgnoreCase("B")) {
-              ByteVector.fromBase64(parts(2)) match {
-                case None => Attempt.failure(Err(s"Invalid base 64 encoding encountered : ${parts(2)} : $from"))
-                case Some(bytes) => attempt(chset.decode(bytes.toByteBuffer)).map(_.toString)
-              }
-            } else Attempt.failure(Err(s"Invalid encoding specified supported Q/B found: $encoding"))
-          }
-
-        }
-      }
-    } else Attempt.successful(from)
-  }
-
-
-  /**
-    * Reverse for `decodeNonAscii` that allows to encode non-ascii characters according to RFC 2047.
-    *
-    * @param from source, nonAscii text. If this text contains only ascii characters it is returned as is.
-
-    */
-  def encodeNonAscii(from: String): String = {
-    if (from.exists(ch => !AsciiEncoder.canEncode(ch) || ch == '?' || ch.isControl)) {
-      // encode according to RFC
-      // we do prefer `Q` notation as it is better human readable
-      val transform =
-      from.flatMap {
-        case ' ' => "_"
-        case '_' => "=5F"
-        case '?' => "=3F"
-        case c =>
-          if (AsciiEncoder.canEncode(c) && ! c.isControl ) c.toString
-          else ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(Array(c)))).toHex.toUpperCase.grouped(2).flatMap { "=" + _ }
-      }
-      "=?utf-8?Q?" + transform + "?="
-
-    } else from
-
-  }
 
 
   /**
