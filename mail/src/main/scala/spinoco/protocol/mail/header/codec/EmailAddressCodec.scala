@@ -1,5 +1,6 @@
 package spinoco.protocol.mail.header.codec
 
+import scodec.bits.BitVector
 import scodec.{Attempt, Codec, Err}
 import scodec.codecs._
 import spinoco.protocol.mail.EmailAddress
@@ -24,13 +25,24 @@ object EmailAddressCodec {
             // display may be quoted, in that case just take quoted part as is,
             // otherwise decode non ascii
             val display = s.take(open).dropRight(1).trim
-            if (display.length > 1 && display.head == '"' && display.last == '"') {
-              Attempt.successful((addr, Some(display.init.tail)))
-            } else {
-              decodeNonAscii(s.take(open).dropRight(1)) map { decoded =>
-                (addr, Some(decoded).map(_.trim).filter(_.nonEmpty))
+            // This is "quoted-string" as per RFC 2822
+            // In RFC 2047 it is said that inside "quoted-string" there cannot be the "encoded-word"
+            // But some clients do send it there, as such there is an deviation from RFC 2047 in terms of decoding.
+            val quotesStrippedDisplay =
+              if (display.length > 1 && display.head == '"' && display.last == '"') {
+                display.init.tail
+              } else {
+                display
               }
+
+            Attempt.fromEither(
+              BitVector.encodeAscii(quotesStrippedDisplay)
+              .left
+              .map(err => Err(s"Could not encode display into ASCII for RFC2047 decoding due to: $err"))
+            ).flatMap (RFC2047Codec.codec.decode).map{ result =>
+              (addr, Some(result.value).map(_.trim).filter(_.nonEmpty))
             }
+
           } else {
             Attempt.failure(Err(s"Invalid Email format, missing end of email address indicator(>): $s"))
           }
@@ -48,7 +60,12 @@ object EmailAddressCodec {
       , addr => {
         addr.display match {
           case None => Attempt.successful(addr.address)
-          case Some(display) => Attempt.successful(encodeNonAscii(display) + " <" + addr.address + ">")
+          case Some(display) =>
+            RFC2047Codec.codec.encode(display).flatMap{_.decodeAscii match {
+              case Left(err) => Attempt.failure(Err(s"Could not encode display test for display $display due to $err"))
+              case Right(succ) => Attempt.successful(succ + " <" + addr.address + ">")
+            }}
+
         }
       }
     )

@@ -36,7 +36,7 @@ object EmailAddressSpec extends Properties("EmailAddress") {
     verify(
       "=?UTF-8?Q?Val=C3=A9rie_Doe?= <valerie.doe@spinoco.com>"
       , EmailAddress("valerie.doe", "spinoco.com", Some("Valérie Doe"))
-      , "=?utf-8?Q?Val=C3=A9rie_Doe?= <valerie.doe@spinoco.com>"
+      , "=?UTF-8?Q?Val=C3=A9rie_Doe?= <valerie.doe@spinoco.com>"
     )
   }
 
@@ -44,9 +44,24 @@ object EmailAddressSpec extends Properties("EmailAddress") {
     verify(
       "=?UTF-8?B?WiB0w6l0byBrYW5kaWTDoXRreSBzaSB2eWJlcmV0ZQ==?= <email.address@spinoco.com>"
       , EmailAddress("email.address", "spinoco.com", Some("Z této kandidátky si vyberete"))
-      , "=?utf-8?Q?Z_t=C3=A9to_kandid=C3=A1tky_si_vyberete?= <email.address@spinoco.com>"
+      , "=?UTF-8?Q?Z_t=C3=A9to_kandid=C3=A1tky_si_vyberete?= <email.address@spinoco.com>"
     )
   }
 
+  property("bracket-quoted-unicode-display") = protect {
+    verify(
+      "\"=?UTF-8?Q?Val=C3=A9rie_Doe?=\" <valerie.doe@spinoco.com>"
+      , EmailAddress("valerie.doe", "spinoco.com", Some("Valérie Doe"))
+      , "=?UTF-8?Q?Val=C3=A9rie_Doe?= <valerie.doe@spinoco.com>"
+    )
+  }
+
+  property("bracket-quoted-unicode-display.contains.equals") = protect {
+    verify(
+      "\"=?UTF-8?Q?Val=C3=A9rie=3DDoe?=\" <valerie.doe@spinoco.com>"
+      , EmailAddress("valerie.doe", "spinoco.com", Some("Valérie=Doe"))
+      , "=?UTF-8?Q?Val=C3=A9rie=3DDoe?= <valerie.doe@spinoco.com>"
+    )
+  }
 
 }
