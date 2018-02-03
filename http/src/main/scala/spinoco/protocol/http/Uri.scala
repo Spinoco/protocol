@@ -17,7 +17,7 @@ import scala.annotation.tailrec
   * All values are decoded (no % escaping)
   */
 sealed case class Uri(
-  scheme: HttpScheme.Value
+  scheme: Scheme
   , host: HostPort
   , path: Uri.Path
   , query: Uri.Query
@@ -96,7 +96,7 @@ object Uri {
       )
     }
 
-    (terminated(HttpScheme.codec, Terminator.constantString1("://")) ~ hostPathQueryCodec)
+    (terminated(Scheme.codec, Terminator.constantString1("://")) ~ hostPathQueryCodec)
     .xmap(
       { case (scheme, (host, path, query)) => Uri(scheme, host, path, query) }
       , uri => (uri.scheme, (uri.host, uri.path, uri.query))
