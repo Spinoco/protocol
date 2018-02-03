@@ -9,6 +9,10 @@ object SchemeSpec extends Properties("Schema"){
     Scheme.parseScheme("http-1+3.two") ?= Some(Scheme("http-1+3.two"))
   }
 
+  property("parse.valid.upper-case") = protect{
+    Scheme.parseScheme("http-1+3.TWO") ?= Some(Scheme("http-1+3.two"))
+  }
+
   property("parse.invalid.starts-digit") = protect{
     Scheme.parseScheme("1http-1+3.two") ?= None
   }

@@ -13,10 +13,10 @@ case class Scheme private[http](tpe: String)
 object Scheme {
 
   def parseScheme(toParse: String): Option[Scheme] = {
-    toParse.headOption.flatMap{ firstChar =>
+    toParse.headOption.flatMap { firstChar =>
       if (!firstChar.isLetter) None
-      else if (toParse.tail.forall(c => c.isLetterOrDigit || c == '+' || c == '-' || c == '.')){
-        Some(new Scheme(toParse))
+      else if (toParse.tail.forall(c => c.isLetterOrDigit || c == '+' || c == '-' || c == '.')) {
+        Some(new Scheme(toParse.toLowerCase))
       } else None
     }
   }
