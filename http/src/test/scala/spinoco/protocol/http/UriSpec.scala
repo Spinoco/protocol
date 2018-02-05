@@ -73,6 +73,10 @@ object UriSpec extends Properties("Uri") {
         , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root, Uri.Query.empty)
         , "http://www.spinoco.com/"
       )
+      , ("http://www.spinoco.com/aA0-._~/!$&'()*+,;=/:@/%5B%5D%2F%7B%7D%C3%A9"
+        , Uri(HttpScheme.HTTP, HostPort("www.spinoco.com", None), Uri.Path.Root / "aA0-._~" / "!$&'()*+,;=" / ":@" / "[]/{}é", Uri.Query.empty)
+        , "http://www.spinoco.com/aA0-._~/!$&'()*+,;=/:@/%5B%5D%2F%7B%7D%C3%A9"
+      )
       , ("http://x.com/123?a=1&b=2;c=3"
         , Uri(HttpScheme.HTTP, HostPort("x.com", None), Uri.Path.Root / "123", Uri.Query("a", "1") :+ (QueryParameter.single("b", "2") :+ ("c", "3")))
         , "http://x.com/123?a=1&b=2;c=3"
