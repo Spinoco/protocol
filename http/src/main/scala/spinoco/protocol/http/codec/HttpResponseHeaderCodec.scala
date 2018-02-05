@@ -18,13 +18,24 @@ object HttpResponseHeaderCodec {
     val headerLineCodec: Codec[HttpVersion.Value :: HttpStatusCode :: String :: HNil] = {
 
       (bytesUntil(_ != ' ').codedAs(HttpVersion.codec) <~ whitespace()) ::
-      (bytesUntil(_ != ' ').codedAs(HttpStatusCode.codec) <~ whitespace()) ::
-      utf8String
+      choice(
+        (bytesUntil(_ != ' ').codedAs(HttpStatusCode.codec) <~ whitespace()) :: utf8String
+        , HttpStatusCode.codec.xmap[HttpStatusCode :: String :: HNil](
+          code => code :: code.description :: HNil
+          , { case code :: _ :: HNil => code }
+        )
+      )
     }
 
     parametrizedN(crlf, crlf, "Response" | headerLineCodec, "Headers" | headerCodec).xmap[HttpResponseHeader] (
       { case (version :: status :: phrase :: HNil, headers) => HttpResponseHeader(status, phrase, headers, version) }
-      , h => ( h.version :: h.status :: h.reason :: HNil, h.headers)
+      , h => {
+        val description =
+          if (h.reason.isEmpty) h.status.description
+          else h.reason
+
+        ( h.version :: h.status :: description :: HNil, h.headers)
+      }
     )
   }
 
