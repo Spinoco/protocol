@@ -61,11 +61,8 @@ object IMAPBodyPartCodec {
         , string.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
       )
 
-
-
-
     def envelope: Codec[Envelope] = {
-      `(`  ~> (
+      (`(`  ~> (
         ("date"         | envDate) ::
         ("subject"      | (SP ~> envSubject)) ::
         ("from"         | (SP ~> envFrom)) ::
@@ -75,17 +72,17 @@ object IMAPBodyPartCodec {
         ("cc"           | (SP ~> envCc)) ::
         ("bcc"          | (SP ~> envBcc)) ::
         ("in-reply-to"  | (SP ~> envInReplyTo)) ::
-        ("message-id"   | (SP ~> envMessageId)) <~
-      `)`
-      ).as[Envelope] <~ `)`
+        ("message-id"   | (SP ~> envMessageId))
+      ) <~ `)`).as[Envelope]
     }
 
 
     def envDate: Codec[LocalDate] = {
-      val format = DateTimeFormatter.ofPattern("dd-MMM-yyyy")
+      val format = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss Z")
+      val dayOfWeekFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z")
       val date: Codec[LocalDate] = {
-        ascii.narrow(
-          s => attempt { LocalDate.parse(s, format) }
+        takeWhile(ascii)(_ != '"').narrow(
+          s => attempt { LocalDate.parse(s, format) } orElse attempt { LocalDate.parse(s, dayOfWeekFormat)}
           , dt => dt.format(format)
         )
       }
@@ -103,13 +100,13 @@ object IMAPBodyPartCodec {
       val host: Codec[Option[String]] = nstring
 
       (`(` ~> (
-        name ::
-        adl ::
-        mailbox ::
+        name :: SP ::
+        adl :: SP ::
+        mailbox :: SP ::
         host
         ) <~ `)`
       ).xmap[EmailAddress] (
-        { case n :: _ :: m :: h :: HNil =>
+        { case n :: _ :: _ :: _ :: m :: _ :: h :: HNil =>
           EmailAddress(
             localPart = m.getOrElse("")
             , domain = h.getOrElse("")
@@ -117,7 +114,7 @@ object IMAPBodyPartCodec {
           )
         }
         , e =>
-          e.display :: None :: Option(e.localPart).filter(_.nonEmpty) :: Option(e.domain).filter(_.nonEmpty) :: HNil
+          e.display :: () :: None :: () :: Option(e.localPart).filter(_.nonEmpty) :: () :: Option(e.domain).filter(_.nonEmpty) :: HNil
       )
     }
 
