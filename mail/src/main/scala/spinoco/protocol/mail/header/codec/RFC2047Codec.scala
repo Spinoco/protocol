@@ -40,37 +40,40 @@ object RFC2047Codec {
      *
      */
     def decodeRFC2047(decode: String): Attempt[String] = {
-      @tailrec
-      def go(rem: String, acc: String): Attempt[String] = {
-        val start = rem.trim
-        if (start.isEmpty) Attempt.successful(acc)
-        else if (start.startsWith("=?")) {
-          val end = start.indexOf("?=")
-          if (end < 0) Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?= : $rem "))
+
+      def decodeLine(line: String): Attempt[String] = {
+        val segment = line.trim
+        if (segment.startsWith("=?") && segment.endsWith("?=")) {
+          val toDecode = segment.slice(2, segment.length - 2)
+          val parts = toDecode.split('?')
+          if (parts.length != 3) Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?= and have 3 parts separated by ? : ${parts.toList} "))
           else {
-            val (segment, remains) = start.splitAt(end)
-            val toDecode = segment.drop(2)
-            val parts = toDecode.split('?')
-            if (parts.length != 3) Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?= and have 3 parts separated by ? : ${parts.toList} "))
-            else {
-              (attempt(Charset.forName(parts(0))) flatMap { chs =>
+            attempt(Charset.forName(parts(0))) flatMap { chs =>
                 parts(1).toUpperCase match {
                   case "Q" => decodeQ(chs, parts(2))
                   case "B" => decodeB(chs, parts(2))
                   case other => Attempt.failure(Err(s"RFC 2047 Invalid encoding $other : $toDecode "))
                 }
-              }) match {
-                case Attempt.Successful(decoded) => go(remains.drop(2), acc + decoded)
-                case Attempt.Failure(err) => Attempt.failure(err)
               }
-            }
           }
+        } else {
+          Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?=: $line "))
         }
-        else Attempt.failure(Err(s"RFC 2047 word must start with =? : $rem "))
       }
 
+      @tailrec
+      def go(lines: Seq[String], acc: String): Attempt[String] = {
+        lines.headOption match {
+          case Some(line) => decodeLine(line) match {
+            case Attempt.Successful(decoded) => go(lines.tail, acc+decoded)
+            case Attempt.Failure(err) => Attempt.failure(err)
+          }
 
-      go(decode, "")
+          case None => Attempt.successful(acc)
+        }
+      }
+
+      go(decode.split('\n'), "")
     }
 
 
