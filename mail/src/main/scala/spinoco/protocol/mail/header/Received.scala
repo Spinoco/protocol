@@ -11,7 +11,7 @@ import spinoco.protocol.mail.header.codec.DateTimeCodec
 case class Received(token: String, at: ZonedDateTime) extends DefaultEmailHeaderField
 
 
-object Received  extends DefaultHeaderDescription[Received] {
+object Received extends DefaultHeaderDescription[Received] {
 
   val codec: Codec[Received] = {
     scodec.codecs.utf8.exmap(

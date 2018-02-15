@@ -1,6 +1,6 @@
 package spinoco.protocol.mail.header
 
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{ZoneId, ZoneOffset, ZonedDateTime}
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
@@ -12,6 +12,16 @@ object ReceivedSpec extends Properties("Received") {
 
   import spinoco.protocol.mail.SpecUtil._
   implicit val HeaderCodec = Received.codec
+
+  property("single-line") = protect {
+    verify(
+      "by 172.16.136.49 with SMTP id aybv6k1v6crbrx8bpifvm57u0m4pf5xa2t7nqpxn; Wed, 14 Feb 2018 14:05:10 GMT"
+      , Received("by 172.16.136.49 with SMTP id aybv6k1v6crbrx8bpifvm57u0m4pf5xa2t7nqpxn", ZonedDateTime.of(2018, 2, 14, 14, 5, 10, 0, ZoneId.of("GMT")))
+      , "by 172.16.136.49 with SMTP id aybv6k1v6crbrx8bpifvm57u0m4pf5xa2t7nqpxn;\r\n Wed, 14 Feb 2018 14:05:10 +0000"
+    )
+    
+  }
+
 
   property("single-entry") = protect {
 
