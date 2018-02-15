@@ -9,6 +9,8 @@ import scodec.codecs._
 import spinoco.protocol.common.util._
 
 import scala.annotation.tailrec
+import scala.util.matching.Regex
+import scala.util.matching.Regex.Groups
 
 /**
   * Created by pach on 23/10/17.
@@ -32,6 +34,7 @@ object RFC2047Codec {
     val AsciiEncoder = Charset.forName("ASCII").newEncoder()
     val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
     val MaxLineSize = 75 // max size of line before put FWS and new word when encoding
+    val EncodedWord = "=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
 
     /*
      * Decodes individual RFC 2047 words by skipping any whitespace and stripping off =? and ?= delimiters
@@ -41,31 +44,27 @@ object RFC2047Codec {
      */
     def decodeRFC2047(decode: String): Attempt[String] = {
 
-      def decodeLine(line: String): Attempt[String] = {
-        val segment = line.trim
-        if (segment.startsWith("=?") && segment.endsWith("?=")) {
-          val toDecode = segment.slice(2, segment.length - 2)
-          val parts = toDecode.split('?')
-          if (parts.length != 3) Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?= and have 3 parts separated by ? : ${parts.toList} "))
-          else {
-            attempt(Charset.forName(parts(0))) flatMap { chs =>
-                parts(1).toUpperCase match {
-                  case "Q" => decodeQ(chs, parts(2))
-                  case "B" => decodeB(chs, parts(2))
-                  case other => Attempt.failure(Err(s"RFC 2047 Invalid encoding $other : $toDecode "))
-                }
+      def decodeWord(word: Regex.Match): Attempt[String] = {
+        word match {
+          case Groups(charset, encoding, text) =>
+            attempt(Charset.forName(charset)) flatMap { chs =>
+              encoding.toUpperCase match {
+                case "Q" => decodeQ(chs, text)
+                case "B" => decodeB(chs, text)
+                case other => Attempt.failure(Err(s"RFC 2047 Invalid encoding $other : $word "))
               }
-          }
-        } else {
-          Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?=: $line "))
+            }
+
+          case _ =>
+            Attempt.failure(Err(s"RFC 2047 word must start with =? and end with ?= and have 3 parts separated by ? : ${word.subgroups} "))
         }
       }
 
       @tailrec
-      def go(lines: Seq[String], acc: String): Attempt[String] = {
-        lines.headOption match {
-          case Some(line) => decodeLine(line) match {
-            case Attempt.Successful(decoded) => go(lines.tail, acc+decoded)
+      def go(words: Seq[Regex.Match], acc: String): Attempt[String] = {
+        words.headOption match {
+          case Some(word) => decodeWord(word) match {
+            case Attempt.Successful(decoded) => go(words.tail, acc + decoded)
             case Attempt.Failure(err) => Attempt.failure(err)
           }
 
@@ -73,7 +72,7 @@ object RFC2047Codec {
         }
       }
 
-      go(decode.split('\n'), "")
+      go(EncodedWord.findAllMatchIn(decode).toSeq, "")
     }
 
 
