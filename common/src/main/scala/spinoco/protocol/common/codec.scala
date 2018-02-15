@@ -31,6 +31,11 @@ object codec {
 
   val utf8Token = token(utf8)
 
+
+  val quotedAsciiToken: Codec[String] = {
+    constantString1("\"") ~> takeWhile(asciiToken)(_ != '"') <~ constantString1("\"")
+  }
+
   /**
     * Decodes to token(string) eventually terminated by `terminator`. Terminator is not customed by this codec.. encodes to codec.
     * Terminator must be Ascii Char
