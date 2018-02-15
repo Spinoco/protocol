@@ -6,9 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import scodec.codecs._
 import scodec.{Attempt, Codec}
-import spinoco.protocol.common.codec._
 import spinoco.protocol.common.util._
-
 
 object DateTimeCodec {
 
@@ -23,10 +21,6 @@ object DateTimeCodec {
 
   val EmailNoDayNameDateFormatterNoSec: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d MMM yyyy HH:mm Z")
-
-  val universalTZ: Codec[Boolean] = {
-    ignoreWS ~> recover(choice(constantString1("UT"), constantString1("GMT"), SPACE))
-  }
 
   //formatter for obsolete timezones (UTC, GMT)
   val EmailDateFormatter2: DateTimeFormatter =
