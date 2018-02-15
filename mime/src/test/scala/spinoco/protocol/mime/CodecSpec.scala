@@ -34,6 +34,14 @@ object CodecSpec extends Properties("CodecSpec") {
         , MultiPartContent(MediaType.`multipart/form-data`.copy(parameters = Map("boundary" -> "something")))
         , "multipart/form-data; boundary=something"
       )
+      , ("""multipart/signed; protocol="application/pgp-signature"; micalg="pgp-sha1"; boundary="===============6480331919205975==""""
+        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "micalg" -> "pgp-sha1", "protocol" -> "application/pgp-signature")))
+        , """multipart/signed; protocol="application/pgp-signature"; micalg="pgp-sha1"; boundary="===============6480331919205975==""""
+      )
+      , ("""multipart/encrypted; protocol="application/pgp-signature"; boundary="===============6480331919205975==""""
+        , MultiPartContent(MediaType.`multipart/encrypted`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "protocol" -> "application/pgp-signature")))
+        , """multipart/encrypted; protocol="application/pgp-signature"; boundary="===============6480331919205975==""""
+      )
     ))
   }
 
