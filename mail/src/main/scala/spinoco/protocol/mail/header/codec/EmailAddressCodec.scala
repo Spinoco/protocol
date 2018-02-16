@@ -1,8 +1,9 @@
 package spinoco.protocol.mail.header.codec
 
 import scodec.bits.BitVector
-import scodec.{Attempt, Codec, Err}
 import scodec.codecs._
+import scodec.{Attempt, Codec, Err}
+import spinoco.protocol.common.codec._
 import spinoco.protocol.mail.EmailAddress
 
 /**
@@ -10,66 +11,50 @@ import spinoco.protocol.mail.EmailAddress
   */
 object EmailAddressCodec {
 
-  val codec: Codec[EmailAddress] =
-    ascii.exmap(
-      s0 => {
-        val s = s0.trim
-        val open = s.indexOf("<")
-        val addressAndDisplay =
-        if (open >= 0) {
-          // parse address with display
-          val end = s.indexOf(">", open)
-          if (end > 0) {
-            val addr = s.slice(open+1, end)
+  val codec: Codec[EmailAddress] = {
 
-            // display may be quoted, in that case just take quoted part as is,
-            // otherwise decode non ascii
-            val display = s.take(open).dropRight(1).trim
-            // This is "quoted-string" as per RFC 2822
-            // In RFC 2047 it is said that inside "quoted-string" there cannot be the "encoded-word"
-            // But some clients do send it there, as such there is an deviation from RFC 2047 in terms of decoding.
-            val quotesStrippedDisplay =
-              if (display.length > 1 && display.head == '"' && display.last == '"') {
-                display.init.tail
-              } else {
-                display
-              }
+    val emailAddress = (ignoreWS ~> choice(dotAtomString, quotedString)) ~ (constantString1("@") ~> dotAtomString)
+    val bracketAddress = constantString1("<") ~> emailAddress <~ constantString1(">")
 
-            Attempt.fromEither(
-              BitVector.encodeAscii(quotesStrippedDisplay)
-              .left
-              .map(err => Err(s"Could not encode display into ASCII for RFC2047 decoding due to: $err"))
-            ).flatMap (RFC2047Codec.codec.decode).map{ result =>
-              (addr, Some(result.value).map(_.trim).filter(_.nonEmpty))
-            }
-
-          } else {
-            Attempt.failure(Err(s"Invalid Email format, missing end of email address indicator(>): $s"))
-          }
-        } else {
-          Attempt.successful((s, None))
-        }
-
-        addressAndDisplay flatMap { case (address, display) =>
-          val parts = address.split("@")
-          if (parts.length != 2) Attempt.failure(Err(s"Address string must be local@domain format: $s"))
-          else Attempt.successful(EmailAddress(parts.head, parts.last, display))
-
-        }
-      }
-      , addr => {
-        addr.display match {
-          case None => Attempt.successful(addr.address)
-          case Some(display) =>
-            RFC2047Codec.codec.encode(display).flatMap{_.decodeAscii match {
-              case Left(err) => Attempt.failure(Err(s"Could not encode display test for display $display due to $err"))
-              case Right(succ) => Attempt.successful(succ + " <" + addr.address + ">")
-            }}
-
-        }
-      }
+    val quotedDisplay = (choice(dotAtomString, quotedString) <~ SPACE).widen[Option[String]](
+      Some(_).map(_.trim).filter(_.nonEmpty)
+      , Attempt.fromOption(_, Err("Failed to create email address without display segment"))
     )
 
+    val displayCodec = takeWhile(ascii)(_ != '<').widen[Option[String]](
+      Some(_).map(_.trim).filter(_.nonEmpty)
+      , Attempt.fromOption(_, Err("Failed to create email address without display segment"))
+    )
 
+    choice(
+      quotedDisplay ~ bracketAddress
+      , emailAddress.xmap[(Option[String], (String, String))](None -> _ , _._2)
+      , bracketAddress.xmap[(Option[String], (String, String))](None -> _ , _._2)
+      , displayCodec ~ bracketAddress
+    ).exmap[EmailAddress]({ case (display, (localPart, domain)) =>
+      display match {
+        case None => Attempt.successful(EmailAddress(localPart, domain, None))
+
+        case Some(d) =>
+          Attempt.fromEither(
+            BitVector.encodeAscii(d).left.map(err => Err(s"Could not encode display into ASCII for RFC2047 decoding due to: $err"))
+          ).flatMap(RFC2047Codec.codec.decode).flatMap { result =>
+            Attempt.successful(EmailAddress(localPart, domain, Some(result.value.trim).filter(_.nonEmpty)))
+          }
+        }
+    }, { case EmailAddress(localPart, domain, display) =>
+      display match {
+        case None =>  Attempt.successful((display, (localPart, domain)))
+
+        case Some(d) => RFC2047Codec.codec.encode(d).flatMap {
+          _.decodeAscii match {
+            case Left(err) => Attempt.failure(Err(s"Could not encode display test for display $d due to $err"))
+            case Right(succ) => Attempt.successful((Some(succ.trim).filter(_.nonEmpty), (localPart, domain)))
+          }
+        }
+      }
+    })
+
+  }
 
 }

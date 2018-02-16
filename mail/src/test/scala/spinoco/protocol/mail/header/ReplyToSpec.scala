@@ -15,7 +15,7 @@ object ReplyToSpec extends  Properties("ReplyTo") {
   property("single-email") = protect {
 
     verify(
-      "John Doe <john.doe@spinoco.com>"
+      "\"John Doe\" <john.doe@spinoco.com>"
       , `Reply-To`(EmailAddress("john.doe", "spinoco.com", Some("John Doe")), Nil)
     )
 
@@ -23,9 +23,9 @@ object ReplyToSpec extends  Properties("ReplyTo") {
 
   property("multiple-email") = protect {
     verify(
-      "John Doe <john.doe@spinoco.com>, jannet.doe@spinoco.com"
+      "\"John Doe\" <john.doe@spinoco.com>, jannet.doe@spinoco.com"
       , `Reply-To`(EmailAddress("john.doe", "spinoco.com", Some("John Doe")), List(EmailAddress("jannet.doe", "spinoco.com", None)))
-      , "John Doe <john.doe@spinoco.com>,\r\n jannet.doe@spinoco.com"
+      , "\"John Doe\" <john.doe@spinoco.com>,\r\n jannet.doe@spinoco.com"
     )
 
   }

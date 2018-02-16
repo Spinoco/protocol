@@ -21,14 +21,14 @@ object EmailAddressSpec extends Properties("EmailAddress") {
   }
 
   property("bracket-ascii-display") = protect {
-    verify("John Doe <john.doe@spinoco.com>", EmailAddress("john.doe", "spinoco.com", Some("John Doe")))
+    verify("John Doe <john.doe@spinoco.com>", EmailAddress("john.doe", "spinoco.com", Some("John Doe")), "\"John Doe\" <john.doe@spinoco.com>")
   }
 
   property("bracket-quoted-ascii-display") = protect {
     verify(
       "\"John Doe\" <john.doe@spinoco.com>"
       , EmailAddress("john.doe", "spinoco.com", Some("John Doe"))
-      , "John Doe <john.doe@spinoco.com>"
+      , "\"John Doe\" <john.doe@spinoco.com>"
     )
   }
 

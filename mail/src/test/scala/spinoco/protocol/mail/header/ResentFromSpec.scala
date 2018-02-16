@@ -17,15 +17,16 @@ object ResentFromSpec extends Properties("ResentFrom") {
     verify(
       "John Doe <john.doe@spinoco.com>"
       , `Resent-From`(EmailAddress("john.doe", "spinoco.com", Some("John Doe")), Nil)
+      , "\"John Doe\" <john.doe@spinoco.com>"
     )
 
   }
 
   property("multiple-email") = protect {
     verify(
-      "John Doe <john.doe@spinoco.com>, jannet.doe@spinoco.com"
+      "\"John Doe\" <john.doe@spinoco.com>, jannet.doe@spinoco.com"
       , `Resent-From`(EmailAddress("john.doe", "spinoco.com", Some("John Doe")), List(EmailAddress("jannet.doe", "spinoco.com", None)))
-      , "John Doe <john.doe@spinoco.com>,\r\n jannet.doe@spinoco.com"
+      , "\"John Doe\" <john.doe@spinoco.com>,\r\n jannet.doe@spinoco.com"
     )
 
   }

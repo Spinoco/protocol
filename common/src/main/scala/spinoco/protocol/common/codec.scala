@@ -514,37 +514,6 @@ object codec {
     }
   }
 
-  /** codec that allows decoding of list of `A` separated by `delimited` and encoding by `encDelimiter` **/
-  def delimitedBy[A](delimited: ByteVector, encDelimiter: ByteVector, codec: Codec[A]): Codec[List[A]] = new Codec[List[A]] {
-    val listDelimited = scodec.codecs.listDelimited(delimited.bits, codec)
-    val encDelimiterBits = encDelimiter.bits
-
-    def sizeBound: SizeBound = SizeBound.unknown
-
-    def decode(bits: BitVector): Attempt[DecodeResult[List[A]]] = listDelimited.decode(bits)
-
-    def encode(value: List[A]): Attempt[BitVector] = {
-      @tailrec
-      def go(rem: List[A], acc: BitVector): Attempt[BitVector] = {
-        rem.headOption match {
-          case Some(a) =>
-            codec.encode(a) match {
-              case Attempt.Successful(bits) =>
-                if (acc.isEmpty) go(rem.tail, bits)
-                else go(rem.tail, acc ++ encDelimiterBits ++ bits)
-
-              case Attempt.Failure(err) => Attempt.failure(err)
-            }
-          case None => Attempt.successful(acc)
-        }
-      }
-
-      go(value, BitVector.empty)
-    }
-  }
-
-
-
   /**
     * A codec, that on decoding will first decode via `terminator` and when that will be successful,
     * will take all bits returned by `terminator` and passes them to be decoded by `codec`.

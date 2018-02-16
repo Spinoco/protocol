@@ -17,10 +17,6 @@ import spinoco.protocol.mime.{ContentType, MIMECharset, MediaType}
   */
 object EmailHeaderSpec extends  Properties("EmailHeader") {
 
-
-
-
-
   property("decode-header") = protect {
 
     val email =
@@ -76,7 +72,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
         |List-Unsubscribe: <mailto:unsubscribe@alza.cz?subject=unsubscribe&body=%3cUserId%3e2670051%3c%2fUserId%3e%3cTypeId%3e139851%3c%2fTypeId%3e>
         |Feedback-ID: 57641:2670051:MLG55268:c43ac1209c
         |MIME-Version: 1.0
-        |From: "Alza.cz" <webinfo@info.alza.cz>
+        |From: Alza.cz, Info <webinfo@info.alza.cz>
         |To: pavel.chlupacek@spinoco.com
         |Date: 20 Oct 2017 20:53:48 +0200
         |Subject: =?utf-8?B?UMWZZWQgdMSbbWlobGUga2xvYm91ayBkb2zFryE=?=
@@ -108,7 +104,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
            , GenericField("List-Unsubscribe", "<mailto:unsubscribe@alza.cz?subject=unsubscribe&body=%3cUserId%3e2670051%3c%2fUserId%3e%3cTypeId%3e139851%3c%2fTypeId%3e>")
            , GenericField("Feedback-ID", "57641:2670051:MLG55268:c43ac1209c")
            , `MIME-Version`("1.0")
-           , From(EmailAddress("webinfo","info.alza.cz",Some("Alza.cz")),List())
+           , From(EmailAddress("webinfo","info.alza.cz",Some("Alza.cz, Info")),List())
            , Destination(DestinationType.To, EmailAddress("pavel.chlupacek","spinoco.com",None), Nil)
            , OriginationDate(ZonedDateTime.of(2017, 10 ,20, 20, 53, 48, 0, ZoneOffset.ofHoursMinutes(2,0)))
            , Subject("Před těmihle klobouk dolů!")
@@ -127,7 +123,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
         , `Return-Path`("webinfo@info.alza.cz")
         , `Message-ID`(tag[`Message-ID`]("59ea4ec3.558bdf0a.1f4fc.c8d9SMTPIN_ADDED_BROKEN@mx.google.com"))
         , `MIME-Version`("1.0")
-        , From(EmailAddress("webinfo","info.alza.cz",Some("Alza.cz")),List())
+        , From(EmailAddress("webinfo","info.alza.cz",Some("Alza.cz, Info")),List())
         , Destination(DestinationType.To, EmailAddress("pavel.chlupacek","spinoco.com",None), Nil)
         , OriginationDate(ZonedDateTime.of(2017, 10 ,20, 20, 53, 48, 0, ZoneOffset.ofHoursMinutes(2,0)))
         , Subject("Před těmihle klobouk dolů!")
@@ -146,7 +142,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
                    |Return-Path: <webinfo@info.alza.cz>
                    |Message-ID: <59ea4ec3.558bdf0a.1f4fc.c8d9SMTPIN_ADDED_BROKEN@mx.google.com>
                    |MIME-Version: 1.0
-                   |From: Alza.cz <webinfo@info.alza.cz>
+                   |From: "Alza.cz, Info" <webinfo@info.alza.cz>
                    |To: pavel.chlupacek@spinoco.com
                    |Date: Fri, 20 Oct 2017 20:53:48 +0200
                    |Subject: =?UTF-8?Q?P=C5=99ed_t=C4=9Bmihle_klobouk_dol=C5=AF!?=
@@ -159,10 +155,5 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
     encoded ?= Attempt.successful(expect.bits)
 
   }
-
-
-
-
-
 
 }
