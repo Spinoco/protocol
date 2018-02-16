@@ -1,8 +1,8 @@
 package spinoco.protocol.mail.header
 
 import scodec.bits.{BitVector, ByteVector}
-import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import scodec.codecs._
+import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import shapeless.tag
 import shapeless.tag.@@
 import spinoco.protocol.common.codec._
@@ -29,13 +29,37 @@ package object codec {
     */
   def commaSeparated[A](codec: Codec[A], fold: Boolean): Codec[(A, List[A])] = {
     val encodeDelimiter = if (fold) foldingComma else `,`
-    delimitedBy(`,`, encodeDelimiter, codec) exmap(
-      la => {
-        if (la.isEmpty) Attempt.failure(Err("No element provided, expecting one"))
-        else Attempt.successful((la.head, la.tail))
+    val separator = constantString1(",") ~> ignoreWS
+    val listCodec = listDelimited(encodeDelimiter.bits, codec)
+
+
+    def decodeList(bits: BitVector): Attempt[DecodeResult[(A, List[A])]] = {
+      @tailrec
+      def go(bits: BitVector, acc: List[A]): Attempt[Seq[A]] = {
+        (codec ~ optional(lookahead2(constantString1(",")), separator)).decode(bits) match {
+          case Attempt.Successful(rslt) =>
+            rslt.value match {
+              case (a, Some(_)) => go(rslt.remainder, acc :+ a)
+              case (a, None) => Attempt.Successful(acc :+ a)
+            }
+
+          case Attempt.Failure(err) => Attempt.failure(err)
+        }
       }
-      , { case (a, la) => Attempt.successful(a +: la) }
-    )
+
+      go(bits, List()) flatMap { decoded =>
+        if (decoded.isEmpty) Attempt.failure(Err("Expected at least one `A` got none"))
+        else Attempt.successful(DecodeResult((decoded.head, decoded.tail.toList), BitVector.empty))
+
+      }
+    }
+
+    new Codec[(A, List[A])] {
+      def encode(value: (A, List[A])): Attempt[BitVector] = listCodec.encode(value._1 +: value._2)
+      def sizeBound: SizeBound = SizeBound.unknown
+      def decode(bits: BitVector): Attempt[DecodeResult[(A, List[A])]] = decodeList(bits)
+    }
+
   }
 
   /**
@@ -97,32 +121,34 @@ package object codec {
   def isAtomDotChar(c: Char): Boolean =
     c.isLetterOrDigit || AtomAcceptChars.contains(c) || c == '.'
 
+  def verifyAtom(pred: String => Boolean)(s: String): Attempt[String] = {
+    if (pred(s)) Attempt.successful(s)
+    else Attempt.failure(Err(s"String is not atom: $s"))
+  }
 
   /** string that is encoded as atom **/
   val atomString: Codec[String] = {
-    def verifyAtom(s: String): Attempt[String] = {
-      if (s.forall(isAtomChar)) Attempt.successful(s)
-      else Attempt.failure(Err(s"String is not atom: $s"))
-    }
-    utf8.exmap(verifyAtom, verifyAtom)
+    takeWhile(utf8)(b => isAtomChar(b.toChar)).exmap(
+      verifyAtom(_.nonEmpty)
+      , verifyAtom(s => s.nonEmpty && s.forall(isAtomChar))
+    )
+  }
+
+  /** string that is encoded as dot-atom **/
+  val dotAtomString: Codec[String] = {
+    takeWhile(utf8)(b => isAtomDotChar(b.toChar)).exmap(
+      verifyAtom(_.nonEmpty)
+      , verifyAtom(s => s.nonEmpty && s.forall(isAtomDotChar))
+    )
   }
 
   /** quoted string **/
   val quotedString: Codec[String] = {
-    utf8.exmap(
-      s => {
-        val s0 = s.trim
-        if (s0.size > 1 && s0.head == '"' && s0.last == '"') {
-          Attempt.successful(s0.init.tail)
-        } else Attempt.failure(Err(s"Expected Quoted string, got: $s"))
-      }
-      , s => Attempt.successful('"' + s + '"')
-    )
+    ignoreWS ~> constantString1("\"") ~> takeWhileChar(utf8)('"') <~ constantString1("\"")
   }
 
   // keyword in RFC 5322
   val keyword = choice(atomString, quotedString)
-
 
   val msgIdCodec: Codec[String @@ `Message-ID`] = {
     def decode(s0: String): Attempt[String @@ `Message-ID`] = {

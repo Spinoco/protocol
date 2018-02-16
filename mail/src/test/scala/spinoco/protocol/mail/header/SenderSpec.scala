@@ -16,7 +16,7 @@ object SenderSpec extends Properties("Sender") {
   property("single-email") = protect {
 
     verify(
-      "John Doe <john.doe@spinoco.com>"
+      "\"John Doe\" <john.doe@spinoco.com>"
       , Sender(EmailAddress("john.doe", "spinoco.com", Some("John Doe")))
     )
 
