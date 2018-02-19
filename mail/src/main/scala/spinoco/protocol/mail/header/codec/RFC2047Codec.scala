@@ -80,21 +80,27 @@ object RFC2047Codec {
       if (encode.forall { c => AsciiEncoder.canEncode(c)  && ! c.isControl && c != '?' }) Attempt.successful(encode)
       else {
         @tailrec
-        def go(remains: String, buff: String, acc: String): Attempt[String] = {
+        def go(remains: String, buff: String, acc: String, highSurrogate: Option[Char]): Attempt[String] = {
           remains.headOption match {
             case Some(ch) =>
-              val encoded: String = ch match {
-                case ' ' => "_"
-                case '_' => "=5F"
-                case '?' => "=3F"
-                case '=' => "=3D"
+              val encoded: Option[String] = ch match {
+                case ' ' => Some("_")
+                case '_' => Some("=5F")
+                case '?' => Some("=3F")
+                case '=' => Some("=3D")
                 case c =>
-                  if (AsciiEncoder.canEncode(c) && !c.isControl && c != '?') c.toString
-                  else ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(Array(c)))).toHex.toUpperCase.grouped(2).flatMap { "=" + _ }.mkString
+                  if (c.isHighSurrogate) None
+                  else if (AsciiEncoder.canEncode(c) && !c.isControl && c != '?') Some(c.toString)
+                  else Some(ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(highSurrogate.toArray ++ Array(c)))).toHex.toUpperCase.grouped(2).flatMap { "=" + _ }.mkString)
               }
-              if (buff.isEmpty) go(remains.tail, "=?UTF-8?Q?" + encoded, acc)
-              else if (buff.length + encoded.length > MaxLineSize) if (acc.nonEmpty) go(remains.tail, "", acc + "\r\n " + buff + "?=") else  go(remains.tail, "", buff + "?=")
-              else go(remains.tail, buff + encoded, acc)
+
+              encoded match {
+                case None => go(remains.tail, buff, acc, Some(ch))
+                case Some(encodedChar) =>
+                  if (buff.isEmpty) go(remains.tail, "=?UTF-8?Q?" + encodedChar, acc, None)
+                  else if (buff.length + encodedChar.length > MaxLineSize) if (acc.nonEmpty) go(remains.tail, "", acc + "\r\n " + buff + "?=", None) else  go(remains.tail, "", buff + "?=", None)
+                  else go(remains.tail, buff + encodedChar, acc, None)
+              }
 
             case None =>
               if (buff.isEmpty) Attempt.successful(acc)
@@ -102,7 +108,7 @@ object RFC2047Codec {
           }
         }
 
-        go(encode, "", "")
+        go(encode, "", "", None)
       }
     }
 
