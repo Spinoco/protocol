@@ -90,7 +90,7 @@ object RFC2047Codec {
                 case '=' => Some("=3D")
                 case c =>
                   if (c.isHighSurrogate) None
-                  else if (AsciiEncoder.canEncode(c) && !c.isControl && c != '?') Some(c.toString)
+                  else if (AsciiEncoder.canEncode(c) && !c.isControl) Some(c.toString)
                   else Some(ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(highSurrogate.toArray ++ Array(c)))).toHex.toUpperCase.grouped(2).flatMap { "=" + _ }.mkString)
               }
 
