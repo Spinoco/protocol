@@ -40,6 +40,22 @@ object SubjectSpec extends Properties("Subject") {
 
   }
 
+  property("encoded.unicode.surrogate-pair.B") = protect {
+    verify(
+      "=?utf-8?b?8J+QnyBSeWLDrSBzcGVjacOhbA==?="
+      , Subject("🐟 Rybí speciál")
+      ,"=?UTF-8?Q?=F0=9F=90=9F_Ryb=C3=AD_speci=C3=A1l?="
+    )
+  }
+
+  property("encoded.unicode.surrogate-pair.Q") = protect {
+    verify(
+      "=?UTF-8?Q?=F0=9F=90=9F_Ryb=C3=AD_speci=C3=A1l?="
+      , Subject("🐟 Rybí speciál")
+      ,"=?UTF-8?Q?=F0=9F=90=9F_Ryb=C3=AD_speci=C3=A1l?="
+    )
+  }
+
   property("encoded.unicode.Q.cfws") = protect {
 
     verify(
@@ -48,7 +64,6 @@ object SubjectSpec extends Properties("Subject") {
     )
 
   }
-
 
   property("encode.unicode.Q.multiple-words") = protect {
     verify(
