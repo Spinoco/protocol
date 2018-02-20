@@ -3,6 +3,7 @@ package spinoco.protocol.mail.header
 import java.time.ZonedDateTime
 
 import scodec.{Attempt, Codec, Err}
+import scodec.codecs._
 import spinoco.protocol.mail.header.codec.DateTimeCodec
 
 /**
@@ -13,16 +14,30 @@ case class Received(token: String, at: ZonedDateTime) extends DefaultEmailHeader
 
 object Received extends DefaultHeaderDescription[Received] {
 
-  val codec: Codec[Received] = {
+  def nonRFCCodec(datePosition: Int): Codec[Received] = {
     scodec.codecs.utf8.exmap(
       s => {
-        val rev = s.reverse
-        val part = rev.indexOf(';')
-        if (part < 0) Attempt.failure(Err(s"""Failed to parse header,  *received-token ";" date-time expectd, got: $s"""))
+        val parts = s.trim.split(" ")
+        val date = parts.takeRight(datePosition).mkString(" ")
+        val token = parts.dropRight(datePosition).mkString(" ")
+
+        DateTimeCodec.parseDate(date).map { zdt =>
+          Received(token, zdt)
+        }
+      }
+      , rcv => DateTimeCodec.formatDate(rcv.at) map { s => s"${rcv.token};\r\n $s" }
+    )
+  }
+
+  val RFCCodec: Codec[Received] = {
+    scodec.codecs.utf8.exmap(
+      s => {
+        val part = s.lastIndexOf(';')
+        if (part < 0) Attempt.failure(Err(s"""Failed to parse header,  *received-token ";" date-time expected, got: $s"""))
         else {
-          val (revDt, revRem) = rev.splitAt(part)
-          DateTimeCodec.parseDate(revDt.trim.reverse) map { zdt =>
-            Received(revRem.reverse.init, zdt)
+          val (rem, dt) = s.splitAt(part)
+          DateTimeCodec.parseDate(dt.tail.trim) map { zdt =>
+            Received(rem, zdt)
           }
         }
       }
@@ -30,5 +45,6 @@ object Received extends DefaultHeaderDescription[Received] {
     )
   }
 
+  val codec: Codec[Received] = choice(RFCCodec, nonRFCCodec(4), nonRFCCodec(7))
 
 }
