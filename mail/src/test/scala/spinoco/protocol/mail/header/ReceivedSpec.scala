@@ -19,7 +19,7 @@ object ReceivedSpec extends Properties("Received") {
       , Received("by 172.16.136.49 with SMTP id aybv6k1v6crbrx8bpifvm57u0m4pf5xa2t7nqpxn", ZonedDateTime.of(2018, 2, 14, 14, 5, 10, 0, ZoneId.of("GMT")))
       , "by 172.16.136.49 with SMTP id aybv6k1v6crbrx8bpifvm57u0m4pf5xa2t7nqpxn;\r\n Wed, 14 Feb 2018 14:05:10 +0000"
     )
-    
+
   }
 
 
@@ -43,4 +43,32 @@ object ReceivedSpec extends Properties("Received") {
 
   }
 
+  property("single-entry.non-rfc") = protect {
+
+    verify(
+      "by filter0527p1iad2.sendgrid.net with SMTP id filter0527p1iad2-22563-5A8AD67A-5 2018-02-19 13:51:54.319416103 +0000 UTC"
+      , Received("by filter0527p1iad2.sendgrid.net with SMTP id filter0527p1iad2-22563-5A8AD67A-5", ZonedDateTime.of(2018, 2, 19, 13, 51, 54, 319416103, ZoneId.of("UTC")))
+      , "by filter0527p1iad2.sendgrid.net with SMTP id filter0527p1iad2-22563-5A8AD67A-5;\r\n Mon, 19 Feb 2018 13:51:54 +0000"
+    )
+
+  }
+
+  property("single-entry.non-rfc-date") = protect {
+
+    verify(
+      "from 87b8d379c4a2 (ec2-34-197-179-31.compute-1.amazonaws.com [34.197.179.31]) by ismtpd0002p1iad2.sendgrid.net (SG) with ESMTP id lXvmPQVwTx-1lTzLQtKl7g for <milan.raulim@spinoco.com>; Mon, 19 Feb 2018 22:00:14.807 +0000 (UTC)"
+      , Received("from 87b8d379c4a2 (ec2-34-197-179-31.compute-1.amazonaws.com [34.197.179.31]) by ismtpd0002p1iad2.sendgrid.net (SG) with ESMTP id lXvmPQVwTx-1lTzLQtKl7g for <milan.raulim@spinoco.com>", ZonedDateTime.of(2018, 2, 19, 22, 0, 14, 807, ZoneOffset.UTC))
+      , "from 87b8d379c4a2 (ec2-34-197-179-31.compute-1.amazonaws.com [34.197.179.31]) by ismtpd0002p1iad2.sendgrid.net (SG) with ESMTP id lXvmPQVwTx-1lTzLQtKl7g for <milan.raulim@spinoco.com>;\r\n Mon, 19 Feb 2018 22:00:14 +0000"
+    )
+
+  }
+
+  property("single-entry.non-rfc-date2") = protect {
+    verify(
+      "from MTgyMzE0NA (ec2-52-21-133-138.compute-1.amazonaws.com [52.21.133.138]) by ismtpd0008p1iad2.sendgrid.net (SG) with HTTP id 3mkK_06IRJaQNoC4tdWWpg Tue, 20 Feb 2018 05:11:56.362 +0000 (UTC)"
+      , Received("from MTgyMzE0NA (ec2-52-21-133-138.compute-1.amazonaws.com [52.21.133.138]) by ismtpd0008p1iad2.sendgrid.net (SG) with HTTP id 3mkK_06IRJaQNoC4tdWWpg", ZonedDateTime.of(2018, 2, 20, 5, 11, 56, 362, ZoneOffset.UTC))
+      , "from MTgyMzE0NA (ec2-52-21-133-138.compute-1.amazonaws.com [52.21.133.138]) by ismtpd0008p1iad2.sendgrid.net (SG) with HTTP id 3mkK_06IRJaQNoC4tdWWpg;\r\n Tue, 20 Feb 2018 05:11:56 +0000"
+    )
+
+  }
 }

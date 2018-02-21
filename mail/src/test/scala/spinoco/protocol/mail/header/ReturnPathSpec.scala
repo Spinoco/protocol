@@ -22,5 +22,13 @@ object ReturnPathSpec extends Properties("ReturnPath") {
   }
 
 
+  property("non-rfc.single-email") = protect {
+    verify(
+      "bce-se_n.7237.318.716502_milanraulim-gmail.com@se-acc-7237.se-bounce-0001.cz"
+      , `Return-Path`("bce-se_n.7237.318.716502_milanraulim-gmail.com@se-acc-7237.se-bounce-0001.cz")
+      , "<bce-se_n.7237.318.716502_milanraulim-gmail.com@se-acc-7237.se-bounce-0001.cz>"
+    )
+  }
+
 }
 
