@@ -42,6 +42,14 @@ object CodecSpec extends Properties("CodecSpec") {
         , MultiPartContent(MediaType.`multipart/encrypted`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "protocol" -> "application/pgp-signature")))
         , """multipart/encrypted; protocol="application/pgp-signature"; boundary="===============6480331919205975==""""
       )
+      , ("""multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="===============7108545632574332286==""""
+        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "===============7108545632574332286==", "protocol" -> "application/pgp-signature", "micalg" -> "pgp-sha1")))
+        , """multipart/signed; protocol="application/pgp-signature"; micalg="pgp-sha1"; boundary="===============7108545632574332286==""""
+      )
+      , ("""multipart/signed; boundary="Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E"; protocol="application/pkcs7-signature"; micalg=sha1"""
+        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E", "protocol" -> "application/pkcs7-signature", "micalg" -> "sha1")))
+        , """multipart/signed; protocol="application/pkcs7-signature"; micalg="sha1"; boundary="Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E""""
+      )
     ))
   }
 

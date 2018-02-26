@@ -2,8 +2,6 @@ package spinoco.protocol.mime
 
 import scodec._
 import scodec.codecs._
-import shapeless.HNil
-import shapeless.::
 import spinoco.protocol.common.codec._
 import spinoco.protocol.mime.MediaType.{CustomMediaType, DefaultMediaType, MultipartMediaType}
 
@@ -31,64 +29,31 @@ object ContentType {
       ignoreWS ~> constantString1("boundary=") ~> asciiToken <~ ignoreWS
     }
 
-    val quotedBoundary: Codec[String] = {
-      semicolon ~> ignoreWS ~> constantString1("boundary=") ~> quotedAsciiToken <~ ignoreWS
-    }
-
-    val quotedProtocol: Codec[String] = {
-      semicolon ~> ignoreWS ~> constantString1("protocol=") ~> quotedAsciiToken <~ ignoreWS
-    }
-
-    val micalg: Codec[String] = {
-      semicolon ~> ignoreWS ~> constantString1("micalg=") ~> quotedAsciiToken <~ ignoreWS
-    }
-
     val mediaTypeCodec: Codec[MediaType] =
       token(ascii, ';').exmap(MediaType.decodeString, MediaType.encodeString)
 
-    def signedParameters(mediaType: MediaType): Codec[Parameters] = {
-      (quotedProtocol :: micalg :: quotedBoundary).widen[Parameters](
-        {
-          case p :: m :: b :: HNil => Parameters(None, Map("protocol" -> p, "micalg" -> m, "boundary" -> b))
-        }, { case Parameters(_, params) =>
-          val parameters = for {
-            p <- params.get("protocol")
-            m <- params.get("micalg")
-            b <- params.get("boundary")
-          } yield p :: m :: b :: HNil
-
-          parameters match {
-            case Some(required) => Attempt.successful(required)
-            case None => Attempt.failure(Err(s"Invalid media type. Parameters protocol, micalg and boundary are required for multipart/signed media type : $mediaType"))
-          }
-        }
-      )
+    def parameter(name: String, tokenCodec: Codec[String]): Codec[(String, String)] = {
+      (semicolon ~> ignoreWS ~> constantString1(s"$name=") ~> tokenCodec <~ ignoreWS).widen(name -> _, { case (param, value) =>
+          if (param == name) Attempt.successful(value)
+          else Attempt.failure(Err(s"Failed to encode Multipart parameter. Expected $name, got $param"))
+      })
     }
 
-    def encryptedParameters(mediaType: MediaType): Codec[Parameters] = {
-      (quotedProtocol :: quotedBoundary).widen[Parameters](
-        {
-          case p :: b :: HNil => Parameters(None, Map("protocol" -> p, "boundary" -> b))
-        }, { case Parameters(_, params) =>
-          val parameters = for {
-            p <- params.get("protocol")
-            b <- params.get("boundary")
-          } yield p :: b :: HNil
+    def multipartParameters(mediaType: MediaType, required: Seq[String], tokenCodec: Codec[String] = choice(quotedAsciiToken, asciiToken)): Codec[Parameters] = {
+      list(choice(required.map(parameter(_, tokenCodec)): _*)).widen[Parameters](
+        { parameters => Parameters(None, parameters.toMap) }
+        , { case Parameters(_, params) =>
+          val requiredParameters = for {
+            name <- required
+            param <- params.get(name)
+          }  yield name -> param
 
-          parameters match {
-            case Some(required) => Attempt.successful(required)
-            case None => Attempt.failure(Err(s"Invalid media type. Parameters protocol and boundary are required for multipart/encrypted media type : $mediaType"))
+          if (requiredParameters.size == required.size) {
+            Attempt.successful(requiredParameters.toList)
+          } else {
+            Attempt.failure(Err(s"Invalid media type. Parameters ${required.mkString(", ")} are required for $mediaType"))
           }
         }
-      )
-    }
-
-    def multipartParameters(mediaType: MediaType): Codec[Parameters] = {
-      (semicolon ~> boundary).widen[Parameters](
-        boundary => Parameters(None, Map("boundary" -> boundary))
-        , _.others.get("boundary").fold[Attempt[String]](
-          Attempt.failure(Err(s"Invalid media type. Parameter boundary is required for multipart media type : $mediaType"))
-        )(Attempt.successful)
       )
     }
 
@@ -110,9 +75,9 @@ object ContentType {
 
     def contentTypeParameters(mediaType: MediaType): Codec[Parameters] = {
       mediaType match {
-        case MultipartMediaType("signed", _) => signedParameters(mediaType)
-        case MultipartMediaType("encrypted", _) => encryptedParameters(mediaType)
-        case MultipartMediaType(_, _) => multipartParameters(mediaType)
+        case MultipartMediaType("signed", _) => multipartParameters(mediaType, Seq("protocol", "micalg", "boundary"))
+        case MultipartMediaType("encrypted", _) => multipartParameters(mediaType, Seq("protocol", "boundary"))
+        case MultipartMediaType(_, _) => multipartParameters(mediaType, Seq("boundary"), asciiToken)
         case _ =>  defaultParameters
       }
     }
