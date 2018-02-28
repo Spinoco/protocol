@@ -9,7 +9,7 @@ object ContentIdSpec extends Properties("ContentId") {
 
   implicit val ContentIdCodec = `Content-ID`.codec
 
-  property("conten-id") = protect {
+  property("content-id") = protect {
     verify(
       "<image001.png@spnc.com>"
       , `Content-ID`("image001.png@spnc.com")
