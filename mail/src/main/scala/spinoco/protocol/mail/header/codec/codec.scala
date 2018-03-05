@@ -170,8 +170,8 @@ package object codec {
     ascii.exmap (decode, encode)
   }
 
-
-
-
+  def toMsgIdCodec(c: Codec[String]): Codec[String @@ `Message-ID`] = {
+    c.xmap(tag[`Message-ID`](_), _.toString)
+  }
 
 }

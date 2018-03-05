@@ -11,6 +11,16 @@ object InReplyToSpec extends Properties("InReplyTo") {
   import spinoco.protocol.mail.SpecUtil._
   implicit val HeaderCodec = `In-Reply-To`.codec
 
+
+  property("phrase-id") = protect {
+
+    verify(
+      "001100000038000068d00295454d"
+      , `In-Reply-To`(tag[`Message-ID`]("001100000038000068d00295454d"), Nil)
+      , "<001100000038000068d00295454d>"
+    )
+  }
+
   property("single-id") = protect {
 
     verify(

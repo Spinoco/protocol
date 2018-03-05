@@ -23,17 +23,17 @@ object ContentType {
     val semicolon = Codec(constantString1("; "), constantString1(";"))
 
     val charset: Codec[MIMECharset] = {
-      ignoreWS ~> constantString1("charset=") ~> MIMECharset.codec <~ ignoreWS
+      ignoreWS ~> constantString1CaseInsensitive("charset=") ~> MIMECharset.codec <~ ignoreWS
     }
     val boundary: Codec[String] = {
-      ignoreWS ~> constantString1("boundary=") ~> asciiToken <~ ignoreWS
+      ignoreWS ~> constantString1CaseInsensitive("boundary=") ~> asciiToken <~ ignoreWS
     }
 
     val mediaTypeCodec: Codec[MediaType] =
       token(ascii, ';').exmap(MediaType.decodeString, MediaType.encodeString)
 
     def parameter(name: String, tokenCodec: Codec[String]): Codec[(String, String)] = {
-      (semicolon ~> ignoreWS ~> constantString1(s"$name=") ~> tokenCodec <~ ignoreWS).widen(name -> _, { case (param, value) =>
+      (semicolon ~> ignoreWS ~> constantString1CaseInsensitive(s"$name=") ~> tokenCodec <~ ignoreWS).widen(name -> _, { case (param, value) =>
           if (param == name) Attempt.successful(value)
           else Attempt.failure(Err(s"Failed to encode Multipart parameter. Expected $name, got $param"))
       })

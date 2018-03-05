@@ -1,6 +1,7 @@
 package spinoco.protocol.mail.header
 
 import scodec.Codec
+import scodec.codecs._
 import shapeless.tag.@@
 import spinoco.protocol.mail.header.codec._
 
@@ -28,7 +29,7 @@ case class `In-Reply-To`(
 
 object `In-Reply-To` extends DefaultHeaderDescription[`In-Reply-To`] {
   val codec: Codec[`In-Reply-To`] =
-    cfwsSeparated(msgIdCodec)
+    cfwsSeparated(choice(msgIdCodec, toMsgIdCodec(atomString), toMsgIdCodec(quotedString)))
     .xmap(`In-Reply-To`.apply _ tupled, { irt => (irt.msgId, irt.others) })
 }
 
