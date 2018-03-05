@@ -70,7 +70,13 @@ object EmailHeaderCodec {
 
             val bits = impl.trimHead(bytes.drop(headerNameBytes.length + 1)).bits
             allHeaders.get(headerName.toLowerCase) match {
-              case Some(c) => c.decode(bits)
+              case Some(c) => c.decode(bits) orElse scodec.codecs.utf8.decode(bits).flatMap { rslt =>
+                T.cast(NonRFC(headerName, rslt.value)) match {
+                  case Some(h) => Attempt.successful(rslt.map(_ => h))
+                  case None => Attempt.failure(Err(s"Cannot encode as Non RFC, hence ${T.describe} is not superclass of it"))
+                }
+              }
+
               case None => scodec.codecs.utf8.decode(bits).flatMap { rslt =>
                 T.cast(GenericField(headerName, rslt.value)) match {
                   case Some(h) => Attempt.successful(rslt.map(_ => h))

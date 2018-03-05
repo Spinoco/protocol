@@ -1,8 +1,9 @@
 package spinoco.protocol.mail.header
 
 import scodec.Codec
+import scodec.codecs._
 import shapeless.tag.@@
-import spinoco.protocol.mail.header.codec.{cfwsSeparated, msgIdCodec}
+import spinoco.protocol.mail.header.codec._
 
 /**
   * RFC 5322 3.6.4
@@ -27,7 +28,7 @@ msgId: String @@ `Message-ID`
 
 object References extends DefaultHeaderDescription[References] {
   val codec: Codec[References] =
-    cfwsSeparated(msgIdCodec)
-      .xmap(References.apply _ tupled, { rfr => (rfr.msgId, rfr.others) })
+    cfwsSeparated(choice(msgIdCodec, toMsgIdCodec(atomString), toMsgIdCodec(quotedString)))
+    .xmap(References.apply _ tupled, { rfr => (rfr.msgId, rfr.others) })
 
 }

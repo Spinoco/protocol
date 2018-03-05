@@ -46,15 +46,12 @@ object IMAPBodyPartCodec {
 
     lazy val intNumber = takeWhile(intAsString)(b => b >= '0' && b <= '9')
 
-    val quotedString : Codec[String] =
-      "quoted-string" | (DQUOTE ~> (takeWhile(ascii)(_ != '"') <~ DQUOTE))
-
     val literalString  : Codec[String] = {
       val sz: Codec[Int] = `{` ~> ( intNumber <~ `}crlf`)
       "literal-string" | variableSizeBytes(sz, ascii)
     }
 
-    lazy val string: Codec[String] = "string" | choice(quotedString, literalString)
+    lazy val string: Codec[String] = "string" | choice(quotedAsciiString, literalString)
     lazy val nstring: Codec[Option[String]] =
       "nstring" | choice(
         NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[String]]

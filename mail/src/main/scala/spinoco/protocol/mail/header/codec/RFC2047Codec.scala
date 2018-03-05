@@ -43,14 +43,14 @@ object RFC2047Codec {
      *
      */
     def decodeRFC2047(decode: String): Attempt[String] = {
-
       def decodeWord(word: Regex.Match): Attempt[String] = {
         word match {
           case Groups(charset, encoding, text) =>
             attempt(Charset.forName(charset)) flatMap { chs =>
               encoding.toUpperCase match {
                 case "Q" => decodeQ(chs, text)
-                case "B" => decodeB(chs, text)
+                case "B" => decodeB(chs, text.replaceAll("""\\\".*\\\"""", "")) //remove nonBase64 parts: \\\"; name*1=\\\"
+
                 case other => Attempt.failure(Err(s"RFC 2047 Invalid encoding $other : $word "))
               }
             }
