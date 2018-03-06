@@ -16,7 +16,7 @@ object CodecSpec extends Properties("CodecSpec") {
             DecodeResult(header, BitVector.empty)
           )
           )) && (("Encode: " + encoded) |: (
-          codec.encode(header).map(_.decodeAscii.fold(_.getMessage, identity)) ?= Attempt.Successful(encoded)
+          codec.encode(header).map(_.decodeAscii.fold(_.getMessage, identity).split(';').toSet) ?= Attempt.Successful(encoded.split(';').toSet)
           ))
     }
 
@@ -31,24 +31,27 @@ object CodecSpec extends Properties("CodecSpec") {
       , ("application/json; charset=utf-8",BinaryContent(MediaType.`application/json`, Some(MIMECharset.`UTF-8`)), "application/json; charset=utf-8")
       , ("text/html; charset=utf-8",TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`)), "text/html; charset=utf-8")
       , ("multipart/form-data; boundary=something"
-        , MultiPartContent(MediaType.`multipart/form-data`.copy(parameters = Map("boundary" -> "something")))
-        , "multipart/form-data; boundary=something"
+        , MultiPartContent(MediaType.`multipart/form-data`.copy(parameters = Map("boundary" -> "something")), charset = None)
+        , """multipart/form-data; boundary="something""""
       )
       , ("""multipart/signed; protocol="application/pgp-signature"; micalg="pgp-sha1"; boundary="===============6480331919205975==""""
-        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "micalg" -> "pgp-sha1", "protocol" -> "application/pgp-signature")))
+        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "micalg" -> "pgp-sha1", "protocol" -> "application/pgp-signature")), charset = None)
         , """multipart/signed; protocol="application/pgp-signature"; micalg="pgp-sha1"; boundary="===============6480331919205975==""""
       )
       , ("""multipart/encrypted; protocol="application/pgp-signature"; boundary="===============6480331919205975==""""
-        , MultiPartContent(MediaType.`multipart/encrypted`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "protocol" -> "application/pgp-signature")))
+        , MultiPartContent(MediaType.`multipart/encrypted`.copy(parameters = Map("boundary" -> "===============6480331919205975==", "protocol" -> "application/pgp-signature")), charset = None)
         , """multipart/encrypted; protocol="application/pgp-signature"; boundary="===============6480331919205975==""""
       )
       , ("""multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="===============7108545632574332286==""""
-        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "===============7108545632574332286==", "protocol" -> "application/pgp-signature", "micalg" -> "pgp-sha1")))
+        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "===============7108545632574332286==", "protocol" -> "application/pgp-signature", "micalg" -> "pgp-sha1")), charset = None)
         , """multipart/signed; protocol="application/pgp-signature"; micalg="pgp-sha1"; boundary="===============7108545632574332286==""""
       )
       , ("""multipart/signed; boundary="Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E"; protocol="application/pkcs7-signature"; micalg=sha1"""
-        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E", "protocol" -> "application/pkcs7-signature", "micalg" -> "sha1")))
+        , MultiPartContent(MediaType.`multipart/signed`.copy(parameters = Map("boundary" -> "Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E", "protocol" -> "application/pkcs7-signature", "micalg" -> "sha1")), charset = None)
         , """multipart/signed; protocol="application/pkcs7-signature"; micalg="sha1"; boundary="Apple-Mail=_A5434659-C987-446B-BA42-479AB306275E""""
+      ), ( """multipart/mixed; charset=utf-8; boundary="4=_k47S1kfn7l1CnpwB9LRjjHMwBfroxwJ""""
+        , MultiPartContent(MediaType.`multipart/mixed`.copy(parameters = Map("boundary" -> "4=_k47S1kfn7l1CnpwB9LRjjHMwBfroxwJ")), charset = Some(MIMECharset.`UTF-8`))
+        , """multipart/mixed; charset=utf-8; boundary="4=_k47S1kfn7l1CnpwB9LRjjHMwBfroxwJ""""
       )
     ))
   }

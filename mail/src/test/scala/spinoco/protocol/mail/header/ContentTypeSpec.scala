@@ -19,7 +19,7 @@ object ContentTypeSpec extends Properties("ContentType") {
   property("simple") = protect {
     verify(
       "multipart/mixed; Boundary=\"0__=4EBB08D4DFA584BB8f9e8a93df938690918c4EBB08D4DFA584BB\""
-      , `Content-Type`(ContentType.MultiPartContent(MultipartMediaType("mixed", Map("boundary" -> "\"0__=4EBB08D4DFA584BB8f9e8a93df938690918c4EBB08D4DFA584BB\""))))
+      , `Content-Type`(ContentType.MultiPartContent(MultipartMediaType("mixed", Map("boundary" -> "0__=4EBB08D4DFA584BB8f9e8a93df938690918c4EBB08D4DFA584BB")), None))
       , "multipart/mixed; boundary=\"0__=4EBB08D4DFA584BB8f9e8a93df938690918c4EBB08D4DFA584BB\""
     )
   }
