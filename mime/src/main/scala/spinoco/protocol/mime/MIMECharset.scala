@@ -4,10 +4,10 @@ import java.nio.charset.{Charset, StandardCharsets}
 
 import scodec.{Attempt, Codec}
 import spinoco.protocol.common.util._
-
+import spinoco.protocol.common.codec._
+import scodec.codecs._
 
 sealed case class MIMECharset(value: String, aliases: Seq[String])
-
 
 object MIMECharset {
 
@@ -29,14 +29,19 @@ object MIMECharset {
   ).map { chs => chs.value.toLowerCase -> chs }.toMap
 
   val codec: Codec[MIMECharset] = {
-    import scodec.codecs._
-
     string(StandardCharsets.US_ASCII).xmap(
       s => allDefault.getOrElse(s.toLowerCase, MIMECharset(s, Nil))
       , _.value.toLowerCase
     )
   }
 
+  def separatedBy(char: Char, chars: Char*): Codec[MIMECharset] = {
+    takeWhileChar(string(StandardCharsets.US_ASCII))(char, chars:_*).xmap(
+      s => allDefault.getOrElse(s.toLowerCase, MIMECharset(s, Nil))
+      , _.value.toLowerCase
+    )
+  }
+  
   def forJavaCharset(charset: Charset): MIMECharset =
     MIMECharset(charset.name().toUpperCase, Nil)
 
