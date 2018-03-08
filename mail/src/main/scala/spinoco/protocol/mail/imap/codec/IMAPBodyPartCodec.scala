@@ -6,11 +6,11 @@ import java.time.format.DateTimeFormatter
 import scodec._
 import scodec.bits.BitVector
 import scodec.codecs._
-import spinoco.protocol.common.codec._
-import spinoco.protocol.common.util.attempt
-import spinoco.protocol.mail.EmailAddress
-import spinoco.protocol.mail.imap.BodyStructure._
 import shapeless.{::, HNil}
+import spinoco.protocol.common.codec._
+import spinoco.protocol.mail.EmailAddress
+import spinoco.protocol.mail.header.codec.DateTimeCodec
+import spinoco.protocol.mail.imap.BodyStructure._
 
 
 object IMAPBodyPartCodec {
@@ -76,10 +76,9 @@ object IMAPBodyPartCodec {
 
     def envDate: Codec[LocalDate] = {
       val format = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss Z")
-      val dayOfWeekFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z")
       val date: Codec[LocalDate] = {
         takeWhile(ascii)(_ != '"').narrow(
-          s => attempt { LocalDate.parse(s, format) } orElse attempt { LocalDate.parse(s, dayOfWeekFormat)}
+          s => DateTimeCodec.parseDate(s).map(_.toLocalDate)
           , dt => dt.format(format)
         )
       }

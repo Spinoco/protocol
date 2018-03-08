@@ -71,6 +71,7 @@ object ContentType {
       mediaType match {
         case MultipartMediaType("signed", _) => readParameters(mediaType, Seq("protocol", "micalg", "boundary"))
         case MultipartMediaType("encrypted", _) => readParameters(mediaType, Seq("protocol", "boundary"))
+        case MultipartMediaType("report", _) => readParameters(mediaType, Seq("boundary", "report-type"))
         case MultipartMediaType(_, _) => readParameters(mediaType, Seq("boundary"))
         case _ =>  readParameters(mediaType, Seq(), asciiToken)
       }
