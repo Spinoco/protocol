@@ -24,4 +24,12 @@ object ContentTypeSpec extends Properties("ContentType") {
     )
   }
 
+  property("report") = protect {
+    verify(
+      "multipart/report; boundary=\"----=_Part_389928_767501270.1520332185688\"; report-type=delivery-status"
+      , `Content-Type`(ContentType.MultiPartContent(MultipartMediaType("report", Map("boundary" -> "----=_Part_389928_767501270.1520332185688", "report-type" -> "delivery-status")), None))
+      , "multipart/report; boundary=\"----=_Part_389928_767501270.1520332185688\"; report-type=\"delivery-status\""
+    )
+  }
+
 }

@@ -171,6 +171,7 @@ object MediaType {
   val `multipart/signed`      = multipart("signed")
   val `multipart/encrypted`   = multipart("encrypted")
   val `multipart/byteranges`  = multipart("byteRanges")
+  val `multipart/report`      = multipart("report")
 
 
   val `text/asp`                  = txt("asp", "asp")
@@ -341,6 +342,7 @@ object MediaType {
     , `multipart/signed`
     , `multipart/encrypted`
     , `multipart/byteranges`
+    , `multipart/report`
     , `text/asp`
     , `text/cache-manifest`
     , `text/calendar`
