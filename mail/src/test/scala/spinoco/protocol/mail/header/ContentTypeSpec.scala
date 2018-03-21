@@ -32,4 +32,12 @@ object ContentTypeSpec extends Properties("ContentType") {
     )
   }
 
+  property("signed") = protect {
+    verify(
+      "multipart/signed; protocol=\"application/x-pkcs7-signature\"; micalg=SHA1; boundary=\"----_NextPart_201803092105523712.SIGNED\""
+      , `Content-Type`(ContentType.MultiPartContent(MultipartMediaType("signed", Map("protocol" -> "application/x-pkcs7-signature", "micalg" -> "SHA1", "boundary" -> "----_NextPart_201803092105523712.SIGNED")), None))
+      , "multipart/signed; protocol=\"application/x-pkcs7-signature\"; micalg=\"SHA1\"; boundary=\"----_NextPart_201803092105523712.SIGNED\""
+    )
+  }
+
 }
