@@ -15,6 +15,7 @@ import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 import util.attemptFromEither
 import util.attempt
 
+import scala.collection.GenTraversable
 
 object codec {
 
@@ -208,7 +209,7 @@ object codec {
 
   /** int codec, that allows min/max bounds inclusive **/
   def intBounded(codec:Codec[Int])(min:Int, max:Int):Codec[Int] =
-    guard(uint16) { i =>
+    guard(codec) { i =>
       if (i < min || i > max) Some(Err(s"int is required to be within bounds [$min,$max] but is $i"))
       else None
     }
@@ -638,22 +639,20 @@ object codec {
   }
 
 
-  /** will encode vectors of `A` with min size of at least `sz`  **/
-  def minItems[A](sz:Int)(codec: Codec[Vector[A]]): Codec[Vector[A]] = {
-    def validate(v: Vector[A]): Attempt[Vector[A]] = {
-      if (v.size >= sz) Attempt.successful(v)
-      else Attempt.failure(Err(s"Expected at least $sz items, got ${v.size}"))
+  /** will encode a collection of `A` with min size of at least `sz`  **/
+  def minItems[A, F[_] <: GenTraversable[_]](sz:Int)(codec: Codec[F[A]]): Codec[F[A]] = {
+    guard(codec){ fa =>
+      if (fa.size >= sz) None
+      else Some(Err(s"Expected at least $sz items, got ${fa.size}"))
     }
-    codec.exmap(validate, validate)
   }
 
-  /** will encode vectors of `A` with at max size of `sz` **/
-  def maxItems[A](sz:Int)(codec: Codec[Vector[A]]): Codec[Vector[A]] = {
-    def validate(v: Vector[A]): Attempt[Vector[A]] = {
-      if (v.size <= sz) Attempt.successful(v)
-      else Attempt.failure(Err(s"Expected at max $sz items, got ${v.size}"))
+  /** will encode a collection of `A` with at max size of `sz` **/
+  def maxItems[A, F[_] <: GenTraversable[_]](sz:Int)(codec: Codec[F[A]]): Codec[F[A]] = {
+    guard(codec){ fa =>
+      if (fa.size <= sz) None
+      else Some(Err(s"Expected at max $sz items, got ${fa.size}"))
     }
-    codec.exmap(validate, validate)
   }
 
   implicit class ByteVectorCodecSyntax(val self: Codec[ByteVector]) extends AnyVal {
@@ -678,7 +677,44 @@ object codec {
     def decodeAs[A](a: A):Codec[A] = self.xmap(_ => a, _ => ())
   }
 
+  /**
+    * A maybe value, that should be encoded only if there is some value present.
+    *
+    * Tries to decode the value using the given codec, if the decode fails we return None.
+    *
+    * @param codec  The codec to attempt to be decoded/encoded
+    */
+  def maybe[A](codec: Codec[A]): Codec[Option[A]] = {
+    fallback(
+      provide(Option.empty[A])
+      , codec.xmap[Some[A]](a => Some(a), _.get)
+    ).xmap[Option[A]](_.merge, _.fold[Either[Option[A], Some[A]]](Left(Option.empty))(bv => Right(Some(bv))))
+  }
 
+  /**
+    * Codec with a default value that is implied if there is no value in the supplied bits.
+    *
+    * If the value that is to be encoded is equal to the default value of the codec, then
+    * we do not encode anything.
+    *
+    * @param codec  The codec to attempt to be decoded
+    */
+  def default[A](codec: Codec[A], default: A): Codec[A] = {
+    maybe(codec).xmap(
+      _.getOrElse(default)
+      , a =>
+        if (a == default) None
+        else Some(a)
+    )
+  }
 
+  /**
+    * Codec for a set of a given `A`.
+    *
+    * @param codec The codec of `A` that is to be used for decoding values.
+    */
+  def set[A](codec: Codec[A]): Codec[Set[A]] = {
+    scodec.codecs.list(codec).xmap(_.toSet, _.toList)
+  }
 
 }
