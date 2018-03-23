@@ -1,7 +1,7 @@
 package spinoco.protocol.ldap
 
 import scodec.Codec
-import spinoco.protocol.ldap.elements.LDAPResult
+import spinoco.protocol.ldap.elements.LdapResult
 
 /**
   * A search request is completed, no more entries to follow.
@@ -9,13 +9,13 @@ import spinoco.protocol.ldap.elements.LDAPResult
   * @param result The status how the request ended.
   */
 case class SearchResultDone(
-  result: LDAPResult
+  result: LdapResult
 ) extends ProtocolOp
 
 object SearchResultDone {
 
   // Codec without the BER wrapping
   val codecInner: Codec[SearchResultDone] =
-    LDAPResult.codecInner.xmap(SearchResultDone(_), _.result)
+    LdapResult.codecInner.xmap(SearchResultDone(_), _.result)
 
 }

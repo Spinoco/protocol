@@ -2,8 +2,8 @@ package spinoco.protocol.ldap
 
 import scodec.Codec
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.ClassTag
-import spinoco.protocol.ldap.elements.{LDAPDN, RelativeLDAPDN}
+import spinoco.protocol.asn.ber.BerClass
+import spinoco.protocol.ldap.elements.{LdapDN, RelativeLdapDN}
 import spinoco.protocol.common
 
 /**
@@ -16,20 +16,20 @@ import spinoco.protocol.common
   * @param newSuperior    The new root for this entry and its subtree.
   */
 case class ModifyDNRequest(
-  entry: LDAPDN
-  , newRdn: RelativeLDAPDN
+  entry: LdapDN
+  , newRdn: RelativeLdapDN
   , deleteOldRdn: Boolean
-  , newSuperior: Option[LDAPDN]
+  , newSuperior: Option[LdapDN]
 ) extends ProtocolOp
 
 object ModifyDNRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[ModifyDNRequest] =
-    (LDAPDN.codec ::
-      RelativeLDAPDN.codec ::
+    (LdapDN.codec ::
+      RelativeLdapDN.codec ::
       boolean ::
-      common.codec.maybe(ber.codecSingle(ClassTag.Context, false, 0)(LDAPDN.codecInner))
+      common.codec.maybe(ber.codecSingle(BerClass.Context, false, 0)(LdapDN.codecInner))
     ).as[ModifyDNRequest]
 
 

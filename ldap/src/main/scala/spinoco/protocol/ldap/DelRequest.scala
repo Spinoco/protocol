@@ -1,7 +1,7 @@
 package spinoco.protocol.ldap
 
 import scodec.Codec
-import spinoco.protocol.ldap.elements.LDAPDN
+import spinoco.protocol.ldap.elements.LdapDN
 
 /**
   * Request to delete a given entry.
@@ -9,13 +9,13 @@ import spinoco.protocol.ldap.elements.LDAPDN
   * @param entry  The entry to be deleted.
   */
 case class DelRequest(
-  entry: LDAPDN
+  entry: LdapDN
 ) extends ProtocolOp
 
 object DelRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[DelRequest] =
-    LDAPDN.codecInner.xmap(DelRequest(_), _.entry)
+    LdapDN.codecInner.xmap(DelRequest(_), _.entry)
 
 }

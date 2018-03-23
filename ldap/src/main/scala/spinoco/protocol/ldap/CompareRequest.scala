@@ -1,7 +1,7 @@
 package spinoco.protocol.ldap
 
 import scodec.Codec
-import spinoco.protocol.ldap.elements.{AttributeValueAssertion, LDAPDN}
+import spinoco.protocol.ldap.elements.{AttributeValueAssertion, LdapDN}
 
 /**
   * A request to compare a given attribute of a given entry with the provided value.
@@ -10,7 +10,7 @@ import spinoco.protocol.ldap.elements.{AttributeValueAssertion, LDAPDN}
   * @param ava    The attribute that is to be compared
   */
 case class CompareRequest(
-  entry: LDAPDN
+  entry: LdapDN
   , ava: AttributeValueAssertion
 ) extends ProtocolOp
 
@@ -18,6 +18,6 @@ object CompareRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[CompareRequest] =
-    (LDAPDN.codec :: AttributeValueAssertion.codec).as[CompareRequest]
+    (LdapDN.codec :: AttributeValueAssertion.codec).as[CompareRequest]
 
 }

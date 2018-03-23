@@ -17,7 +17,7 @@ import spinoco.protocol.ldap
   *                       correct type specified by `controlType`
   */
 case class Control(
-  controlType: LDAPOID
+  controlType: LdapOID
   , criticality: Boolean
   , controlValue: Option[ByteVector]
 )
@@ -26,7 +26,7 @@ object Control {
 
   val codec: Codec[Control] =
     ber.sequence((
-      LDAPOID.codec ::
+      LdapOID.codec ::
       default(ldap.boolean, false) ::
       maybe(ber.octetStringPrimitive)
     ).as[Control])

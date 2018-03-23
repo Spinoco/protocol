@@ -3,8 +3,8 @@ package spinoco.protocol.ldap
 import scodec.Codec
 import scodec.bits.ByteVector
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.ClassTag
-import spinoco.protocol.ldap.elements.{LDAPOID, LDAPResult}
+import spinoco.protocol.asn.ber.BerClass
+import spinoco.protocol.ldap.elements.{LdapOID, LdapResult}
 import spinoco.protocol.common
 
 /**
@@ -15,8 +15,8 @@ import spinoco.protocol.common
   * @param responseValue  The value of the response.
   */
 case class ExtendedResponse(
-  response: LDAPResult
-  , responseName: Option[LDAPOID]
+  response: LdapResult
+  , responseName: Option[LdapOID]
   , responseValue: Option[ByteVector]
 ) extends ProtocolOp
 
@@ -24,9 +24,9 @@ object ExtendedResponse {
 
   // Codec without the BER wrapping
   val codecInner: Codec[ExtendedResponse] =
-    (LDAPResult.codecInner ::
-     common.codec.maybe(ber.codecSingle(ClassTag.Context, false, 10)(LDAPOID.codecInner)) ::
-     common.codec.maybe(ber.codecSingle(ClassTag.Context, false, 11)(scodec.codecs.bytes))
+    (LdapResult.codecInner ::
+     common.codec.maybe(ber.codecSingle(BerClass.Context, false, 10)(LdapOID.codecInner)) ::
+     common.codec.maybe(ber.codecSingle(BerClass.Context, false, 11)(scodec.codecs.bytes))
     ).as[ExtendedResponse]
 
 }

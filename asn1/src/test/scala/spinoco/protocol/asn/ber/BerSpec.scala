@@ -31,35 +31,35 @@ object BerSpec extends Properties("BER"){
   }
 
   property("identifier.universal.primitive") = protect {
-    verify(Identifier(ClassTag.Universal, false, 2), BitVector.fromInt(0x02, 8))(identifier)
+    verify(Identifier(BerClass.Universal, false, 2), BitVector.fromInt(0x02, 8))(identifier)
   }
 
   property("identifier.universal.constructed") = protect {
-    verify(Identifier(ClassTag.Universal, true, 2), BitVector.fromInt(0x22, 8))(identifier)
+    verify(Identifier(BerClass.Universal, true, 2), BitVector.fromInt(0x22, 8))(identifier)
   }
 
   property("identifier.application.primitive") = protect {
-    verify(Identifier(ClassTag.Application, false, 2), BitVector.fromInt(0x42, 8))(identifier)
+    verify(Identifier(BerClass.Application, false, 2), BitVector.fromInt(0x42, 8))(identifier)
   }
 
   property("identifier.application.constructed") = protect {
-    verify(Identifier(ClassTag.Application, true, 2), BitVector.fromInt(0x62, 8))(identifier)
+    verify(Identifier(BerClass.Application, true, 2), BitVector.fromInt(0x62, 8))(identifier)
   }
 
   property("identifier.context.primitive") = protect {
-    verify(Identifier(ClassTag.Context, false, 2), BitVector.fromInt(0x82, 8))(identifier)
+    verify(Identifier(BerClass.Context, false, 2), BitVector.fromInt(0x82, 8))(identifier)
   }
 
   property("identifier.context.constructed") = protect {
-    verify(Identifier(ClassTag.Context, true, 2), BitVector.fromInt(0xA2, 8))(identifier)
+    verify(Identifier(BerClass.Context, true, 2), BitVector.fromInt(0xA2, 8))(identifier)
   }
 
   property("identifier.private.primitive") = protect {
-    verify(Identifier(ClassTag.Private, false, 2), BitVector.fromInt(0xC2, 8))(identifier)
+    verify(Identifier(BerClass.Private, false, 2), BitVector.fromInt(0xC2, 8))(identifier)
   }
 
   property("identifier.private.constructed") = protect {
-    verify(Identifier(ClassTag.Private, true, 2), BitVector.fromInt(0xE2, 8))(identifier)
+    verify(Identifier(BerClass.Private, true, 2), BitVector.fromInt(0xE2, 8))(identifier)
   }
 
   property("finite-length.insufficient") = protect {

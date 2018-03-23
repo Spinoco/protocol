@@ -1,7 +1,7 @@
 package spinoco.protocol.asn.ber
 
 /** The scope of the BER encoded tag. */
-object ClassTag extends Enumeration {
+object BerClass extends Enumeration {
 
   val Universal = Value(0)
   val Application = Value(1)

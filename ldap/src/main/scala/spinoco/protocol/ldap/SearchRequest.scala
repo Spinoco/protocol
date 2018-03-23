@@ -4,7 +4,7 @@ import scodec.Codec
 import spinoco.protocol.asn.ber
 import spinoco.protocol.common
 import spinoco.protocol.ldap.SearchRequest.{Aliases, SearchScope}
-import spinoco.protocol.ldap.elements.{AttributeSelector, Filter, LDAPDN}
+import spinoco.protocol.ldap.elements.{AttributeSelector, Filter, LdapDN}
 
 /**
   * Request to perform a LDAP search.
@@ -22,7 +22,7 @@ import spinoco.protocol.ldap.elements.{AttributeSelector, Filter, LDAPDN}
   * @param attributes     A selection of attributes to be returned for search entries that match this search.
   */
 case class SearchRequest(
-  baseObject: LDAPDN
+  baseObject: LdapDN
   , scope: SearchScope.Value
   , deferAliases: Aliases.Value
   , sizeLimit: Int
@@ -63,7 +63,7 @@ object SearchRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[SearchRequest] =
-    (LDAPDN.codec ::
+    (LdapDN.codec ::
      scodec.codecs.enumerated(ber.enumerated, SearchScope) ::
      scodec.codecs.enumerated(ber.enumerated, Aliases) ::
      common.codec.intBounded(ber.integer)(0, Int.MaxValue) ::

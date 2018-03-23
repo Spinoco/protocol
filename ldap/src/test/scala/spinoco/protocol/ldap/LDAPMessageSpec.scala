@@ -16,8 +16,6 @@ object LDAPMessageSpec extends Properties("LDAPMessage"){
       case Failure(err) =>
         Prop.falsified :| err.messageWithContext :| "Encode fail"
       case Successful(a) =>
-        println("Should have gotten: " + shouldBe.toHex)
-        println("Should buto gotten: " + a.toHex)
         a ?= shouldBe
     }) && (C.decode(shouldBe) match {
       case Failure(err) => Prop.falsified :| err.messageWithContext :| "Decode fail"
@@ -26,23 +24,23 @@ object LDAPMessageSpec extends Properties("LDAPMessage"){
   }
 
   property("bind.admin") = protect {
-    verify(LDAPMessage(
+    verify(LdapMessage(
       1
       , BindRequest(
         3
-        , LDAPDN.decode("dc=admin").require
+        , LdapDN.decode("dc=admin").require
         , BindRequest.Simple(ByteVector.encodeUtf8("admin").right.get)
       )
       , None
-    ), BitVector.fromValidHex("30190201016014020103040864633d61646d696e800561646d696e"))(LDAPMessage.codec)
+    ), BitVector.fromValidHex("30190201016014020103040864633d61646d696e800561646d696e"))(LdapMessage.codec)
   }
 
   property("search.root") = protect {
     val data = BitVector.fromValidHex("3038020102633304000a01000a0103020100020100010100870b6f626a656374436c61737330130411737562736368656d61537562656e747279")
-    verify(LDAPMessage(
+    verify(LdapMessage(
       2
       , SearchRequest(
-        baseObject = LDAPDN.decode("").require
+        baseObject = LdapDN.decode("").require
         , scope = SearchRequest.SearchScope.baseObject
         , deferAliases = SearchRequest.Aliases.derefAlways
         , sizeLimit = 0
@@ -52,16 +50,16 @@ object LDAPMessageSpec extends Properties("LDAPMessage"){
         , attributes = Vector(AttributeSelector.Description(AttributeDescription.TextDescriptor("subschemaSubentry")))
       )
       , None
-    ), data)(LDAPMessage.codec)
+    ), data)(LdapMessage.codec)
   }
 
   property("search.with-and-filter") = protect {
 
     val data = BitVector.fromValidHex("3071020102636c041164633d7965616c696e6b2c64633d636f6d0a01020a0100020132020100010100a00f8702636ea4090402736e300380014a30370402636e0402736e040b646973706c61794e616d6504066d6f62696c65040f74656c6570686f6e654e756d6265720407697050686f6e65")
-    verify(LDAPMessage(
+    verify(LdapMessage(
       2
       , SearchRequest(
-        baseObject = LDAPDN.decode("dc=yealink,dc=com").require
+        baseObject = LdapDN.decode("dc=yealink,dc=com").require
         , scope = SearchRequest.SearchScope.wholeSubtree
         , deferAliases = SearchRequest.Aliases.neverDerefAliases
         , sizeLimit = 50
@@ -78,25 +76,25 @@ object LDAPMessageSpec extends Properties("LDAPMessage"){
         )
       )
       , None
-    ), data)(LDAPMessage.codec)
+    ), data)(LdapMessage.codec)
   }
 
   property("abandon") = protect {
     val data = BitVector.fromValidHex("3006020103500102")
-    verify(LDAPMessage(
+    verify(LdapMessage(
       3
-      , AbandonRequest(tag[LDAPMessage](2))
+      , AbandonRequest(tag[LdapMessage](2))
       , None
-    ), data)(LDAPMessage.codec)
+    ), data)(LdapMessage.codec)
   }
 
   property("unbind") = protect {
     val data = BitVector.fromValidHex("30050201044200")
-    verify(LDAPMessage(
+    verify(LdapMessage(
       4
       , UnbindRequest
       , None
-    ), data)(LDAPMessage.codec)
+    ), data)(LdapMessage.codec)
   }
 
 }

@@ -1,17 +1,17 @@
 package spinoco.protocol.ldap
 
 import scodec.Codec
-import spinoco.protocol.ldap.elements.LDAPResult
+import spinoco.protocol.ldap.elements.LdapResult
 
 /** Response to the [[ModifyRequest]] **/
 case class ModifyResponse(
-  response: LDAPResult
+  response: LdapResult
 ) extends ProtocolOp
 
 object ModifyResponse {
 
   // Codec without the BER wrapping
   val codecInner: Codec[ModifyResponse] =
-    LDAPResult.codecInner.xmap(ModifyResponse(_), _.response)
+    LdapResult.codecInner.xmap(ModifyResponse(_), _.response)
 
 }

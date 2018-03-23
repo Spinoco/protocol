@@ -4,9 +4,9 @@ import scodec.Codec
 import scodec.codecs
 import scodec.bits.ByteVector
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.{ClassTag, Identifier}
+import spinoco.protocol.asn.ber.{BerClass, Identifier}
 import spinoco.protocol.ldap.BindRequest.AuthenticationChoice
-import spinoco.protocol.ldap.elements.LDAPDN
+import spinoco.protocol.ldap.elements.LdapDN
 import spinoco.protocol.common.codec._
 
 
@@ -19,7 +19,7 @@ import spinoco.protocol.common.codec._
   */
 case class BindRequest(
   version: Int
-  , name: LDAPDN
+  , name: LdapDN
   , auth: AuthenticationChoice
 ) extends ProtocolOp
 
@@ -42,11 +42,11 @@ object BindRequest {
 
   val authenticationCodec: Codec[AuthenticationChoice] =
     ber.discriminated[AuthenticationChoice]
-    .typecase(Identifier(ClassTag.Context, false, 0), ber.finiteLength(simpleAuthCodec))
-    .typecase(Identifier(ClassTag.Context, false, 3), ber.finiteLength(saslAuthCodec))
+    .typecase(Identifier(BerClass.Context, false, 0), ber.finiteLength(simpleAuthCodec))
+    .typecase(Identifier(BerClass.Context, false, 3), ber.finiteLength(saslAuthCodec))
 
   // Codec without the BER wrapping
   val codecInner: Codec[BindRequest] =
-    (intBounded(ber.integer)(1, 127) :: LDAPDN.codec :: authenticationCodec).as[BindRequest]
+    (intBounded(ber.integer)(1, 127) :: LdapDN.codec :: authenticationCodec).as[BindRequest]
 
 }

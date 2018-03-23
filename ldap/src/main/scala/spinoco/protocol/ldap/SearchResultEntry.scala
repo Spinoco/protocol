@@ -2,7 +2,7 @@ package spinoco.protocol.ldap
 
 import scodec.Codec
 import spinoco.protocol.ldap.elements.PartialAttribute.PartialAttributeList
-import spinoco.protocol.ldap.elements.{LDAPDN, PartialAttribute}
+import spinoco.protocol.ldap.elements.{LdapDN, PartialAttribute}
 
 /**
   * A result of search. Contains one resulting entry.
@@ -12,7 +12,7 @@ import spinoco.protocol.ldap.elements.{LDAPDN, PartialAttribute}
   *                   they may only contain descriptions of their attributes.
   */
 case class SearchResultEntry(
-  objectName: LDAPDN
+  objectName: LdapDN
   , attributes: PartialAttributeList
 ) extends ProtocolOp
 
@@ -20,6 +20,6 @@ object SearchResultEntry {
 
   // Codec without the BER wrapping
   val codecInner: Codec[SearchResultEntry] =
-    (LDAPDN.codec :: PartialAttribute.listCodec).as[SearchResultEntry]
+    (LdapDN.codec :: PartialAttribute.listCodec).as[SearchResultEntry]
 
 }

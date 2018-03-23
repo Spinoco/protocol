@@ -3,7 +3,7 @@ package spinoco.protocol
 import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.ClassTag
+import spinoco.protocol.asn.ber.BerClass
 
 package object ldap {
 
@@ -55,6 +55,6 @@ package object ldap {
     def sizeBound: SizeBound = SizeBound.exact(8)
   }
 
-  val boolean: Codec[Boolean] = ber.codecSingle(ClassTag.Universal, false, 1)(booleanLDAP)
+  val boolean: Codec[Boolean] = ber.codecSingle(BerClass.Universal, false, 1)(booleanLDAP)
 
 }

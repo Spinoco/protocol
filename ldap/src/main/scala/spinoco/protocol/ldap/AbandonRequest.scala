@@ -15,13 +15,13 @@ import shapeless.tag.@@
   * @param msgId  The id of the message that should have its progress cancelled.
   */
 case class AbandonRequest(
-  msgId: Int @@ LDAPMessage
+  msgId: Int @@ LdapMessage
 ) extends ProtocolOp
 
 object AbandonRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[AbandonRequest] =
-    scodec.codecs.vint.xmap(msgId => AbandonRequest(tag[LDAPMessage](msgId)), _.msgId)
+    scodec.codecs.vint.xmap(msgId => AbandonRequest(tag[LdapMessage](msgId)), _.msgId)
 
 }

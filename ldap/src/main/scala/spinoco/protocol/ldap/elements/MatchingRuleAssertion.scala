@@ -2,7 +2,7 @@ package spinoco.protocol.ldap.elements
 
 import scodec.Codec
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.ClassTag
+import spinoco.protocol.asn.ber.BerClass
 import spinoco.protocol.ldap._
 import spinoco.protocol.{common, ldap}
 
@@ -39,9 +39,9 @@ object MatchingRuleAssertion {
 
   // Codec without the BER wrapping
   val codecInner: Codec[MatchingRuleAssertion] =
-    (common.codec.maybe(ber.codecSingle(ClassTag.Context, false, 1)(matchingRuleIdInner)) ::
-    common.codec.maybe(ber.codecSingle(ClassTag.Context, false, 2)(AttributeDescription.codecInner)) ::
-    ber.codecSingle(ClassTag.Context, false, 3)(assertionValueInner) ::
-    common.codec.default(ber.codecSingle(ClassTag.Context, false, 4)(ldap.boolean), false)).as[MatchingRuleAssertion]
+    (common.codec.maybe(ber.codecSingle(BerClass.Context, false, 1)(matchingRuleIdInner)) ::
+    common.codec.maybe(ber.codecSingle(BerClass.Context, false, 2)(AttributeDescription.codecInner)) ::
+    ber.codecSingle(BerClass.Context, false, 3)(assertionValueInner) ::
+    common.codec.default(ber.codecSingle(BerClass.Context, false, 4)(ldap.boolean), false)).as[MatchingRuleAssertion]
 
 }

@@ -2,7 +2,7 @@ package spinoco.protocol.ldap.elements
 
 import scodec.Codec
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.{ClassTag, Identifier}
+import spinoco.protocol.asn.ber.{BerClass, Identifier}
 import spinoco.protocol.common
 
 /** Filter for [[spinoco.protocol.ldap.SearchRequest]] **/
@@ -142,15 +142,15 @@ object Filter {
 
   def codec: Codec[Filter] =
     ber.discriminated[Filter]
-    .typecase(Identifier(ClassTag.Context, true, 0), ber.finiteLength(andCodecInner))
-    .typecase(Identifier(ClassTag.Context, true, 1), ber.finiteLength(orCodecInner))
-    .typecase(Identifier(ClassTag.Context, true, 2), ber.finiteLength(notCodecInner))
-    .typecase(Identifier(ClassTag.Context, false, 3), ber.finiteLength(equalityCodecInner))
-    .typecase(Identifier(ClassTag.Context, true, 4), ber.finiteLength(substringCodecInner))
-    .typecase(Identifier(ClassTag.Context, false, 5), ber.finiteLength(greaterOrEqualCodecInner))
-    .typecase(Identifier(ClassTag.Context, false, 6), ber.finiteLength(lessOrEqualCodec))
-    .typecase(Identifier(ClassTag.Context, false, 7), ber.finiteLength(presentCodecInner))
-    .typecase(Identifier(ClassTag.Context, false, 8), ber.finiteLength(approxMatchCodecInner))
-    .typecase(Identifier(ClassTag.Context, false, 9), ber.finiteLength(extensibleMatchCodecInner))
+    .typecase(Identifier(BerClass.Context, true, 0), ber.finiteLength(andCodecInner))
+    .typecase(Identifier(BerClass.Context, true, 1), ber.finiteLength(orCodecInner))
+    .typecase(Identifier(BerClass.Context, true, 2), ber.finiteLength(notCodecInner))
+    .typecase(Identifier(BerClass.Context, false, 3), ber.finiteLength(equalityCodecInner))
+    .typecase(Identifier(BerClass.Context, true, 4), ber.finiteLength(substringCodecInner))
+    .typecase(Identifier(BerClass.Context, false, 5), ber.finiteLength(greaterOrEqualCodecInner))
+    .typecase(Identifier(BerClass.Context, false, 6), ber.finiteLength(lessOrEqualCodec))
+    .typecase(Identifier(BerClass.Context, false, 7), ber.finiteLength(presentCodecInner))
+    .typecase(Identifier(BerClass.Context, false, 8), ber.finiteLength(approxMatchCodecInner))
+    .typecase(Identifier(BerClass.Context, false, 9), ber.finiteLength(extensibleMatchCodecInner))
 
 }

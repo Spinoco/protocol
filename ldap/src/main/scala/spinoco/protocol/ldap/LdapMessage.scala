@@ -2,7 +2,7 @@ package spinoco.protocol.ldap
 
 import scodec.Codec
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.ClassTag
+import spinoco.protocol.asn.ber.BerClass
 import spinoco.protocol.common.codec.maybe
 import spinoco.protocol.ldap.elements.Control
 
@@ -14,19 +14,19 @@ import spinoco.protocol.ldap.elements.Control
   * @param protocolOp   The LDAP operation to be performed. This includes responses from server to client.
   * @param controls     The possible additional arguments for the protocol op.
   */
-case class LDAPMessage(
+case class LdapMessage(
   messageId: Int
   , protocolOp: ProtocolOp
   , controls: Option[Vector[Control]]
 )
 
-object LDAPMessage {
+object LdapMessage {
 
-  lazy val codec: Codec[LDAPMessage] =
+  lazy val codec: Codec[LdapMessage] =
     ber.sequence((
       ber.integer ::
       ProtocolOp.codec ::
-      maybe(ber.codecSingle(ClassTag.Context, true, 0)(scodec.codecs.vector(Control.codec)))
-    ).as[LDAPMessage])
+      maybe(ber.codecSingle(BerClass.Context, true, 0)(scodec.codecs.vector(Control.codec)))
+    ).as[LdapMessage])
 
 }

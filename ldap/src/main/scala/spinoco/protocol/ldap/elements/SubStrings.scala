@@ -5,7 +5,7 @@ import scodec.bits.ByteVector
 import spinoco.protocol.ldap.assertionValueInner
 import scodec.codecs._
 import spinoco.protocol.asn.ber
-import spinoco.protocol.asn.ber.{ClassTag, Identifier}
+import spinoco.protocol.asn.ber.{BerClass, Identifier}
 import spinoco.protocol.ldap.elements.SubStrings.{Anywhere, Final, Initial}
 
 /**
@@ -31,9 +31,9 @@ object SubStrings {
 
   val codecSubStringAssertion: Codec[SubStringAssertionType] =
     ber.discriminated[SubStringAssertionType]
-    .typecase(Identifier(ClassTag.Context, false, 0), ber.finiteLength(assertionValueInner.xmap[Initial](Initial, _.value)))
-    .typecase(Identifier(ClassTag.Context, false, 1), ber.finiteLength(assertionValueInner.xmap[Anywhere](Anywhere, _.value)))
-    .typecase(Identifier(ClassTag.Context, false, 2), ber.finiteLength(assertionValueInner.xmap[Final](Final, _.value)))
+    .typecase(Identifier(BerClass.Context, false, 0), ber.finiteLength(assertionValueInner.xmap[Initial](Initial, _.value)))
+    .typecase(Identifier(BerClass.Context, false, 1), ber.finiteLength(assertionValueInner.xmap[Anywhere](Anywhere, _.value)))
+    .typecase(Identifier(BerClass.Context, false, 2), ber.finiteLength(assertionValueInner.xmap[Final](Final, _.value)))
 
 
   val codec: Codec[SubStrings] =

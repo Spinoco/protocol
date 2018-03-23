@@ -2,7 +2,7 @@ package spinoco.protocol.ldap
 
 import scodec.Codec
 import spinoco.protocol.asn.ber
-import spinoco.protocol.ldap.elements.{Attribute, LDAPDN}
+import spinoco.protocol.ldap.elements.{Attribute, LdapDN}
 
 /**
   * Adds an entry with a given attributes.
@@ -12,7 +12,7 @@ import spinoco.protocol.ldap.elements.{Attribute, LDAPDN}
   *
   */
 case class AddRequest(
-  entry: LDAPDN
+  entry: LdapDN
   , attributes: Vector[Attribute]
 ) extends ProtocolOp
 
@@ -20,6 +20,6 @@ object AddRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[AddRequest] =
-    (LDAPDN.codec :: ber.sequence(scodec.codecs.vector(Attribute.codec))).as[AddRequest]
+    (LdapDN.codec :: ber.sequence(scodec.codecs.vector(Attribute.codec))).as[AddRequest]
 
 }

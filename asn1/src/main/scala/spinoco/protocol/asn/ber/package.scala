@@ -20,25 +20,22 @@ package object ber {
 
       def decode(bits: BitVector): Attempt[DecodeResult[Identifier]] = {
         Attempt.fromEither(
-          (for {
-            classTagBits <- bits.acquire(2).right
-            classTag <- Try(ClassTag(classTagBits.toInt(false))).toEither.left.map(_.toString).right
-            constructed = bits.get(2)
-            remaining = bits.drop(3)
-            numberTagBits <- remaining.acquire(5).right
-            numberTag = numberTagBits.toInt(false)
-            _ <-
-              if (numberTag >= 31) Left("Tag number can only be 0 - 30, we do not support the extended identifier octets").right
-              else Right(()).right
-          } yield DecodeResult(Identifier(classTag, constructed, numberTag), remaining.drop(5)))
-            .left.map(Err(_))
+          bits.acquire(2).right.flatMap{classTagBits =>
+          Try(BerClass(classTagBits.toInt(false))).toOption.toRight("Could not get class tag from: " + classTagBits).right.flatMap{ classTag =>
+            val constructed = bits.get(2)
+            val remaining = bits.drop(3)
+            remaining.acquire(5).right.flatMap { numberTagBits =>
+              val numberTag = numberTagBits.toInt(false)
+              if (numberTag >= 31) Left("Tag number can only be 0 - 30, the extended identifier octets are not supported")
+              else Right(DecodeResult(Identifier(classTag, constructed, numberTag), remaining.drop(5)))
+          }}}.left.map(Err(_))
         )
       }
 
       def encode(value: Identifier): Attempt[BitVector] = {
         if (value.numberTag <= 30 && value.numberTag >= 0) {
           Attempt.successful(
-            BitVector.fromInt(value.classTag.id, 2) ++
+            BitVector.fromInt(value.berClass.id, 2) ++
               BitVector.bit(value.constructed) ++
               BitVector.fromInt(value.numberTag, 5)
           )
@@ -149,13 +146,13 @@ package object ber {
   /**
     * Codec for a single BER encoded codec.
     *
-    * @param classTag     The class tag of the value that is to be encoded.
+    * @param berClass     The class tag of the value that is to be encoded.
     * @param constructed  Whether the codec is constructed, ie is made out of other BER encoded data.
     * @param numberTag    The number tag to specify the data within the class tag scope.
     * @param codec        The codec for the data withing this BER tag.
     */
-  def codecSingle[A](classTag: ClassTag.Value, constructed: Boolean, numberTag: Int)(codec: Codec[A]): Codec[A] = {
-    val identifierValue = Identifier(classTag, constructed, numberTag)
+  def codecSingle[A](berClass: BerClass.Value, constructed: Boolean, numberTag: Int)(codec: Codec[A]): Codec[A] = {
+    val identifierValue = Identifier(berClass, constructed, numberTag)
     identifier.consume[A] {
       case `identifierValue` => finiteLength(codec)
       case other => scodec.codecs.fail(Err(s"Expected number tag: $numberTag but gotten $other"))
@@ -170,40 +167,40 @@ package object ber {
 
   val endOfContent: BitVector = BitVector.fromInt(0xFF, 1)
 
-  val boolean: Codec[Boolean] = codecSingle(ClassTag.Universal, false, 1)(scodec.codecs.bool)
+  val boolean: Codec[Boolean] = codecSingle(BerClass.Universal, false, 1)(scodec.codecs.bool)
 
-  lazy val integer: Codec[Int] = codecSingle(ClassTag.Universal, false, 2)(scodec.codecs.vint)
+  lazy val integer: Codec[Int] = codecSingle(BerClass.Universal, false, 2)(scodec.codecs.vint)
 
-  val bitStringPrimitive: Codec[BitVector] = codecSingle(ClassTag.Universal, false, 3)(scodec.codecs.bits)
-  val bitStringConstructed: Codec[BitVector] = codecSingle(ClassTag.Universal, true, 3)(scodec.codecs.bits)
+  val bitStringPrimitive: Codec[BitVector] = codecSingle(BerClass.Universal, false, 3)(scodec.codecs.bits)
+  val bitStringConstructed: Codec[BitVector] = codecSingle(BerClass.Universal, true, 3)(scodec.codecs.bits)
 
-  val octetStringPrimitive: Codec[ByteVector] = codecSingle(ClassTag.Universal, false, 4)(scodec.codecs.bytes)
-  val octetStringConstructed: Codec[ByteVector] = codecSingle(ClassTag.Universal, true, 4)(scodec.codecs.bytes)
+  val octetStringPrimitive: Codec[ByteVector] = codecSingle(BerClass.Universal, false, 4)(scodec.codecs.bytes)
+  val octetStringConstructed: Codec[ByteVector] = codecSingle(BerClass.Universal, true, 4)(scodec.codecs.bytes)
 
-  val NULL: Codec[Unit] = codecSingle(ClassTag.Universal, false, 5)(scodec.codecs.provide(()))
+  val NULL: Codec[Unit] = codecSingle(BerClass.Universal, false, 5)(scodec.codecs.provide(()))
 
-  val objectIdentifier: Codec[String] = codecSingle(ClassTag.Universal, false, 6)(scodec.codecs.utf8)
+  val objectIdentifier: Codec[String] = codecSingle(BerClass.Universal, false, 6)(scodec.codecs.utf8)
 
-  val objectDescriptor: Codec[String] = codecSingle(ClassTag.Universal, false, 7)(scodec.codecs.utf8)
+  val objectDescriptor: Codec[String] = codecSingle(BerClass.Universal, false, 7)(scodec.codecs.utf8)
 
-  val external: Codec[String] = codecSingle(ClassTag.Universal, true, 8)(scodec.codecs.utf8)
+  val external: Codec[String] = codecSingle(BerClass.Universal, true, 8)(scodec.codecs.utf8)
 
-  val real: Codec[Float] = codecSingle(ClassTag.Universal, false, 9)(scodec.codecs.float)
+  val real: Codec[Float] = codecSingle(BerClass.Universal, false, 9)(scodec.codecs.float)
 
-  val enumerated: Codec[Int] = codecSingle(ClassTag.Universal, false, 10)(scodec.codecs.vint)
+  val enumerated: Codec[Int] = codecSingle(BerClass.Universal, false, 10)(scodec.codecs.vint)
 
-  val embeddedPDV: Codec[String] = codecSingle(ClassTag.Universal, true, 11)(scodec.codecs.utf8)
+  val embeddedPDV: Codec[String] = codecSingle(BerClass.Universal, true, 11)(scodec.codecs.utf8)
 
-  val utf8StringPrimitive: Codec[String] = codecSingle(ClassTag.Universal, false, 12)(scodec.codecs.utf8)
-  val utf8StringConstructed: Codec[String] = codecSingle(ClassTag.Universal, true, 12)(scodec.codecs.utf8)
+  val utf8StringPrimitive: Codec[String] = codecSingle(BerClass.Universal, false, 12)(scodec.codecs.utf8)
+  val utf8StringConstructed: Codec[String] = codecSingle(BerClass.Universal, true, 12)(scodec.codecs.utf8)
 
-  val relativeOID: Codec[String] = codecSingle(ClassTag.Universal, false, 13)(scodec.codecs.utf8)
+  val relativeOID: Codec[String] = codecSingle(BerClass.Universal, false, 13)(scodec.codecs.utf8)
 
   //14 - 15 reserved
 
-  def sequence[A](consume: Codec[A]): Codec[A] = codecSingle(ClassTag.Universal, true, 16)(consume)
+  def sequence[A](consume: Codec[A]): Codec[A] = codecSingle(BerClass.Universal, true, 16)(consume)
 
-  def set[A](consume: Codec[A]): Codec[A] = codecSingle(ClassTag.Universal, true, 17)(consume)
+  def set[A](consume: Codec[A]): Codec[A] = codecSingle(BerClass.Universal, true, 17)(consume)
 
 
 }

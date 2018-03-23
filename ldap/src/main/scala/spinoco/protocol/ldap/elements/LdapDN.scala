@@ -3,24 +3,24 @@ package spinoco.protocol.ldap.elements
 import scodec.bits.ByteVector
 import scodec.{Attempt, Codec, Err}
 import spinoco.protocol.ldap
-import spinoco.protocol.ldap.elements.LDAPDN.RelativeDistinguishedName
+import spinoco.protocol.ldap.elements.LdapDN.RelativeDistinguishedName
 
 /**
   * Representation of distinguished name, defined in RFC 4514.
   *
   * @param names The vector of relative names. This vector can be empty, that denotes the root object.
   */
-case class LDAPDN(
+case class LdapDN(
   names: Vector[RelativeDistinguishedName]
 )
 
-object LDAPDN {
+object LdapDN {
 
   // Codec with BER wrapper around it
-  val codec: Codec[LDAPDN] = ldap.ldapString.exmap(decode, encode)
+  val codec: Codec[LdapDN] = ldap.ldapString.exmap(decode, encode)
 
   // Codec without the BER wrapping
-  val codecInner: Codec[LDAPDN] = ldap.ldapStringInner.exmap(decode, encode)
+  val codecInner: Codec[LdapDN] = ldap.ldapStringInner.exmap(decode, encode)
 
   /** A set of values that distinguish an unique entry. Has to be nonempty. **/
   case class RelativeDistinguishedName(
@@ -58,15 +58,15 @@ object LDAPDN {
     *
     * @param string The string encoded LDAPDN.
     */
-  def decode(string: String): Attempt[LDAPDN] = {
-    def go(remaining: String, acc: String, parsedRelative: Vector[RelativeDistinguishedName], parsedAttributes: Set[AttributeTypeAndValue]): Attempt[LDAPDN] = {
+  def decode(string: String): Attempt[LdapDN] = {
+    def go(remaining: String, acc: String, parsedRelative: Vector[RelativeDistinguishedName], parsedAttributes: Set[AttributeTypeAndValue]): Attempt[LdapDN] = {
       remaining.headOption match {
         case None =>
           if (acc.isEmpty) {
-            Attempt.successful(LDAPDN(parsedRelative))
+            Attempt.successful(LdapDN(parsedRelative))
           } else {
             decodeTypeAndValue(acc) match {
-              case Attempt.Successful(attr) => Attempt.successful(LDAPDN(parsedRelative :+ RelativeDistinguishedName(parsedAttributes + attr)))
+              case Attempt.Successful(attr) => Attempt.successful(LdapDN(parsedRelative :+ RelativeDistinguishedName(parsedAttributes + attr)))
               case Attempt.Failure(err) => Attempt.Failure(err)
             }
           }
@@ -108,7 +108,7 @@ object LDAPDN {
     *
     * @param dn The LDAPDN to be encoded.
     */
-  def encode(dn: LDAPDN): Attempt[String] = {
+  def encode(dn: LdapDN): Attempt[String] = {
     dn.names.foldLeft(Attempt.successful(Vector.empty[String])){ case (acc, relative) =>
       acc.flatMap{ curr =>
         encodeRelative(relative).map(curr :+ _ )

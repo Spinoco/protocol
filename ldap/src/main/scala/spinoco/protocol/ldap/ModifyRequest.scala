@@ -3,7 +3,7 @@ package spinoco.protocol.ldap
 import scodec.Codec
 import spinoco.protocol.asn.ber
 import spinoco.protocol.ldap.ModifyRequest.Change
-import spinoco.protocol.ldap.elements.{LDAPDN, PartialAttribute}
+import spinoco.protocol.ldap.elements.{LdapDN, PartialAttribute}
 
 /**
   * A request to modify given entry with given changes.
@@ -12,7 +12,7 @@ import spinoco.protocol.ldap.elements.{LDAPDN, PartialAttribute}
   * @param changes  The changes to be applied to the entry.
   */
 case class ModifyRequest(
-  entry: LDAPDN
+  entry: LdapDN
   , changes: Vector[Change]
 ) extends ProtocolOp
 
@@ -37,6 +37,6 @@ object ModifyRequest {
 
   // Codec without the BER wrapping
   val codecInner: Codec[ModifyRequest] =
-    (LDAPDN.codec :: ber.sequence(scodec.codecs.vector(changeCodec))).as[ModifyRequest]
+    (LdapDN.codec :: ber.sequence(scodec.codecs.vector(changeCodec))).as[ModifyRequest]
 
 }
