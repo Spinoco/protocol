@@ -196,6 +196,21 @@ lazy val kafka =
     , common % "test->test"
   )
 
+lazy val asn1 =
+  project.in(file("asn1"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-asn1"
+  ).dependsOn(common)
+
+lazy val ldap =
+  project.in(file("ldap"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-ldap"
+  ).dependsOn(common, asn1)
+
+
 
 lazy val allProtocols =
   project.in(file("."))
@@ -211,4 +226,6 @@ lazy val allProtocols =
    , sdp
    , mgcp
    , kafka
+   , asn1
+   , ldap
  )

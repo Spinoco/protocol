@@ -15,3 +15,5 @@ Currently these protocols are implemented:
  - MIME [RFC2045](https://tools.ietf.org/html/rfc2045)
  - Email [RFC5322](https://tools.ietf.org/html/rfc5322), [RFC2047](https://tools.ietf.org/html/rfc2047)
  - IMAP v4 rev1 [RFC3501](https://tools.ietf.org/html/rfc3501) (BODY, BODYSTRUCTURE, ENVELOPE)
+ - ASN.1 BER [X.690](https://www.itu.int/rec/T-REC-X.690-201508-I/en)
+ - LDAP [RFC4511](https://tools.ietf.org/html/rfc4511)
