@@ -19,17 +19,21 @@ package object ber {
     new Codec[Identifier] {
 
       def decode(bits: BitVector): Attempt[DecodeResult[Identifier]] = {
-        Attempt.fromEither(
-          bits.acquire(2).right.flatMap{classTagBits =>
-          Try(BerClass(classTagBits.toInt(false))).toOption.toRight("Could not get class tag from: " + classTagBits).right.flatMap{ classTag =>
-            val constructed = bits.get(2)
-            val remaining = bits.drop(3)
-            remaining.acquire(5).right.flatMap { numberTagBits =>
-              val numberTag = numberTagBits.toInt(false)
-              if (numberTag >= 31) Left("Tag number can only be 0 - 30, the extended identifier octets are not supported")
-              else Right(DecodeResult(Identifier(classTag, constructed, numberTag), remaining.drop(5)))
-          }}}.left.map(Err(_))
-        )
+        if (bits.size < 8) {
+          Attempt.failure(Err.insufficientBits(8, bits.size))
+        } else {
+          Attempt.fromEither(
+            bits.acquire(2).right.flatMap{classTagBits =>
+            Try(BerClass(classTagBits.toInt(false))).toOption.toRight("Could not get class tag from: " + classTagBits).right.flatMap{ classTag =>
+              val constructed = bits.get(2)
+              val remaining = bits.drop(3)
+              remaining.acquire(5).right.flatMap { numberTagBits =>
+                val numberTag = numberTagBits.toInt(false)
+                if (numberTag >= 31) Left("Tag number can only be 0 - 30, the extended identifier octets are not supported")
+                else Right(DecodeResult(Identifier(classTag, constructed, numberTag), remaining.drop(5)))
+            }}}.left.map(Err(_))
+          )
+        }
       }
 
       def encode(value: Identifier): Attempt[BitVector] = {

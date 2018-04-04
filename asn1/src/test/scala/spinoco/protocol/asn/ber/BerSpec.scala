@@ -68,4 +68,8 @@ object BerSpec extends Properties("BER"){
     codec.decode(BitVector.fromValidHex("8180")) ?= Attempt.failure(Err.insufficientBits(128 * 8, 0))
   }
 
+  property("identifier.insufficient") = protect {
+    identifier.decode(BitVector.fromValidHex("A")) ?= Attempt.failure(Err.insufficientBits(8, 4))
+  }
+
 }
