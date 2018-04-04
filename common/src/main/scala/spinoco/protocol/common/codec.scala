@@ -595,10 +595,11 @@ object codec {
     * Last item will not be terminated by `delimiter`
     * @param codec
     * @param delimiter
+    * @param firstWithDelimiter if set to true, first element will start with delimiter
     * @tparam A
     * @return
     */
-  def vectorVDelimited[A](codec: Codec[A], delimiter: Codec[Unit]): Codec[Vector[A]] = {
+  def vectorVDelimited[A](codec: Codec[A], delimiter: Codec[Unit], firstWithDelimiter: Boolean = false): Codec[Vector[A]] = {
     new Codec[Vector[A]] {
       def sizeBound: SizeBound = SizeBound.unknown
 
@@ -609,7 +610,7 @@ object codec {
         def go(rem: Vector[A], acc: BitVector): Attempt[BitVector] = {
           rem.headOption match {
             case Some(a) =>
-              val aCodec = if (rem.size == value.size) codec else withDelimiter
+              val aCodec = if (rem.size == value.size && !firstWithDelimiter) codec else withDelimiter
               aCodec.encode(a) match {
                 case Attempt.Successful(bits) => go(rem.tail, acc ++ bits)
                 case Attempt.Failure(err) => Attempt.failure(err)
@@ -626,7 +627,7 @@ object codec {
         def go(rem: BitVector, acc: Vector[A]): Attempt[DecodeResult[Vector[A]]] = {
           if (rem.isEmpty) Attempt.successful(DecodeResult(acc, BitVector.empty))
           else {
-            val aCodec = if (acc.isEmpty) codec else withDelimiter
+            val aCodec = if (acc.isEmpty && !firstWithDelimiter) codec else withDelimiter
             aCodec.decode(rem) match {
               case Attempt.Successful(DecodeResult(a, rem)) => go(rem, acc :+ a)
               case Attempt.Failure(err) => Attempt.successful(DecodeResult(acc, rem))

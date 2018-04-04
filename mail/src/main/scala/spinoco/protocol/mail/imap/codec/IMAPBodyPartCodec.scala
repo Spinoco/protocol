@@ -235,7 +235,7 @@ object IMAPBodyPartCodec {
         bodyFldMD5 ~
           optional(lookahead2(SP), SP ~> bodyFldDsp ~
             optional(lookahead2(SP), SP ~> bodyFldLang ~
-              optional(lookahead2(SP), SP ~> bodyFldLoc ~ vectorVDelimited(bodyExtension, SP) )
+              optional(lookahead2(SP), SP ~> bodyFldLoc ~ vectorVDelimited(bodyExtension, SP, firstWithDelimiter = true))
             )
         )
       ).xmap(
@@ -262,7 +262,7 @@ object IMAPBodyPartCodec {
         bodyFldParam ~
         optional(lookahead2(SP), SP ~> bodyFldDsp ~
           optional(lookahead2(SP), SP ~> bodyFldLang ~
-            optional(lookahead2(SP), SP ~> bodyFldLoc ~ vectorVDelimited(bodyExtension, SP) )
+            optional(lookahead2(SP), SP ~> bodyFldLoc ~ vectorVDelimited(bodyExtension, SP, firstWithDelimiter = true) )
           )
         )
       ).xmap(

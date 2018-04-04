@@ -179,6 +179,53 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
 
   }
 
+  property("multi-body-extension") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(BODYSTRUCTURE (("text" "plain" ("charset" "utf-8") NIL NIL "quoted-printable" 413 19 NIL NIL NIL NIL)("text" "html" ("charset" "utf-8") NIL NIL "quoted-printable" 731 10 NIL NIL NIL NIL) "alternative" ("boundary" "---0f38efd9-d1a7-49f3-acd9-31d7a496f37a---b14d35c6-7966-4a17-9fcd-28248679d25b---") NIL NIL NIL NIL))""".getBytes
+    )) ?= Attempt.successful(
+      MultiBodyPart(
+        parts = Vector(
+          SingleBodyPart(
+            tpe = BodyTypeText(
+              subType = "plain"
+              , fields = BodyFields(
+                params = Vector("charset" -> "utf-8")
+                , id = None
+                , desc = None
+                , encoding = "quoted-printable"
+                , size = 413
+              )
+              , lines = 19
+            )
+            , ext = Some(SingleBodyExtension(None, None, Some(List()), None, Vector.empty))
+          )
+          , SingleBodyPart(
+            tpe = BodyTypeText(
+              subType = "html"
+              , fields = BodyFields(
+                params = Vector("charset" -> "utf-8")
+                , id = None
+                , desc = None
+                , encoding = "quoted-printable"
+                , size = 731
+              )
+              , lines = 10
+            )
+            , ext = Some(SingleBodyExtension(None, None, Some(List()), None, Vector.empty))
+          )
+        )
+        , mediaSubType = "alternative"
+        , ext =  Some(MultiBodyExtension(
+          params = Vector("boundary" -> "---0f38efd9-d1a7-49f3-acd9-31d7a496f37a---b14d35c6-7966-4a17-9fcd-28248679d25b---")
+          , dsp = None
+          , lang = Some(List())
+          , loc = None
+          , extensions = Vector(ListBodyExtension(Vector.empty))
+        ))
+      )
+    )
+  }
+
   property("simple-body-structure.lowercase") = protect {
     IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
       """(BODYSTRUCTURE (("text" "html" ("charset" "utf-8") NIL NIL "quoted-printable" 22621 598 nil ("inline" nil) nil)("image" "png" ("name" "page.word-icon.png") "<page.word-icon>" nil "base64" 328 NIL ("inline" ("filename" "page.word-icon.png")) nil)("image" "png" ("name" "footer-desktop-logo.png") "<footer-desktop-logo>" nil "base64" 1182 nil ("inline" ("filename" "footer-desktop-logo.png")) nil)("image" "png" ("name" "footer-mobile-logo.png") "<footer-mobile-logo>" nil "base64" 524 nil ("inline" ("filename" "footer-mobile-logo.png")) nil) "related" ("boundary" "----=_Part_11768_185568052.1510095660090") nil nil))""".getBytes
