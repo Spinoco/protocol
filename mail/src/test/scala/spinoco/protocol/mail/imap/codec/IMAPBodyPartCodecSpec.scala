@@ -179,7 +179,7 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
 
   }
 
-  property("") = protect {
+  property("multi-body-extension") = protect {
     IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
       """(BODYSTRUCTURE (("text" "plain" ("charset" "utf-8") NIL NIL "quoted-printable" 413 19 NIL NIL NIL NIL)("text" "html" ("charset" "utf-8") NIL NIL "quoted-printable" 731 10 NIL NIL NIL NIL) "alternative" ("boundary" "---0f38efd9-d1a7-49f3-acd9-31d7a496f37a---b14d35c6-7966-4a17-9fcd-28248679d25b---") NIL NIL NIL NIL))""".getBytes
     )) ?= Attempt.successful(
