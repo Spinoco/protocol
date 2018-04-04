@@ -44,7 +44,7 @@ object ContentType {
       })
     }
 
-    def readParameters(mediaType: MediaType, required: Seq[String], tokenCodec: Codec[String] = choice(quotedAsciiToken, asciiToken)): Codec[Parameters] = {
+    def readParameters(mediaType: MediaType, required: Seq[String], tokenCodec: Codec[String] = choice(quotedAsciiToken, token(ascii, ';'))): Codec[Parameters] = {
       list(choice(charset, parameter(tokenCodec))).exmap[Parameters](
         { parameters =>
           val names = parameters.map(_._1).toSet
