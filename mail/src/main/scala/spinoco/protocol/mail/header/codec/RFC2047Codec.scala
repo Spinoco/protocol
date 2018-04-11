@@ -49,9 +49,19 @@ object RFC2047Codec {
   }
 
   val quotedCodec: Codec[String] = {
-    quotedAsciiString.exmap({s =>
-      impl.decodeRFC2047(s.trim.replaceAll("\".*\"", "")) //remove quoted parts: "; name*1="
-    }, impl.decodeRFC2047)
+    new Codec[String] {
+      def encode(value: String): Attempt[BitVector] = {
+        impl.encodeRFC2047(value).flatMap(quotedAsciiString.encode)
+      }
+
+      def sizeBound: SizeBound = SizeBound.unknown
+
+      def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
+        quotedAsciiString.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+          impl.decodeRFC2047(s.trim.replaceAll("\".*\"", "")).fold(_ => r, s0 => DecodeResult(s0, remainder))
+        }
+      }
+    }
   }
 
   object impl {
