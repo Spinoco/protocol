@@ -9,13 +9,11 @@ import scodec.codecs._
 import shapeless.{::, HNil}
 import spinoco.protocol.common.codec._
 import spinoco.protocol.mail.EmailAddress
-import spinoco.protocol.mail.header.codec.DateTimeCodec
+import spinoco.protocol.mail.header.codec.{DateTimeCodec, RFC2047Codec}
 import spinoco.protocol.mail.imap.BodyStructure._
-
 
 object IMAPBodyPartCodec {
   import impl._
-
 
   lazy val bodyStructure: Codec[BodyPart] = {
     `(` ~> constantString1CaseInsensitive("BODYSTRUCTURE") ~> SP ~> codec <~ `)`
@@ -192,10 +190,10 @@ object IMAPBodyPartCodec {
 
     def bodyFldLines: Codec[Int] = intNumber
 
-    def  bodyFldParam: Codec[Vector[(String, String)]] = {
+    def bodyFldParam: Codec[Vector[(String, String)]] = {
       choice(
         nilVector
-        , `(` ~> vectorVDelimited(string ~ (SP ~> string), SP) <~ `)`
+        , `(` ~> vectorVDelimited(string ~ (SP ~> choice(RFC2047Codec.quotedCodec, literalString)), SP) <~ `)`
       )
     }
 
