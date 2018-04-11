@@ -102,7 +102,7 @@ object RFC2047Codec {
       if (words.isEmpty) {
         Attempt.successful(decode)
       } else {
-        go(EncodedWord.findAllMatchIn(decode).toSeq, "")
+        go(words.toSeq, "")
       }
     }
 
