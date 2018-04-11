@@ -7,6 +7,7 @@ import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
 import scodec.codecs._
 import spinoco.protocol.common.util._
+import spinoco.protocol.common.codec._
 
 import scala.annotation.tailrec
 import scala.util.matching.Regex
@@ -31,10 +32,44 @@ object RFC2047Codec {
     *
     */
   val codec: Codec[String] = {
+    new Codec[String] {
+      def encode(value: String): Attempt[BitVector] =
+        impl.encodeRFC2047(value) flatMap { encoded =>
+          ascii.encode(encoded)
+        }
+
+      def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
+        ascii.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+          impl.decodeRFC2047(s.trim).fold(_ => r, s0 => DecodeResult(s0, remainder))
+        }
+      }
+      def sizeBound: SizeBound = SizeBound.unknown
+    }
+
+  }
+
+  val quotedCodec: Codec[String] = {
+    new Codec[String] {
+      def encode(value: String): Attempt[BitVector] = {
+        impl.encodeRFC2047(value).flatMap(quotedAsciiString.encode)
+      }
+
+      def sizeBound: SizeBound = SizeBound.unknown
+
+      def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
+        quotedAsciiString.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+          impl.decodeRFC2047(s.trim.replaceAll("\".*\"", "")).fold(_ => r, s0 => DecodeResult(s0, remainder))
+        }
+      }
+    }
+  }
+
+  object impl {
+
+    val EncodedWord = "=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
     val AsciiEncoder = Charset.forName("ASCII").newEncoder()
     val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
     val MaxLineSize = 75 // max size of line before put FWS and new word when encoding
-    val EncodedWord = "=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
 
     /*
      * Decodes individual RFC 2047 words by skipping any whitespace and stripping off =? and ?= delimiters
@@ -64,7 +99,8 @@ object RFC2047Codec {
       def go(words: Seq[Regex.Match], acc: String): Attempt[String] = {
         words.headOption match {
           case Some(word) => decodeWord(word) match {
-            case Attempt.Successful(decoded) => go(words.tail, acc + decoded)
+            case Attempt.Successful(decoded) =>
+              go(words.tail, acc + decoded)
             case Attempt.Failure(err) => Attempt.failure(err)
           }
 
@@ -72,12 +108,16 @@ object RFC2047Codec {
         }
       }
 
-      go(EncodedWord.findAllMatchIn(decode).toSeq, "")
+      val words = EncodedWord.findAllMatchIn(decode)
+      if (words.isEmpty) {
+        Attempt.successful(decode)
+      } else {
+        go(words.toSeq, "")
+      }
     }
 
-
     def encodeRFC2047(encode: String): Attempt[String] = {
-      if (encode.forall { c => AsciiEncoder.canEncode(c)  && ! c.isControl && c != '?' }) Attempt.successful(encode)
+      if (encode.forall { c => AsciiEncoder.canEncode(c) && !c.isControl && c != '?' }) Attempt.successful(encode)
       else {
         @tailrec
         def go(remains: String, buff: String, acc: String, highSurrogate: Option[Char]): Attempt[String] = {
@@ -91,14 +131,16 @@ object RFC2047Codec {
                 case c =>
                   if (c.isHighSurrogate) None
                   else if (AsciiEncoder.canEncode(c) && !c.isControl) Some(c.toString)
-                  else Some(ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(highSurrogate.toArray ++ Array(c)))).toHex.toUpperCase.grouped(2).flatMap { "=" + _ }.mkString)
+                  else Some(ByteVector.view(UTF8Encoder.encode(CharBuffer.wrap(highSurrogate.toArray ++ Array(c)))).toHex.toUpperCase.grouped(2).flatMap {
+                    "=" + _
+                  }.mkString)
               }
 
               encoded match {
                 case None => go(remains.tail, buff, acc, Some(ch))
                 case Some(encodedChar) =>
                   if (buff.isEmpty) go(remains.tail, "=?UTF-8?Q?" + encodedChar, acc, None)
-                  else if (buff.length + encodedChar.length > MaxLineSize) if (acc.nonEmpty) go(remains.tail, "", acc + "\r\n " + buff + "?=", None) else  go(remains.tail, "", buff + "?=", None)
+                  else if (buff.length + encodedChar.length > MaxLineSize) if (acc.nonEmpty) go(remains.tail, "", acc + "\r\n " + buff + "?=", None) else go(remains.tail, "", buff + "?=", None)
                   else go(remains.tail, buff + encodedChar, acc, None)
               }
 
@@ -113,64 +155,55 @@ object RFC2047Codec {
     }
 
 
-
-    new Codec[String] {
-      def encode(value: String): Attempt[BitVector] =
-        encodeRFC2047(value) flatMap { encoded =>
-          ascii.encode(encoded)
-        }
-
-      def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
-        ascii.decode(bits) flatMap { case (r@DecodeResult(s, remainder)) =>
-          if (! s.trim.startsWith("=?")) Attempt.successful(r)
-          else Attempt.successful {
-            decodeRFC2047(s.trim).fold(_ => r, s0 => DecodeResult(s0, remainder))
-          }
+    /**
+      * From the supplied string decodes string via charset supplied in RFC2047 Q format
+      */
+    def decodeQ(chs: Charset, s: String): Attempt[String] = {
+      def fromHex(hex: String): Attempt[String] = {
+        Attempt.fromOption(ByteVector.fromHex(hex.toLowerCase), Err(s"Invalid hex encoding: $hex")) flatMap { bytes =>
+          attempt(chs.decode(bytes.toByteBuffer)).map(_.toString)
         }
       }
-      def sizeBound: SizeBound = SizeBound.unknown
-    }
 
-  }
-
-  /**
-    * From the supplied string decodes string via charset supplied in RFC2047 Q format
-    */
-  def decodeQ(chs: Charset, s : String): Attempt[String] = {
-    @tailrec
-    def go(remains: String, hex: String, acc: String): Attempt[String] = {
-      remains.headOption match {
-        case Some(c) =>
-          if (c != '=') {
-            // if there is something in hex, lets decode it, otherwise lets just add the char
-            val dc = if (c == '_') ' ' else c
-            if (hex.isEmpty) go(remains.tail, hex, acc :+ dc)
-            else {
-              (Attempt.fromOption(ByteVector.fromHex(hex.toLowerCase), Err(s"Invalid hex encoding: $hex")) flatMap { bytes =>
-                attempt(chs.decode(bytes.toByteBuffer)) map { _.toString }
-              }) match {
-                case Attempt.Successful(decoded) => go(remains.tail, "", acc + decoded + dc)
-                case Attempt.Failure(err) => Attempt.failure(err)
+      @tailrec
+      def go(remains: String, hex: String, acc: String): Attempt[String] = {
+        remains.headOption match {
+          case Some(c) =>
+            if (c != '=') {
+              // if there is something in hex, lets decode it, otherwise lets just add the char
+              val dc = if (c == '_') ' ' else c
+              if (hex.isEmpty) go(remains.tail, hex, acc :+ dc)
+              else {
+                fromHex(hex) match {
+                  case Attempt.Successful(decoded) => go(remains.tail, "", acc + decoded + dc)
+                  case Attempt.Failure(err) => Attempt.failure(err)
+                }
               }
+            } else {
+              if (remains.length < 3) Attempt.failure(Err(s"Not enough characters to decode ($remains from $s)"))
+              else go(remains.drop(3), hex + remains.tail.take(2), acc)
             }
-          } else {
-            if (remains.length < 3) Attempt.failure(Err(s"Not enough characters to decode ($remains from $s)"))
-            else go(remains.drop(3), hex + remains.tail.take(2), acc)
-          }
 
-        case None => Attempt.successful(acc)
+          case None =>
+            if (hex.isEmpty) {
+              Attempt.successful(acc)
+            } else {
+              fromHex(hex).map(acc + _)
+            }
+
+        }
+      }
+
+      go(s, "", "")
+    }
+
+
+    def decodeB(chs: Charset, s: String): Attempt[String] = {
+      Attempt.fromOption(ByteVector.fromBase64(s), Err(s"Invalid base64 encoding: $s")) flatMap { bs =>
+        attempt { chs.decode(bs.toByteBuffer) } map { _.toString }
       }
     }
 
-    go(s, "", "")
   }
-
-
-  def decodeB(chs: Charset, s: String): Attempt[String] = {
-    Attempt.fromOption(ByteVector.fromBase64(s), Err(s"Invalid base64 encoding: $s")) flatMap { bs =>
-      attempt { chs.decode(bs.toByteBuffer) } map { _.toString }
-    }
-  }
-
 
 }
