@@ -140,13 +140,18 @@ object RFC2047Codec {
                 case None => go(remains.tail, buff, acc, Some(ch))
                 case Some(encodedChar) =>
                   if (buff.isEmpty) go(remains.tail, "=?UTF-8?Q?" + encodedChar, acc, None)
-                  else if (buff.length + encodedChar.length > MaxLineSize) if (acc.nonEmpty) go(remains.tail, "", acc + "\r\n " + buff + "?=", None) else go(remains.tail, "", buff + "?=", None)
+                  else if (buff.length + encodedChar.length > MaxLineSize) {
+                    val newLine = "=?UTF-8?Q?" + encodedChar
+                    if (acc.nonEmpty) go(remains.tail, newLine, acc + "\r\n " + buff + "?=", None)
+                    else go(remains.tail, newLine, buff + "?=", None)
+                  }
                   else go(remains.tail, buff + encodedChar, acc, None)
               }
 
             case None =>
               if (buff.isEmpty) Attempt.successful(acc)
-              else if (acc.nonEmpty) Attempt.successful(acc + "\r\n " + buff + "?=") else Attempt.successful(buff + "?=")
+              else if (acc.nonEmpty) Attempt.successful(acc + "\r\n " + buff + "?=")
+              else Attempt.successful(buff + "?=")
           }
         }
 
