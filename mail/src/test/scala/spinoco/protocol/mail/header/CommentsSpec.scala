@@ -54,7 +54,7 @@ object CommentsSpec extends Properties("Comments") {
     verify(
       "=?utf-8?Q?Petr_Poled=C5=88=C3=A1k?= =?utf-8?Q?_Petr_Poled=C5=88=C3=A1k?=\r\n =?utf-8?Q?_Petr_Poled=C5=88=C3=A1k_123456789012345678901234567890?="
       , Comments("Petr Poledňák Petr Poledňák Petr Poledňák 123456789012345678901234567890")
-      , "=?UTF-8?Q?Petr_Poled=C5=88=C3=A1k_Petr_Poled=C5=88=C3=A1k_Petr_Poled=C5=88?=\r\n =?UTF-8?Q?k_123456789012345678901234567890?="
+      , "=?UTF-8?Q?Petr_Poled=C5=88=C3=A1k_Petr_Poled=C5=88=C3=A1k_Petr_Poled=C5=88?=\r\n =?UTF-8?Q?=C3=A1k_123456789012345678901234567890?="
     )
   }
 
