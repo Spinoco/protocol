@@ -46,7 +46,7 @@ object IMAPBodyPartCodec {
 
     val literalString  : Codec[String] = {
       val sz: Codec[Int] = `{` ~> ( intNumber <~ `}crlf`)
-      "literal-string" | variableSizeBytes(sz, ascii)
+      "literal-string" | variableSizeBytes(sz, utf8)
     }
 
     lazy val string: Codec[String] = "string" | choice(quotedAsciiString, literalString)
