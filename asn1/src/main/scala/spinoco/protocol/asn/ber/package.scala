@@ -167,13 +167,45 @@ package object ber {
   def discriminated[A]: DiscriminatorCodec[A, Identifier] = scodec.codecs.discriminated[A].by(identifier)
 
 
+  /**
+    * Codec for 2's compliment integers with stripped redundant leading octets.
+    * This is implementation of integer encoding from "https://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf" page 7
+    */
+  val compliment2Stripped: Codec[Int] = new Codec[Int] {
+
+    private val highOctet = BitVector.fill(9)(true)
+    private val lowOctet = BitVector.fill(9)(false)
+
+    def decode(bits: BitVector): Attempt[DecodeResult[Int]] = {
+      Attempt.fromOption(Try(bits.toInt(true)).toOption, Err("An 2s compliment integer could not be read from the bit vector: " + bits))
+      .map(DecodeResult(_, BitVector.empty))
+    }
+
+    def encode(value: Int): Attempt[BitVector] = {
+      def adjustSize(in: BitVector): BitVector = {
+        if (in.sizeLessThanOrEqual(8)) in
+        else {
+          if (in.startsWith(highOctet) || in.startsWith(lowOctet)) adjustSize(in.drop(8))
+          else in
+        }
+      }
+
+      if (value == 0) Attempt.successful(BitVector.fill(8)(false))
+      else {
+        Attempt.successful(adjustSize(BitVector.fromInt(value)))
+      }
+    }
+
+    def sizeBound: SizeBound = SizeBound.unknown
+  }
+
   // Universal codecs
 
   val endOfContent: BitVector = BitVector.fromInt(0xFF, 1)
 
   val boolean: Codec[Boolean] = codecSingle(BerClass.Universal, false, 1)(scodec.codecs.bool)
 
-  lazy val integer: Codec[Int] = codecSingle(BerClass.Universal, false, 2)(scodec.codecs.vint)
+  lazy val integer: Codec[Int] = codecSingle(BerClass.Universal, false, 2)(compliment2Stripped)
 
   val bitStringPrimitive: Codec[BitVector] = codecSingle(BerClass.Universal, false, 3)(scodec.codecs.bits)
   val bitStringConstructed: Codec[BitVector] = codecSingle(BerClass.Universal, true, 3)(scodec.codecs.bits)
@@ -191,7 +223,7 @@ package object ber {
 
   val real: Codec[Float] = codecSingle(BerClass.Universal, false, 9)(scodec.codecs.float)
 
-  val enumerated: Codec[Int] = codecSingle(BerClass.Universal, false, 10)(scodec.codecs.vint)
+  val enumerated: Codec[Int] = codecSingle(BerClass.Universal, false, 10)(compliment2Stripped)
 
   val embeddedPDV: Codec[String] = codecSingle(BerClass.Universal, true, 11)(scodec.codecs.utf8)
 

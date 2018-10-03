@@ -72,4 +72,19 @@ object BerSpec extends Properties("BER"){
     identifier.decode(BitVector.fromValidHex("A")) ?= Attempt.failure(Err.insufficientBits(8, 4))
   }
 
+  property("integer.encode") = protect {
+    (compliment2Stripped.encode(64).require ?= BitVector.fromValidBin("01000000")) :| "Positive 64" &&
+    (compliment2Stripped.encode(-64).require ?= BitVector.fromValidBin("11000000")) :| "Negative 64" &&
+    (compliment2Stripped.encode(256).require ?= BitVector.fromValidBin("0000000100000000")) :| "Positive 256" &&
+    (compliment2Stripped.encode(-256).require ?= BitVector.fromValidBin("1111111100000000")) :| "Negative 256"
+  }
+
+  property("integer.decode") = protect {
+    (compliment2Stripped.decode(BitVector.fromValidBin("01000000")).require.value ?= 64) :| "Positive 64" &&
+    (compliment2Stripped.decode(BitVector.fromValidBin("11000000")).require.value ?= -64) :| "Negative 64" &&
+    (compliment2Stripped.decode(BitVector.fromValidBin("0000000100000000")).require.value ?= 256) :| "Positive 256" &&
+    (compliment2Stripped.decode(BitVector.fromValidBin("1111111100000000")).require.value ?= -256) :| "Negative 256"&&
+    (compliment2Stripped.decode(BitVector.fromValidBin("0000000000110010")).require.value ?= 50) :| "Padded 50"
+  }
+
 }
