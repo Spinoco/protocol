@@ -26,6 +26,11 @@ object BerSpec extends Properties("BER"){
     verify(Option(128l), BitVector.fromInt(0x8180, 16))(length)
   }
 
+  property("length.3383") = protect {
+    // Tests proper encoding of "D37" <- partial octet
+    verify(Option(3383l), BitVector.fromInt(0x820D37 , 24))(length)
+  }
+
   property("length.long-max") = protect {
     verify(Option(Long.MaxValue), BitVector.fromInt(0x88, 8) ++ BitVector.fromLong(Long.MaxValue))(length)
   }
