@@ -92,7 +92,7 @@ package object ber {
             } else if (value <= 127) {
               Attempt.successful(BitVector.bit(false) ++ BitVector.fromInt(value.toInt, 7))
             } else {
-              val octets = (value.toHexString.length / 2).ceil.toInt
+              val octets = (value.toHexString.length.toDouble / 2).ceil.toInt
 
               if (octets > 126) {
                 Attempt.failure(Err("Cannot BER encode anything with size that has more than 126 octets"))
