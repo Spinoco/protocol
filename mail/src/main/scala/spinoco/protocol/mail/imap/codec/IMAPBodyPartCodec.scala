@@ -219,8 +219,8 @@ object IMAPBodyPartCodec {
 
     def bodyFldLang:  Codec[Vector[String]] = {
       choice(
-        `(` ~> minItems(2)(vectorVDelimited(string, SP)) <~ `)`
-        , maxItems(1)(nstring.xmap(_.toVector, _.headOption))
+        maxItems(1)(nstring.xmap(_.toVector, _.headOption))
+        , `(` ~> vectorVDelimited(string, SP) <~ `)`
       )
     }
 
