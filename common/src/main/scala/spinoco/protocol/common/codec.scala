@@ -143,7 +143,7 @@ object codec {
   val quotedAsciiString: Codec[String] = quotedString(StandardCharsets.US_ASCII)
   val quotedUTF8String: Codec[String] = quotedString(StandardCharsets.UTF_8)
 
-  private val defaultQuotableChars: Set[Char] = "()<>@.,;:\\/[]?={} \t\"\'".toSet
+  val defaultQuotableChars: Set[Char] = "()<>@.,;:\\/[]?={} \t\"\'".toSet
 
   /**
     * Decodes string from eventually quoted string.
@@ -338,6 +338,12 @@ object codec {
   lazy val longAsString: Codec[Long] =
     fromAsciiString[Long](_.toLong, _.toString).withToString("longAsString")
 
+  lazy val digits: Codec[Int] =
+    takeWhile(ascii)(b => ('0'.toByte <= b) && (b <= '9'.toByte)).exmap({ str =>
+      try { Attempt.successful(str.trim.toInt)} catch { case t: Throwable => Attempt.failure(Err(s"Invalid format : $str : ${t.getMessage}")) }
+    }, { int =>
+      Attempt.successful(int.toString)
+    })
 
   lazy val bytesWsRemoved: Codec[ByteVector] = {
     def stripWs(bs:ByteVector):ByteVector = {
