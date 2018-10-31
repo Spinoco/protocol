@@ -5,8 +5,7 @@ import scodec.codecs._
 import spinoco.protocol.common.codec._
 import spinoco.protocol.mime.codec.RFC2184Codec
 
-sealed case class ContentDisposition(
-  dispositionType: ContentDispositionType, parameters: Map[String, String] )
+sealed case class ContentDisposition(dispositionType: ContentDispositionType, parameters: Map[String, String])
 
 sealed trait ContentDispositionType
 

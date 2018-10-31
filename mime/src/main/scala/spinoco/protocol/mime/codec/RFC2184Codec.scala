@@ -65,7 +65,7 @@ object RFC2184Codec {
         } else {
           if (encoded) {
             charsetAndLang.decode(result.remainder).flatMap { res =>
-              decodeValue(res.remainder, Some(res.value._1)).map(_.map(v => (name, v, index, Some(res.value._1))))
+              decodeValue(res.remainder, Some(res.value._1).filter(_.nonEmpty) orElse Some("utf-8")).map(_.map(v => (name, v, index, Some(res.value._1))))
             }
           } else {
             decodeValue(result.remainder, None).map(_.map(v => (name, v, index, cCharset)))
