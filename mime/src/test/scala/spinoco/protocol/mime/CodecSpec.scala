@@ -60,14 +60,30 @@ object CodecSpec extends Properties("CodecSpec") {
     implicit val codec:Codec[ContentDisposition] = ContentDisposition.codec
 
     checkExamples(Seq(
-      ("form-data", ContentDisposition("form-data", Map.empty), "form-data")
-      , ("attachment; filename=\"filename.jpg\""
-        , ContentDisposition("attachment", Map("filename" -> "filename.jpg"))
-        , "attachment; filename=\"filename.jpg\""
+      ("form-data", ContentDisposition(ContentDispositionType.IETFToken("form-data"), Map.empty), "form-data")
+      , ("attachment;\r\n filename=\"filename.jpg\""
+        , ContentDisposition(ContentDispositionType.Attachment, Map("filename" -> "filename.jpg"))
+        , "attachment;\r\n filename=\"filename.jpg\""
       )
-      , ("form-data; name=\"fieldName\";\n filename=\"filename.jpg\""
-        , ContentDisposition("form-data", Map("name" -> "fieldName", "filename" -> "filename.jpg"))
-        , "form-data; name=fieldName; filename=\"filename.jpg\""
+      , ("form-data; name=\"fieldName\";\r\n filename=\"filename.jpg\""
+        , ContentDisposition(ContentDispositionType.IETFToken("form-data"), Map("name" -> "fieldName", "filename" -> "filename.jpg"))
+        , "form-data;\r\n name=fieldName;\r\n filename=\"filename.jpg\""
+      )
+    ))
+  }
+
+
+  property("Content-Disposition with extension") = secure {
+    implicit val codec:Codec[ContentDisposition] = ContentDisposition.codec
+
+    checkExamples(Seq(
+      ("message/external-body; access-type=URL;\n      URL*0=\"ftp://\";\n      URL*1=\"cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar\""
+        , ContentDisposition(ContentDispositionType.IETFToken("message/external-body"), Map("access-type" -> "URL", "URL" -> "ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"))
+        , "message/external-body;\r\n access-type=URL;\r\n URL=\"ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar\""
+      ),
+      ("attachment;\r\n filename*=utf-8''%C4%9B%C4%9B%C5%99%C5%BE%C3%BD%C5%BE%2E%6A%70%67"
+        , ContentDisposition(ContentDispositionType.Attachment, Map("filename" -> "ěěřžýž.jpg"))
+        , "attachment;\r\n filename*=utf-8''%C4%9B%C4%9B%C5%99%C5%BE%C3%BD%C5%BE%2E%6A%70%67"
       )
     ))
   }
