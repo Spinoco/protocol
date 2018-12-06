@@ -57,7 +57,7 @@ object CodecSpec extends Properties("CodecSpec") {
   }
 
   property("Content-Disposition") = secure {
-    implicit val codec:Codec[ContentDisposition] = ContentDisposition.codec
+    implicit val codec:Codec[ContentDisposition] = ContentDisposition.emailCodec
 
     checkExamples(Seq(
       ("form-data", ContentDisposition(ContentDispositionType.IETFToken("form-data"), Map.empty), "form-data")
@@ -74,7 +74,7 @@ object CodecSpec extends Properties("CodecSpec") {
 
 
   property("Content-Disposition with extension") = secure {
-    implicit val codec:Codec[ContentDisposition] = ContentDisposition.codec
+    implicit val codec:Codec[ContentDisposition] = ContentDisposition.emailCodec
 
     checkExamples(Seq(
       ("message/external-body; access-type=URL;\n      URL*0=\"ftp://\";\n      URL*1=\"cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar\""
