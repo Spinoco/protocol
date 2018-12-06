@@ -221,12 +221,12 @@ property("Accept-Ranges Header") = secure {
   property("Content-Disposition Header") = secure {
     checkExamples(Seq(
       ("Content-Disposition: form-data", `Content-Disposition`(ContentDisposition(ContentDispositionType.IETFToken("form-data"), Map.empty)), "Content-Disposition: form-data")
-      , ("Content-Disposition: attachment;\r\n filename=\"filename.jpg\""
+      , ("Content-Disposition: attachment; filename=\"filename.jpg\""
         , `Content-Disposition`(ContentDisposition(ContentDispositionType.Attachment, Map("filename" -> "filename.jpg")))
-        , "Content-Disposition: attachment;\r\n filename=\"filename.jpg\"")
-      , ("Content-Disposition: form-data;\r\n name=\"fieldName\";\r\n filename=\"filename.jpg\""
+        , "Content-Disposition: attachment; filename=\"filename.jpg\"")
+      , ("Content-Disposition: form-data; name=\"fieldName\"; filename=\"filename.jpg\""
         , `Content-Disposition`(ContentDisposition(ContentDispositionType.IETFToken("form-data"), Map("name" -> "fieldName", "filename" -> "filename.jpg")))
-        , "Content-Disposition: form-data;\r\n name=fieldName;\r\n filename=\"filename.jpg\"")
+        , "Content-Disposition: form-data; name=fieldName; filename=\"filename.jpg\"")
     ))
   }
 

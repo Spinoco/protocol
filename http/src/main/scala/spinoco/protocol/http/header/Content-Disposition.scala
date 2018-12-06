@@ -13,5 +13,5 @@ sealed case class `Content-Disposition`(value: ContentDisposition) extends Defau
 
 
 object `Content-Disposition` { val codec =
-  HeaderCodecDefinition[ `Content-Disposition`](ContentDisposition.codec.xmap (cd => `Content-Disposition`(cd), _.value))
+  HeaderCodecDefinition[ `Content-Disposition`](ContentDisposition.htmlCodec.xmap (cd => `Content-Disposition`(cd), _.value))
 }
