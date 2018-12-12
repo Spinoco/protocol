@@ -348,6 +348,7 @@ object MediaType {
     , `text/calendar`
     , `text/css`
     , `text/csv`
+    , `text/event-stream`
     , `text/html`
     , `text/mcf`
     , `text/plain`
