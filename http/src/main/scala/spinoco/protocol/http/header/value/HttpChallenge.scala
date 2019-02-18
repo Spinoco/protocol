@@ -20,7 +20,17 @@ object HttpChallenge {
 
     bytesWsRemoved.codedAs(
       bytesUntil(! _.toChar.isWhitespace).xmap[ByteVector](identity, bv => bv ++ SP).codedAs(HttpChallengeScheme.codec) ~
-      bytesWsRemoved.codedAs(commaDelimited(parameter))
+        bytesWsRemoved.codedAs(scodec.codecs.choice(
+        commaDelimited(parameter)
+        , delimitedBy(SP, comma_SP, eventuallyQuotedUTF8String).xmap[List[(String, String)]](
+          split => {
+            split.lift(0).map("realm" -> _).toList ++
+            split.lift(1).map("error" -> _).toList ++
+            split.lift(2).map("error_description" -> _).toList
+          }
+          , list => list.map{ case (k, v) => s"$k=$v"}
+        )
+      ))
     ).xmap(HttpChallenge.apply _ tupled, ch => ch.scheme -> ch.params)
 
   }
@@ -31,6 +41,7 @@ object HttpChallenge {
 object HttpChallengeScheme extends Enumeration {
   val Basic = Value("Basic")
   val Digest = Value("Digest")
+  val OAuth = Value("OAuth")
 
   val codec: Codec[HttpChallengeScheme.Value] = {
     import scodec.Attempt._

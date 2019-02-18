@@ -535,6 +535,9 @@ property("Accept-Ranges Header") = secure {
       ("WWW-Authenticate: Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\""
         , `WWW-Authenticate`(HttpChallenge(HttpChallengeScheme.Digest, List("realm" -> "testrealm@host.com", "qop" -> "auth,auth-int", "nonce" -> "dcd98b7102dd2f0e8b11d0f600bfb0c093", "opaque"->"5ccc069c403ebaf9f0171e9517f40e41")))
         , "WWW-Authenticate: Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=dcd98b7102dd2f0e8b11d0f600bfb0c093, opaque=5ccc069c403ebaf9f0171e9517f40e41")
+      , ("WWW-Authenticate: OAuth \"Facebook Platform\" \"invalid_request\" \"Invalid appsecret_proof provided in the API argument\""
+        , `WWW-Authenticate`(HttpChallenge(HttpChallengeScheme.OAuth, List("realm" -> "Facebook Platform", "error" -> "invalid_request", "error_description" -> "Invalid appsecret_proof provided in the API argument")))
+        , "WWW-Authenticate: OAuth realm=\"Facebook Platform\", error=invalid_request, error_description=\"Invalid appsecret_proof provided in the API argument\"")
     ))
   }
 
