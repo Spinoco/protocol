@@ -16,7 +16,7 @@ object IMAPBodyPartCodec {
   import impl._
 
   lazy val bodyStructure: Codec[BodyPart] = {
-    `(` ~> constantString1CaseInsensitive("BODYSTRUCTURE") ~> SP ~> codec <~ `)`
+    `(` ~> constantString1CaseInsensitive("BODYSTRUCTURE") ~> SP ~> codec <~ uidCodec <~ `)`
   }
 
   lazy val codec: Codec[BodyPart] = {
@@ -27,6 +27,7 @@ object IMAPBodyPartCodec {
       ) <~
      `)`
   }
+
 
   object impl {
 
@@ -55,6 +56,10 @@ object IMAPBodyPartCodec {
         NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[String]]
         , string.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
       )
+
+    lazy val uidCodec: Codec[Unit] = {
+      optional(lookahead2(SP), SP ~> constantString1CaseInsensitive("UID") ~> SP ~> intNumber).xmap(_ => (), _ => None)
+    }
 
     def envelope: Codec[Envelope] = {
       (`(`  ~> (

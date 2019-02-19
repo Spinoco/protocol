@@ -323,4 +323,25 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
 
   }
 
+  property("simple-body-structure.RFC822") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(BODYSTRUCTURE (("text" "plain" ("charset" "utf-8" "format" "flowed") NIL NIL "8bit" 63 6 NIL NIL NIL NIL)("text" "html" ("charset" "utf-8") NIL NIL "8bit" 600 21 NIL NIL NIL NIL) "alternative" ("boundary" "------------6ADC3590299BEA6A994E5EFB") NIL "en-US") UID 31)""".getBytes
+    )) ?= Attempt.successful(
+      MultiBodyPart(
+        parts = Vector(
+          SingleBodyPart(
+            BodyTypeText("plain", BodyFields(Vector("charset" -> "utf-8", "format" -> "flowed"), None, None, "8bit", 63), 6)
+              , Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          ), SingleBodyPart(
+            BodyTypeText("html", BodyFields(Vector("charset" -> "utf-8"), None, None, "8bit", 600), 21)
+            , Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          )
+        )
+        , "alternative"
+        , Some(MultiBodyExtension(Vector("boundary" -> "------------6ADC3590299BEA6A994E5EFB"), None, Some(List("en-US")), None, Vector.empty))
+      )
+    )
+
+  }
+
 }
