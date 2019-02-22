@@ -146,7 +146,7 @@ object codec {
   val defaultQuotableChars: Set[Char] = "()<>@.,;:\\/[]?={} \t\"\'".toSet
 
   // Token definition as in https://tools.ietf.org/html/rfc2616#section-2.2
-  val defaultHttpQuotableChars: Set[Char] = "()<>@,;:\\/[]?={} \t\"\'".toSet
+  val defaultHttpQuotableChars: Set[Char] = "()<>@,;:\\/[]?={} \t\"".toSet
 
   /**
     * Decodes string from eventually quoted string.
