@@ -15,14 +15,14 @@ object HttpChallenge {
 
   val codec: Codec[HttpChallenge] = {
     val parameter:Codec[(String,String)] = {
-      terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ eventuallyQuotedUTF8String
+      terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ httpMaybeQuotedUTF8String
     }
 
     bytesWsRemoved.codedAs(
       bytesUntil(! _.toChar.isWhitespace).xmap[ByteVector](identity, bv => bv ++ SP).codedAs(HttpChallengeScheme.codec) ~
         bytesWsRemoved.codedAs(scodec.codecs.choice(
         commaDelimited(parameter)
-        , delimitedBy(SP, comma_SP, eventuallyQuotedUTF8String).xmap[List[(String, String)]](
+        , delimitedBy(SP, comma_SP, httpMaybeQuotedUTF8String).xmap[List[(String, String)]](
           split => {
             split.lift(0).map("realm" -> _).toList ++
             split.lift(1).map("error" -> _).toList ++
