@@ -59,7 +59,7 @@ object ContentDisposition {
 
     val paramsCodec: Codec[(String, String)] =    {
       ignoreWS ~> terminated(asciiToken, Terminator.constantString1("=")) ~
-        (ignoreWS ~> eventuallyQuotedUTF8String <~ ignoreWS)
+        (ignoreWS ~> httpMaybeQuotedUTF8String <~ ignoreWS)
     }
 
     val semicolon = Codec(constantString1("; "), constantString1(";"))

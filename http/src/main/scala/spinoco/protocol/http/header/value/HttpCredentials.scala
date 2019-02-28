@@ -43,7 +43,7 @@ object HttpCredentials {
 
   val digestCodec: Codec[DigestHttpCredentials] = {
     ((ignoreWS ~> asciiToken) ~ (whitespace() ~> commaDelimited(
-      terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ eventuallyQuotedUTF8String
+      terminated(trimmedAsciiToken, Terminator.constantString1("=")) ~ httpMaybeQuotedUTF8String
     ))).xmap(
       { case (digest, params) => DigestHttpCredentials(digest, params.toMap) }
       , { h => (h.tpe, h.params.toList) }

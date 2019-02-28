@@ -145,6 +145,9 @@ object codec {
 
   val defaultQuotableChars: Set[Char] = "()<>@.,;:\\/[]?={} \t\"\'".toSet
 
+  // Token definition as in https://tools.ietf.org/html/rfc2616#section-2.2
+  val defaultHttpQuotableChars: Set[Char] = "()<>@,;:\\/[]?={} \t\"".toSet
+
   /**
     * Decodes string from eventually quoted string.
     * If the decoded string was not quoted and contains chars within `quotableChars` the encoding will fail
@@ -178,7 +181,9 @@ object codec {
 
 
   val eventuallyQuotedAsciiString: Codec[String] = eventuallyQuotedString(defaultQuotableChars, charset = StandardCharsets.US_ASCII)
-  val eventuallyQuotedUTF8String: Codec[String] = eventuallyQuotedString(defaultQuotableChars, charset = StandardCharsets.UTF_8)
+
+  // To be used to decode (token | quoted-string) in http codecs
+  val httpMaybeQuotedUTF8String: Codec[String] = eventuallyQuotedString(defaultHttpQuotableChars, charset = StandardCharsets.UTF_8)
 
 
   /**
