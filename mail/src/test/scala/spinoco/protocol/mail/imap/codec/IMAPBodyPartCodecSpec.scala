@@ -323,7 +323,7 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
 
   }
 
-  property("simple-body-structure.RFC822") = protect {
+  property("multi-body-structure-uid-after-body") = protect {
     IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
       """(BODYSTRUCTURE (("text" "plain" ("charset" "utf-8" "format" "flowed") NIL NIL "8bit" 63 6 NIL NIL NIL NIL)("text" "html" ("charset" "utf-8") NIL NIL "8bit" 600 21 NIL NIL NIL NIL) "alternative" ("boundary" "------------6ADC3590299BEA6A994E5EFB") NIL "en-US") UID 31)""".getBytes
     )) ?= Attempt.successful(
@@ -339,6 +339,27 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
         )
         , "alternative"
         , Some(MultiBodyExtension(Vector("boundary" -> "------------6ADC3590299BEA6A994E5EFB"), None, Some(List("en-US")), None, Vector.empty))
+      )
+    )
+
+  }
+
+  property("multi-body-structure-NIL-fld-value") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(BODYSTRUCTURE (("text" "html" ("charset" "utf-8") NIL NIL "7BIT" 754 18 NIL NIL NIL NIL)("text" "calendar" ("method" NIL "charset" "UTF-8") NIL NIL "quoted-printable" 1370 49 NIL NIL NIL NIL) "mixed" ("boundary" "----=_=-_OpenGroupware_org_NGMime-10893-1551275996.406374-0------") NIL NIL) UID 1398857)""".getBytes
+    )) ?= Attempt.successful(
+      MultiBodyPart(
+        parts = Vector(
+          SingleBodyPart(
+            BodyTypeText("html", BodyFields(Vector("charset" -> "utf-8"), None, None, "7BIT", 754), 18)
+              , Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          ), SingleBodyPart(
+            BodyTypeText("calendar", BodyFields(Vector("method" -> "", "charset" -> "UTF-8"), None, None, "quoted-printable", 1370), 49)
+            , Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          )
+        )
+        , "mixed"
+        , Some(MultiBodyExtension(Vector("boundary" -> "----=_=-_OpenGroupware_org_NGMime-10893-1551275996.406374-0------"), None, Some(List()), None, Vector.empty))
       )
     )
 
