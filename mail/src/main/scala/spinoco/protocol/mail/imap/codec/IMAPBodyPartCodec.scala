@@ -51,6 +51,7 @@ object IMAPBodyPartCodec {
     }
 
     lazy val string: Codec[String] = "string" | choice(quotedAsciiString, literalString)
+    lazy val nilString: Codec[String] = "nil-string" | NIL.xmap(_ => "", _ => ())
     lazy val nstring: Codec[Option[String]] =
       "nstring" | choice(
         NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[String]]
@@ -198,7 +199,7 @@ object IMAPBodyPartCodec {
     def bodyFldParam: Codec[Vector[(String, String)]] = {
       choice(
         nilVector
-        , `(` ~> vectorVDelimited(string ~ (SP ~> choice(RFC2047Codec.quotedCodec, literalString)), SP) <~ `)`
+        , `(` ~> vectorVDelimited(string ~ (SP ~> choice(RFC2047Codec.quotedCodec, literalString, nilString)), SP) <~ `)`
       )
     }
 
