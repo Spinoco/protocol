@@ -12,6 +12,7 @@ import spinoco.protocol.http.header._
 import spinoco.protocol.http.header.value._
 import spinoco.protocol.http._
 import spinoco.protocol.mime.ContentType._
+import spinoco.protocol.mime.MediaType.CustomMediaType
 import spinoco.protocol.mime._
 
 import scala.concurrent.duration._
@@ -67,7 +68,18 @@ object HeaderCodecSpec extends Properties("HeaderCodec") {
           , HttpMediaRange.Pattern("*", Some(0.2f))
       ))
         , "Accept: text/html, image/gif, image/jpeg, */*;q=0.2, */*;q=0.2")
-
+      , ("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
+        , Accept(List(
+        HttpMediaRange.One(MediaType.`text/html`, None)
+        , HttpMediaRange.One(MediaType.`application/xhtml+xml`, None)
+        , HttpMediaRange.One(MediaType.`application/xml`, Some(0.9f))
+        , HttpMediaRange.One(MediaType.`image/webp`, None)
+        , HttpMediaRange.One(CustomMediaType("image", "apng"), None)
+        , HttpMediaRange.Pattern("*", Some(0.8f))
+        , HttpMediaRange.One(CustomMediaType("application", "signed-exchange"), None, params = Map("v" -> "b3"))
+      ))
+        ,"Accept: text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, image/apng, */*;q=0.8, application/signed-exchange;v=b3"
+      )
     ))
   }
 
