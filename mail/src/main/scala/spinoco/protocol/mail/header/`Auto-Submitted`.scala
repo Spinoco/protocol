@@ -23,8 +23,7 @@ object `Auto-Submitted` extends DefaultHeaderDescription[`Auto-Submitted`] {
 
   val codec = scodec.codecs.ascii.exmap[`Auto-Submitted`]( a => {
     Attempt.fromEither(
-      Try(AutoType.withName(a)).toEither
-      .left.map(_ => Err("Could not parse Auto-Submitted header due to invalid tpe: " + a))
+      Try(AutoType.withName(a)).toOption.toRight(Err("Could not parse Auto-Submitted header due to invalid tpe: " + a))
       .map(`Auto-Submitted`(_))
     )
   }
