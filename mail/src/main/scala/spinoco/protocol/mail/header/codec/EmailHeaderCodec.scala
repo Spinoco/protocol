@@ -95,7 +95,8 @@ object EmailHeaderCodec {
   /** Headers used in Email **/
   val defaultEmailHeaders: Map[String, Codec[EmailHeaderField]] = {
     Seq(
-      Comments
+      `Auto-Submitted`
+      , Comments
       , Destination.To
       , Destination.Cc
       , Destination.Bcc

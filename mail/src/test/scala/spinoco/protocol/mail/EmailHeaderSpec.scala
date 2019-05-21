@@ -78,6 +78,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
         |Subject: =?utf-8?B?UMWZZWQgdMSbbWlobGUga2xvYm91ayBkb2zFryE=?=
         |Content-Type: text/html; charset=utf-8
         |Content-Transfer-Encoding: base64
+        |Auto-Submitted: auto-notified
         |
         |""".stripMargin.lines.mkString("\r\n")
 
@@ -110,6 +111,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
            , Subject("Před těmihle klobouk dolů!")
            , `Content-Type`(ContentType.TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`)))
            , `Content-Transfer-Encoding`(TransferEncoding.Base64)
+           , `Auto-Submitted`(`Auto-Submitted`.AutoType.AutoNotified)
          )
        )
     }.fold(err => { println(s"FAILED: $err"); falsified }, identity)
