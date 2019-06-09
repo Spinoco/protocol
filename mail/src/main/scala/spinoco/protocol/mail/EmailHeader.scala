@@ -5,8 +5,7 @@ import java.time.ZonedDateTime
 
 import shapeless.Typeable
 import spinoco.protocol.mail.header._
-import spinoco.protocol.mail.mime.TransferEncoding
-import spinoco.protocol.mime.ContentType
+import spinoco.protocol.mime.{ContentType, TransferEncoding}
 
 /**
   * Represents Email header that consists of arbitrary fields.

@@ -9,9 +9,9 @@ import spinoco.protocol.mime.ContentDisposition
   *
   *   @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
   */
-sealed case class `Content-Disposition`(value: ContentDisposition) extends DefaultHeader
+sealed case class `Content-Disposition`(value: ContentDisposition) extends DefaultHeader with ContentHeaderField
 
 
 object `Content-Disposition` { val codec =
-  HeaderCodecDefinition[ `Content-Disposition`](ContentDisposition.htmlCodec.xmap (cd => `Content-Disposition`(cd), _.value))
+  HeaderCodecDefinition.contentField[ `Content-Disposition`](ContentDisposition.htmlCodec.xmap (cd => `Content-Disposition`(cd), _.value))
 }

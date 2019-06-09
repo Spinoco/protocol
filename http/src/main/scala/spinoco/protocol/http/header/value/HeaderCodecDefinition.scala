@@ -1,7 +1,8 @@
 package spinoco.protocol.http.header.value
 
 import scodec.Codec
-import spinoco.protocol.http.header.HttpHeader
+import shapeless.Typeable
+import spinoco.protocol.http.header.{ContentHeaderField, HttpHeader}
 
 import scala.reflect.ClassTag
 
@@ -29,5 +30,20 @@ object HeaderCodecDefinition {
   def nameFromClass(clz:Class[_]):String = {
     clz.getSimpleName.replace("$minus","-")
   }
+
+  trait ContentHeaderCodecDefinition[A <: HttpHeader] extends HeaderCodecDefinition[A]{
+
+    def contentField: Codec[ContentHeaderField]
+
+  }
+
+  def contentField[A <: ContentHeaderField: Typeable](codec: Codec[A])(implicit ev: ClassTag[A]): ContentHeaderCodecDefinition[HttpHeader] =
+    new ContentHeaderCodecDefinition[HttpHeader]  {
+      def headerName: String = nameFromClass(ev.runtimeClass)
+
+      def headerCodec: Codec[HttpHeader] = codec.asInstanceOf[Codec[HttpHeader]].withContext(headerName)
+
+      def contentField: Codec[ContentHeaderField] = codec.upcast
+    }
 
 }

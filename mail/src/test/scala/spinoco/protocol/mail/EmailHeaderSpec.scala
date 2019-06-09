@@ -9,8 +9,7 @@ import scodec.bits.ByteVector
 import shapeless.tag
 import spinoco.protocol.mail.header._
 import spinoco.protocol.mail.header.codec.EmailHeaderCodec
-import spinoco.protocol.mail.mime.TransferEncoding
-import spinoco.protocol.mime.{ContentType, MIMECharset, MediaType}
+import spinoco.protocol.mime.{ContentType, MIMECharset, MediaType, TransferEncoding}
 
 /**
   * Created by pach on 23/10/17.

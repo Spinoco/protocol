@@ -1,7 +1,7 @@
-package spinoco.protocol.mail.mime
+package spinoco.protocol.mime
 
-import scodec.{Attempt, Codec}
 import scodec.codecs._
+import scodec.{Attempt, Codec}
 import spinoco.protocol.common.util.attempt
 
 

@@ -15,3 +15,5 @@ trait HttpHeader {
 
 }
 
+/** denotes header fields that may be used with MIME parts **/
+trait ContentHeaderField extends HttpHeader
