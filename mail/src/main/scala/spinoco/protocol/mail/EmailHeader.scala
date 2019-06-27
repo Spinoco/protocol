@@ -40,6 +40,9 @@ case class EmailHeader(fields: List[EmailHeaderField]) { self =>
   /** returns any email addresses marked as `bcc` **/
   def bcc: Seq[EmailAddress] = destination(DestinationType.Bcc)
 
+  /** returns any email addresses marked as `replyTo` **/
+  def replyTo: Seq[EmailAddress] = destination(DestinationType.ReplyTo)
+
   /** add supplied fields to header **/
   def add(field1: EmailHeaderField, fields: EmailHeaderField*): EmailHeader =
     self.copy(fields = self.fields ++ ( field1 +: fields))
