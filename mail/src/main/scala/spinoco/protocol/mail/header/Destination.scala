@@ -25,6 +25,7 @@ case class Destination(
     case DestinationType.To => Destination.To.name
     case DestinationType.Cc => Destination.Cc.name
     case DestinationType.Bcc => Destination.Bcc.name
+    case DestinationType.ReplyTo => Destination.ReplyTo.name
   }
 }
 
@@ -71,12 +72,24 @@ object Destination {
 
   }
 
-}
+  object ReplyTo extends HeaderDescription[Destination] {
+    val name: String = "Reply-To"
 
+    val codec: Codec[Destination] = {
+      commaSeparated(EmailAddressCodec.codec, fold = true).xmap(
+        { case (email, others) => Destination(DestinationType.ReplyTo, email, others) }, dest => (dest.email, dest.others)
+      )
+    }
+
+    def emailHeaderField: Codec[EmailHeaderField] = codec.upcast
+
+  }
+
+}
 
 /** type of message destination **/
 object DestinationType extends Enumeration {
-  val To, Cc, Bcc = Value
+  val To, Cc, Bcc, ReplyTo = Value
 
 }
 

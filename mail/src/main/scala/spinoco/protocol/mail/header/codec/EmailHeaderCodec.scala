@@ -100,6 +100,7 @@ object EmailHeaderCodec {
       , Destination.To
       , Destination.Cc
       , Destination.Bcc
+      , Destination.ReplyTo
       , From
       , `In-Reply-To`
       , Keywords
@@ -107,7 +108,6 @@ object EmailHeaderCodec {
       , OriginationDate
       , Received
       , References
-      , `Reply-To`
       , `Resent-Date`
       , ResentDestination.To
       , ResentDestination.Cc
