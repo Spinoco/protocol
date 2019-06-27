@@ -27,12 +27,12 @@ lazy val commonSettings = Seq(
     "-Ywarn-unused-import"
    ),
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-   scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
+   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
    libraryDependencies ++= Seq(
      "org.scodec" %% "scodec-bits" % "1.1.5"
      , "org.scodec" %% "scodec-core" % "1.10.3"
-     , "org.scalatest" %% "scalatest" % "3.0.0" % "test"
-     , "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+     , "org.scalatest" %% "scalatest" % "3.0.0" % Test
+     , "org.scalacheck" %% "scalacheck" % "1.13.4" % Test
    ),
    scmInfo := Some(ScmInfo(url("https://github.com/Spinoco/protocol"), "git@github.com:Spinoco/protocol.git")),
    homepage := None,
@@ -102,9 +102,9 @@ lazy val releaseSettings = Seq(
 )
 
 lazy val noPublish = Seq(
-  publish := (),
-  publishLocal := (),
-  publishSigned := (),
+  publish := {},
+  publishLocal := {},
+  publishSigned := {},
   publishArtifact := false
 )
 
@@ -189,7 +189,7 @@ lazy val kafka =
     name := "protocol-kafka"
     , libraryDependencies ++= Seq(
       "org.xerial.snappy" % "snappy-java" % "1.1.2.1"  // for supporting a Snappy compression of message sets
-      , "org.apache.kafka" %% "kafka" % "0.10.2.0" % "test"
+      , "org.apache.kafka" %% "kafka" % "0.10.2.0" % Test
     )
   ).dependsOn(
     common
