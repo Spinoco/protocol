@@ -4,6 +4,7 @@ language : scala
 scala:
   - 2.11.12
   - 2.12.8
+  - 2.13.0
 
 cache:
   directories:
@@ -14,6 +15,6 @@ jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 "project allProtocols" test
+  - sbt "project allProtocols" "++$TRAVIS_SCALA_VERSION test"
 
 

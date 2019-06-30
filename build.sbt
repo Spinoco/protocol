@@ -13,7 +13,7 @@ lazy val contributors = Seq(
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
    scalaVersion := "2.12.8",
-   crossScalaVersions := Seq("2.11.12", "2.12.8"),
+   crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0"),
    scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -21,11 +21,12 @@ lazy val commonSettings = Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-language:postfixOps",
-    "-Xfatal-warnings",
-    "-Yno-adapted-args",
+//    "-Xfatal-warnings",
     "-Ywarn-value-discard",
-    "-Ywarn-unused-import"
-   ),
+   ) ++ (if (!scalaVersion.value.startsWith("2.13"))
+          Seq("-Yno-adapted-args", "-Ywarn-unused-import")
+        else
+          Seq.empty),
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
    scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
    libraryDependencies ++= Seq(
@@ -149,7 +150,6 @@ lazy val stun =
   )
   .dependsOn(common)
 
-
 lazy val webSocket =
   project.in(file("websocket"))
   .settings(commonSettings)
@@ -165,9 +165,6 @@ lazy val http =
     name := "protocol-http"
   )
   .dependsOn(common, mime)
-
-
-
 
 lazy val sdp =
   project.in(file("sdp"))
@@ -187,6 +184,7 @@ lazy val kafka =
   project.in(file("kafka"))
   .settings(commonSettings)
   .settings(
+    crossScalaVersions := Seq("2.11.12", "2.12.8"),
     name := "protocol-kafka"
     , libraryDependencies ++= Seq(
       "org.xerial.snappy" % "snappy-java" % "1.1.7.3"  // for supporting a Snappy compression of message sets
@@ -217,6 +215,9 @@ lazy val allProtocols =
   project.in(file("."))
  .settings(commonSettings)
  .settings(noPublish)
+ .settings(
+   crossScalaVersions := Seq("2.11.12", "2.12.8")
+ )
  .aggregate(
    common
    , mime
