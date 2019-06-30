@@ -4,9 +4,11 @@ import scodec.bits.BitVector
 import scodec.{Attempt, Codec}
 import scodec.codecs._
 import shapeless.{::, HNil}
+import shapeless.Typeable.simpleTypeable
 import spinoco.protocol.kafka._
 import spinoco.protocol.common.util._
 import spinoco.protocol.kafka.Request.{FetchRequest, MetadataRequest, OffsetsRequest, ProduceRequest}
+import spinoco.protocol.kafka.Response.{FetchResponse, MetadataResponse, OffsetResponse, ProduceResponse}
 
 
 object MessageCodec {
@@ -26,13 +28,12 @@ object MessageCodec {
   /** decodes concrete response **/
   def responseCodecFor(version: ProtocolVersion.Value, apiKey:ApiKey.Value):Codec[Response] = {
     apiKey match {
-      case ApiKey.FetchRequest => FetchCodec.responseCodec(version).upcast
-      case ApiKey.MetadataRequest => MetadataCodec.metadataResponseCodec.upcast
-      case ApiKey.ProduceRequest => ProduceCodec.produceResponseCodec(version).upcast
-      case ApiKey.OffsetRequest => OffsetCodec.responseCodec(version).upcast
+      case ApiKey.FetchRequest => FetchCodec.responseCodec(version).upcast(simpleTypeable(classOf[FetchResponse]))
+      case ApiKey.MetadataRequest => MetadataCodec.metadataResponseCodec.upcast(simpleTypeable(classOf[MetadataResponse]))
+      case ApiKey.ProduceRequest => ProduceCodec.produceResponseCodec(version).upcast(simpleTypeable(classOf[ProduceResponse]))
+      case ApiKey.OffsetRequest => OffsetCodec.responseCodec(version).upcast(simpleTypeable(classOf[OffsetResponse]))
     }
   }
-
 
   object impl {
 
@@ -103,12 +104,12 @@ object MessageCodec {
       requestHeaderCodec.flatZip[Request] {
         case api :: version :: _ =>
           api match {
-            case ApiKey.ProduceRequest => ProduceCodec.requestCodec.upcast
-            case ApiKey.FetchRequest => FetchCodec.requestCodec(version).upcast
-            case ApiKey.MetadataRequest => MetadataCodec.requestCodec.upcast
-            case ApiKey.OffsetRequest => OffsetCodec.requestCodec(version).upcast
+            case ApiKey.ProduceRequest => ProduceCodec.requestCodec.upcast(simpleTypeable(classOf[ProduceRequest]))
+            case ApiKey.FetchRequest => FetchCodec.requestCodec(version).upcast(simpleTypeable(classOf[FetchRequest]))
+            case ApiKey.MetadataRequest => MetadataCodec.requestCodec.upcast(simpleTypeable(classOf[MetadataRequest]))
+            case ApiKey.OffsetRequest => OffsetCodec.requestCodec(version).upcast(simpleTypeable(classOf[OffsetsRequest]))
           }
-      }.xmap(decode _ tupled,encode)
+      }.xmap(decode _ tupled, encode)
     }
 
   }
