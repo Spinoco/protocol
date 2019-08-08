@@ -6,6 +6,7 @@ import shapeless.Typeable
 import spinoco.protocol.mail.EmailHeader
 import spinoco.protocol.mail.header._
 import spinoco.protocol.mail.mime.MIMEHeader
+import spinoco.protocol.common.codec.`ISO-8859-1`
 
 import scala.annotation.tailrec
 
@@ -70,14 +71,14 @@ object EmailHeaderCodec {
 
             val bits = impl.trimHead(bytes.drop(headerNameBytes.length + 1)).bits
             allHeaders.get(headerName.toLowerCase) match {
-              case Some(c) => c.decode(bits) orElse (scodec.codecs.utf8.decode(bits) orElse scodec.codecs.ascii.decode(bits)).flatMap { rslt =>
+              case Some(c) => c.decode(bits) orElse `ISO-8859-1`.decode(bits).flatMap { rslt =>
                 T.cast(NonRFC(headerName, rslt.value)) match {
                   case Some(h) => Attempt.successful(rslt.map(_ => h))
                   case None => Attempt.failure(Err(s"Cannot encode as Non RFC, hence ${T.describe} is not superclass of it"))
                 }
               }
 
-              case None => (scodec.codecs.utf8.decode(bits) orElse scodec.codecs.ascii.decode(bits)).flatMap { rslt =>
+              case None => `ISO-8859-1`.decode(bits).flatMap { rslt =>
                 T.cast(GenericField(headerName, rslt.value)) match {
                   case Some(h) => Attempt.successful(rslt.map(_ => h))
                   case None => Attempt.failure(Err(s"Cannot encode as Generic Field, hence ${T.describe} is not superclass of it"))
