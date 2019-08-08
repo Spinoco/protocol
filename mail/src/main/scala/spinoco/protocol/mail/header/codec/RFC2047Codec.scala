@@ -32,6 +32,7 @@ object RFC2047Codec {
     *
     */
   val codec: Codec[String] = {
+
     new Codec[String] {
       def encode(value: String): Attempt[BitVector] =
         impl.encodeRFC2047(value) flatMap { encoded =>
@@ -39,7 +40,7 @@ object RFC2047Codec {
         }
 
       def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
-        (ascii.decode(bits) orElse utf8.decode(bits)) map { case (r@DecodeResult(s, remainder)) =>
+        (ascii.decode(bits) orElse `ISO-8859-1`.decode(bits)) map { case (r@DecodeResult(s, remainder)) =>
           impl.decodeRFC2047(s.trim).fold(_ => r, s0 => DecodeResult(s0, remainder))
         }
       }

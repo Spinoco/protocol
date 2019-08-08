@@ -2,6 +2,7 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.bits.ByteVector
 
 
 object SubjectSpec extends Properties("Subject") {
@@ -81,13 +82,12 @@ object SubjectSpec extends Properties("Subject") {
     )
   }
 
-  property("encode.unicode.Q.test") = protect {
-    verify(
-      "Subject ö"
-      , Subject("Subject ö")
-      , "=?UTF-8?Q?Subject_=C3=B6?="
+  property("encode.unicode.Q.plain.utf-8.from.HEX") = protect {
+    verifyBytes(
+      ByteVector(Vector(0xF6.toByte))
+      , Subject("ö")
+      , "=?UTF-8?Q?=C3=B6?="
     )
   }
-
 
 }
