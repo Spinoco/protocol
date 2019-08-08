@@ -11,7 +11,7 @@ object RFC3986 {
 
   val genDelims = BitSet(':', '/', '?', '#', '[', ']', '@')
 
-  val subDelims = BitSet('!', '$', '&', ''', '(', ')' , '*', '+', ',', ';', '=')
+  val subDelims = BitSet('!', '$', '&', '\'', '(', ')' , '*', '+', ',', ';', '=')
 
   val reserved  = genDelims ++ subDelims
 

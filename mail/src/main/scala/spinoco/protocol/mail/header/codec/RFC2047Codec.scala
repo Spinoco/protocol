@@ -68,8 +68,6 @@ object RFC2047Codec {
   object impl {
 
     val EncodedWord = "=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
-    val AsciiEncoder = Charset.forName("ASCII").newEncoder()
-    val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
     val MaxLineSize = 75 // max size of line before put FWS and new word when encoding
 
     /*
@@ -118,6 +116,9 @@ object RFC2047Codec {
     }
 
     def encodeRFC2047(encode: String): Attempt[String] = {
+      val AsciiEncoder = Charset.forName("ASCII").newEncoder()
+      val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
+
       if (encode.forall { c => AsciiEncoder.canEncode(c) && !c.isControl && c != '?' }) Attempt.successful(encode)
       else {
         @tailrec
