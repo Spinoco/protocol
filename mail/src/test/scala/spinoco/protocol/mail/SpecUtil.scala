@@ -23,4 +23,12 @@ object SpecUtil {
         :| s"Encoded value: $decoded as: ${C.encode(decoded).map(_.bytes.decodeUtf8)}")
   }
 
+  def verifyBytes[A](bytes: ByteVector, decoded: A, expect: String)(implicit C: Codec[A]): Prop = {
+    ((C.decode(bytes.bits) ?= Attempt.Successful(
+      DecodeResult(decoded, BitVector.empty)
+    )) :| s"Decoded value: $bytes") &&
+      ((C.encode(decoded).map(_.bytes) ?= Attempt.Successful(ByteVector.view(expect.getBytes)))
+        :| s"Encoded value: $decoded as: ${C.encode(decoded).map(_.bytes.decodeUtf8)}")
+  }
+
 }

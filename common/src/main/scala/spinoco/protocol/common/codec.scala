@@ -32,6 +32,7 @@ object codec {
 
   val utf8Token = token(utf8)
 
+  val `ISO-8859-1` = string(Charset.forName("ISO-8859-1"))
 
   val quotedAsciiToken: Codec[String] = {
     constantString1("\"") ~> takeWhile(asciiToken)(_ != '"') <~ constantString1("\"")

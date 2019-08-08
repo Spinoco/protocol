@@ -37,7 +37,6 @@ object RFC2184Codec {
 
   object impl {
     val maxValueLength = 78
-    val AsciiEncoder = Charset.forName("ASCII").newEncoder()
 
     val attribute: Codec[String] = {
       takeWhileChar(asciiToken)('*', '=')
@@ -54,7 +53,7 @@ object RFC2184Codec {
 
     // [charset]'[language]'
     val charsetAndLang = {
-      (token(ascii, ''') <~ constantString1("'")) ~ (token(ascii, ''') <~ constantString1("'"))
+      (token(ascii, '\'') <~ constantString1("'")) ~ (token(ascii, '\'') <~ constantString1("'"))
     }
 
     def parameter(bits: BitVector, cName: Option[String], cCharset: Option[String]): Attempt[DecodeResult[(String, String, Option[Int], Option[String])]] = {
@@ -122,6 +121,7 @@ object RFC2184Codec {
 
 
     def encodeValue(name: String, value: String, charset: String): Attempt[String] = {
+      val AsciiEncoder = Charset.forName("ASCII").newEncoder()
 
       lazy val encoder = Charset.forName(charset).newEncoder()
 

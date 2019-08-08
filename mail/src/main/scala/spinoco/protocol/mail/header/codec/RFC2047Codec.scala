@@ -32,6 +32,7 @@ object RFC2047Codec {
     *
     */
   val codec: Codec[String] = {
+
     new Codec[String] {
       def encode(value: String): Attempt[BitVector] =
         impl.encodeRFC2047(value) flatMap { encoded =>
@@ -39,7 +40,7 @@ object RFC2047Codec {
         }
 
       def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
-        ascii.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+        `ISO-8859-1`.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
           impl.decodeRFC2047(s.trim).fold(_ => r, s0 => DecodeResult(s0, remainder))
         }
       }
@@ -67,8 +68,6 @@ object RFC2047Codec {
   object impl {
 
     val EncodedWord = "=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
-    val AsciiEncoder = Charset.forName("ASCII").newEncoder()
-    val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
     val MaxLineSize = 75 // max size of line before put FWS and new word when encoding
 
     /*
@@ -117,6 +116,9 @@ object RFC2047Codec {
     }
 
     def encodeRFC2047(encode: String): Attempt[String] = {
+      val AsciiEncoder = Charset.forName("ASCII").newEncoder()
+      val UTF8Encoder = Charset.forName("UTF-8").newEncoder()
+
       if (encode.forall { c => AsciiEncoder.canEncode(c) && !c.isControl && c != '?' }) Attempt.successful(encode)
       else {
         @tailrec
