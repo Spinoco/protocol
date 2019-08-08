@@ -39,7 +39,7 @@ object RFC2047Codec {
         }
 
       def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
-        ascii.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+        (ascii.decode(bits) orElse utf8.decode(bits)) map { case (r@DecodeResult(s, remainder)) =>
           impl.decodeRFC2047(s.trim).fold(_ => r, s0 => DecodeResult(s0, remainder))
         }
       }

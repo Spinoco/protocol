@@ -81,6 +81,13 @@ object SubjectSpec extends Properties("Subject") {
     )
   }
 
+  property("encode.unicode.Q.test") = protect {
+    verify(
+      "Subject ö"
+      , Subject("Subject ö")
+      , "=?UTF-8?Q?Subject_=C3=B6?="
+    )
+  }
 
 
 }
