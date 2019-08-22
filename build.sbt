@@ -21,10 +21,9 @@ lazy val commonSettings = Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-language:postfixOps",
-//    "-Xfatal-warnings",
     "-Ywarn-value-discard",
    ) ++ (if (!scalaVersion.value.startsWith("2.13"))
-          Seq("-Yno-adapted-args", "-Ywarn-unused-import")
+          Seq("-Xfatal-warnings", "-Yno-adapted-args", "-Ywarn-unused-import")
         else
           Seq.empty),
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
