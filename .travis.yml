@@ -12,9 +12,9 @@ cache:
   - $HOME/.sbt
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 script:
-  - sbt "project allProtocols" "++$TRAVIS_SCALA_VERSION test"
+  - sbt -Dfile.encoding=UTF8 "project allProtocols" "++$TRAVIS_SCALA_VERSION test"
 
 
