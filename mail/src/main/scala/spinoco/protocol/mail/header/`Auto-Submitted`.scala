@@ -25,7 +25,7 @@ object `Auto-Submitted` extends DefaultHeaderDescription[`Auto-Submitted`] {
     Attempt.fromEither(
       Try(AutoType.withName(a)).toOption
       .toRight(Err("Could not parse Auto-Submitted header due to invalid tpe: " + a))
-      .right.map(`Auto-Submitted`(_))
+      .map(`Auto-Submitted`(_))
     )
   }
   , b => {

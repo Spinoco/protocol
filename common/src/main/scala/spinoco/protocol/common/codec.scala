@@ -15,8 +15,6 @@ import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 import util.attemptFromEither
 import util.attempt
 
-import scala.collection.GenTraversable
-
 object codec {
 
 
@@ -653,7 +651,7 @@ object codec {
 
 
   /** will encode a collection of `A` with min size of at least `sz`  **/
-  def minItems[A, F[_] <: GenTraversable[_]](sz:Int)(codec: Codec[F[A]]): Codec[F[A]] = {
+  def minItems[A, F[_] <: Iterable[_]](sz:Int)(codec: Codec[F[A]]): Codec[F[A]] = {
     guard(codec){ fa =>
       if (fa.size >= sz) None
       else Some(Err(s"Expected at least $sz items, got ${fa.size}"))
@@ -661,7 +659,7 @@ object codec {
   }
 
   /** will encode a collection of `A` with at max size of `sz` **/
-  def maxItems[A, F[_] <: GenTraversable[_]](sz:Int)(codec: Codec[F[A]]): Codec[F[A]] = {
+  def maxItems[A, F[_] <: Iterable[_]](sz:Int)(codec: Codec[F[A]]): Codec[F[A]] = {
     guard(codec){ fa =>
       if (fa.size <= sz) None
       else Some(Err(s"Expected at max $sz items, got ${fa.size}"))

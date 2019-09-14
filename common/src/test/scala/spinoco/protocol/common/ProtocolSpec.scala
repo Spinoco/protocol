@@ -1,15 +1,14 @@
 package spinoco.protocol.common
 
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.Matchers
+import org.scalatest.{FreeSpec, Matchers}
 import org.scalatest.concurrent.{Eventually, TimeLimitedTests}
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.scalatest.time.SpanSugar._
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 /**
   * Created by pach on 23/07/16.
   */
-class ProtocolSpec extends AnyFreeSpec
+class ProtocolSpec extends FreeSpec
   with ScalaCheckDrivenPropertyChecks
   with Matchers
   with TimeLimitedTests

@@ -9,11 +9,14 @@ lazy val contributors = Seq(
   , "d6y" -> "Richard Dallaway"
 )
 
+val Scala211 = "2.11.12"
+val Scala212 = "2.12.10"
+val Scala213 = "2.13.0"
 
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
-   scalaVersion := "2.12.9",
-   crossScalaVersions := Seq("2.11.12", "2.12.9", "2.13.0"),
+   scalaVersion := Scala212,
+   crossScalaVersions := Seq(Scala211, Scala212, Scala213),
    scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -21,18 +24,18 @@ lazy val commonSettings = Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-language:postfixOps",
-    "-Ywarn-value-discard",
-   ) ++ (if (!scalaVersion.value.startsWith("2.13"))
-          Seq("-Xfatal-warnings", "-Yno-adapted-args", "-Ywarn-unused-import")
-        else
-          Seq.empty),
+    "-Xfatal-warnings",
+   ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+     case Some((2, 11 | 12)) => Seq("-Yno-adapted-args", "-Ywarn-value-discard", "-Ywarn-unused-import")
+     case Some((2, 13)) => Seq("-Wvalue-discard", "-Wunused:imports")
+     case _ => Seq.empty
+   }),
    scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
    scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
    libraryDependencies ++= Seq(
      "org.scodec" %% "scodec-bits" % "1.1.12"
      , "org.scodec" %% "scodec-core" % "1.11.4"
-     , "org.scalatest" %% "scalatest" % "3.1.0-SNAP13" % Test
-     , "org.scalatestplus" %% "scalatestplus-scalacheck" % "1.0.0-SNAP8" % Test
+     , "org.scalatest" %% "scalatest" % "3.0.8" % Test
      , "org.scalacheck" %% "scalacheck" % "1.14.0" % Test
    ),
    scmInfo := Some(ScmInfo(url("https://github.com/Spinoco/protocol"), "git@github.com:Spinoco/protocol.git")),
@@ -116,6 +119,15 @@ lazy val common =
   .settings(
     name := "protocol-common"
   )
+  .settings(
+    unmanagedSourceDirectories in Compile += {
+      val sourceDir = (sourceDirectory in Compile).value
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n <= 12 => sourceDir / "scala-2.13-"
+        case _                       => sourceDir / "scala-2.13+"
+      }
+    }
+  )
 
 lazy val mime =
   project.in(file("mime"))
@@ -183,11 +195,11 @@ lazy val kafka =
   project.in(file("kafka"))
   .settings(commonSettings)
   .settings(
-    crossScalaVersions := Seq("2.11.12", "2.12.8"),
+    crossScalaVersions := Seq(Scala211, Scala212),
     name := "protocol-kafka"
     , libraryDependencies ++= Seq(
       "org.xerial.snappy" % "snappy-java" % "1.1.7.3"  // for supporting a Snappy compression of message sets
-      , "org.apache.kafka" %% "kafka" % "0.10.2.0" % Test
+      , "org.apache.kafka" %% "kafka" % "0.10.2.2" % Test
     )
   ).dependsOn(
     common
@@ -215,7 +227,7 @@ lazy val allProtocols =
  .settings(commonSettings)
  .settings(noPublish)
  .settings(
-   crossScalaVersions := Seq("2.11.12", "2.12.8")
+   crossScalaVersions := Seq.empty
  )
  .aggregate(
    common
