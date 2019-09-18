@@ -11,7 +11,7 @@ lazy val contributors = Seq(
 
 val Scala211 = "2.11.12"
 val Scala212 = "2.12.10"
-val Scala213 = "2.13.0"
+val Scala213 = "2.13.1"
 
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
