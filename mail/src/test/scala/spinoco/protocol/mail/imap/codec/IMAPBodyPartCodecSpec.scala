@@ -374,5 +374,14 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
       , EmailAddress("no-reply", "spinoco.com", None)
     ))
   }
+  property("rfc822-envelope-from-no-space") = protect {
+    IMAPBodyPartCodec.impl.envFrom.decodeValue(BitVector.view(
+      """(("Test" NIL "test" "spinoco.com")("Spinoco Dev" NIL "create" "spinoco.com")(NIL NIL "no-reply" "spinoco.com"))""".getBytes
+    )) ?= Attempt.successful(Vector(
+      EmailAddress("test", "spinoco.com", Some("Test"))
+      , EmailAddress("create", "spinoco.com", Some("Spinoco Dev"))
+      , EmailAddress("no-reply", "spinoco.com", None)
+    ))
+  }
 
 }
