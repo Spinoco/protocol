@@ -16,7 +16,7 @@ import spinoco.protocol.sdp._
 object MGCPCommandCodecSpec extends Properties("MGCPCommandCodec"){
 
   def encode(command: MGCPCommand)(encoded: String): Prop = {
-    "Encode" |: (MGCPCommandCodec.codec.encode(command).map(_.decodeUtf8) ?= Attempt.successful(Right(encoded.lines.mkString("", "\r\n", "\r\n"))))
+    "Encode" |: (MGCPCommandCodec.codec.encode(command).map(_.decodeUtf8) ?= Attempt.successful(Right(encoded.linesWithSeparators.map(_.stripLineEnd).mkString("", "\r\n", "\r\n"))))
   }
 
   def decode(command: MGCPCommand)(encoded: String): Prop = {

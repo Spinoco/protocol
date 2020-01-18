@@ -42,7 +42,7 @@ package object ldap {
           if (bits == trueVector) Right(true)
           else Right(false)
         }
-        .right.map{ case (remaining, value) => DecodeResult(value, remaining)}
+        .map{ case (remaining, value) => DecodeResult(value, remaining)}
         .left.map(err => Err("Could not decode LDAP boolean due to: " + err))
       )
     }

@@ -80,7 +80,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
         |Content-Transfer-Encoding: base64
         |Auto-Submitted: auto-notified
         |
-        |""".stripMargin.lines.mkString("\r\n")
+        |""".stripMargin.linesWithSeparators.map(_.stripLineEnd).mkString("\r\n")
 
 
     EmailHeaderCodec.codec(Int.MaxValue).decodeValue(ByteVector.view(email.getBytes).bits).map { header =>
@@ -151,7 +151,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
                    |Content-Type: text/html; charset=utf-8
                    |Content-Transfer-Encoding: base64
                    |
-                   |""".stripMargin.lines.mkString("\r\n").getBytes)
+                   |""".stripMargin.linesWithSeparators.map(_.stripLineEnd).mkString("\r\n").getBytes)
 
 
     encoded ?= Attempt.successful(expect.bits)

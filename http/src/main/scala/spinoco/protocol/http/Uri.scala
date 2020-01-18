@@ -146,7 +146,7 @@ object Uri {
       }
       Path(
         initialSlash =  trimmed.startsWith("/")
-        , segments = segments
+        , segments = segments.toIndexedSeq
         , trailingSlash = trimmed.endsWith("/") && segments.nonEmpty
       )
     }

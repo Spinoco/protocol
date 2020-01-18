@@ -3,7 +3,7 @@ package spinoco.protocol.mail.header.codec
 import scodec.bits.BitVector
 import scodec.codecs._
 import scodec.{Attempt, Codec, Err}
-import spinoco.protocol.common.codec._
+import spinoco.protocol.common.codec.{quotedString => _, _}
 import spinoco.protocol.mail.EmailAddress
 
 /**

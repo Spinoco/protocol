@@ -15,6 +15,7 @@ import spinoco.protocol.mime.ContentType._
 import spinoco.protocol.mime.MediaType.CustomMediaType
 import spinoco.protocol.mime._
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.duration._
 
 
@@ -195,7 +196,7 @@ property("Accept-Ranges Header") = secure {
         , Authorization(HttpCredentials.OAuthToken("Bearer", "mF_9.B5f-4.1JqM"))
         , "Authorization: Bearer mF_9.B5f-4.1JqM")
       , ("Authorization: Digest username=\"Mufasa\",\n                 realm=\"testrealm@host.com\",\n                 nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\",\n                 uri=\"/dir/index.html\",\n                 qop=auth,\n                 nc=00000001,\n         cnonce=\"0a4f113b\",\n                 response=\"6629fae49393a05397450978507c4ef1\",\n                 opaque=\"5ccc069c403ebaf9f0171e9517f40e41\""
-        , Authorization(HttpCredentials.DigestHttpCredentials("Digest", Map(
+        , Authorization(HttpCredentials.DigestHttpCredentials("Digest", ListMap(
         "username" -> "Mufasa"
         , "realm" -> "testrealm@host.com"
         , "nonce" -> "dcd98b7102dd2f0e8b11d0f600bfb0c093"
@@ -206,7 +207,7 @@ property("Accept-Ranges Header") = secure {
         , "response" -> "6629fae49393a05397450978507c4ef1"
         , "opaque" -> "5ccc069c403ebaf9f0171e9517f40e41"
       )))
-        , "Authorization: Digest nc=00000001, nonce=dcd98b7102dd2f0e8b11d0f600bfb0c093, username=Mufasa, uri=\"/dir/index.html\", cnonce=0a4f113b, qop=auth, response=6629fae49393a05397450978507c4ef1, opaque=5ccc069c403ebaf9f0171e9517f40e41, realm=\"testrealm@host.com\"")
+        , "Authorization: Digest username=Mufasa, realm=\"testrealm@host.com\", nonce=dcd98b7102dd2f0e8b11d0f600bfb0c093, uri=\"/dir/index.html\", qop=auth, nc=00000001, cnonce=0a4f113b, response=6629fae49393a05397450978507c4ef1, opaque=5ccc069c403ebaf9f0171e9517f40e41")
     ))
   }
 

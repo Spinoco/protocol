@@ -59,7 +59,7 @@ object ContentType {
         , { case Parameters(charset, params) =>
 
           if (required.forall(params.isDefinedAt)) {
-            Attempt.successful(params.mapValues(Right(_)).toList ++ charset.map("charset" -> Left(_)).toList)
+            Attempt.successful(params.map { case (k, v) => k -> Right(v) }.toList ++ charset.map("charset" -> Left(_)).toList)
           } else {
             Attempt.failure(Err(s"Invalid media type. Parameters ${required.mkString(", ")} are required for $mediaType"))
           }

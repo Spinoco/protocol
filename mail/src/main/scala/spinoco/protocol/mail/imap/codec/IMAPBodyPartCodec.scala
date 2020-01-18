@@ -7,6 +7,7 @@ import scodec._
 import scodec.bits.BitVector
 import scodec.codecs._
 import shapeless.{::, HNil}
+import shapeless.Typeable.simpleTypeable
 import spinoco.protocol.common.codec._
 import spinoco.protocol.mail.EmailAddress
 import spinoco.protocol.mail.header.codec.{DateTimeCodec, RFC2047Codec}
@@ -22,8 +23,8 @@ object IMAPBodyPartCodec {
   lazy val codec: Codec[BodyPart] = {
     `(` ~>
       choice(
-        ("multi body"         | multiBodyPart.upcast[BodyPart])
-        , ("single body"      | singleBodyPart.upcast[BodyPart])
+        ("multi body"         | multiBodyPart.upcast[BodyPart](simpleTypeable(classOf[MultiBodyPart])))
+        , ("single body"      | singleBodyPart.upcast[BodyPart](simpleTypeable(classOf[SingleBodyPart])))
       ) <~
      `)`
   }
