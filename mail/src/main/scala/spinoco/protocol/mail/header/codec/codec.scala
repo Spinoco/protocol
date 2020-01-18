@@ -19,6 +19,14 @@ package object codec {
   private[codec] val foldingComma: ByteVector = ByteVector.view(",\r\n ".getBytes)
   private[codec] val cfws : ByteVector = ByteVector.view("\r\n ".getBytes)
 
+  // A WSP email encoding as specified in https://tools.ietf.org/html/rfc5322#section-2.2
+  private[codec] val WSP: Codec[Unit] = {
+    choice(
+      constantString1(" ")
+      , constantString1("\t")
+    )
+  }
+
 
   /**
     * Creates a codec, that decodes list of comma separated values.

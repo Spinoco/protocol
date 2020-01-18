@@ -32,6 +32,14 @@ object EmailAddressSpec extends Properties("EmailAddress") {
     )
   }
 
+  property("bracket-quoted-ascii-display-tab") = protect {
+    verify(
+      "\"John Doe\"\t<john.doe@spinoco.com>"
+      , EmailAddress("john.doe", "spinoco.com", Some("John Doe"))
+      , "\"John Doe\" <john.doe@spinoco.com>"
+    )
+  }
+
   property("bracket-unicode-display") = protect {
     verify(
       "=?UTF-8?Q?Val=C3=A9rie_Doe?= <valerie.doe@spinoco.com>"
