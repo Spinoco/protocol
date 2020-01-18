@@ -226,9 +226,6 @@ lazy val allProtocols =
   project.in(file("."))
  .settings(commonSettings)
  .settings(noPublish)
- .settings(
-   crossScalaVersions := Seq.empty
- )
  .aggregate(
    common
    , mime
