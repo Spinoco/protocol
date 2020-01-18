@@ -27,6 +27,9 @@ object codec {
   /** codec that encodes/decodes to space **/
   val SPACE: Codec[Unit] = constantString1(" ")
 
+  /** codec that encodes to space and optionally decodes from space */
+  val optionalSPACE: Codec[Unit] = optionalString1(" ")
+
 
   val asciiToken = token(ascii)
 
@@ -453,14 +456,14 @@ object codec {
       .recover { case _ => DecodeResult(false, bits) }
   }
 
-
-
-
-  /** codec that encodes and deoces to supplied string **/
+  /** codec that encodes and decodes to supplied string **/
   def constantString1(s: String): Codec[Unit] =
     constant(BitVector.view(s.getBytes))
 
-
+  /** codec that encodes and optionally decodes to supplied string **/
+  def optionalString1(s: String): Codec[Unit] =  {
+    optional(lookahead2(constantString1(s)), constantString1(s)).xmap(_ => (), _ => Some(()))
+  }
 
   /** like `constantString1` but decodes when matches case insensitive. Works fro ascii only. **/
   def constantString1CaseInsensitive(s: String): Codec[Unit] = {

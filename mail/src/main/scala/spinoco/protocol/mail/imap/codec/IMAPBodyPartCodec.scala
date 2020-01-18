@@ -121,7 +121,7 @@ object IMAPBodyPartCodec {
     private def emailAddressesList: Codec[Vector[EmailAddress]] = {
       choice(
         NIL.widen[Vector[EmailAddress]](_ => Vector.empty, v => if (v.isEmpty) Attempt.successful(()) else Attempt.failure(Err("List must be empty")))
-        , `(` ~> minItems(1)(vectorVDelimited(emailAddress, SPACE)) <~ `)`
+        , `(` ~> minItems(1)(vectorVDelimited(emailAddress, optionalSPACE)) <~ `)`
       )
     }
 
