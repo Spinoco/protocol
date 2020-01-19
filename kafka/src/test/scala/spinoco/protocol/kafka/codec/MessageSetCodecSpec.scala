@@ -3,8 +3,7 @@ package spinoco.protocol.kafka.codec
 
 import java.util.Date
 
-import kafka.message.{GZIPCompressionCodec, SnappyCompressionCodec}
-import org.apache.kafka.common.record.{CompressionType, MemoryRecords, Record, RecordBatch, SimpleRecord, TimestampType}
+import org.apache.kafka.common.record.{CompressionType, MemoryRecords, Record, RecordBatch, SimpleRecord}
 import spinoco.protocol.common.ProtocolSpec
 import scodec.{Attempt, DecodeResult}
 import scodec.bits.{BitVector, ByteVector}
