@@ -1,5 +1,6 @@
 package spinoco.protocol.kafka.codec
 
+import org.apache.kafka.common.requests.RequestHeader
 import scodec.bits.{BitVector, ByteVector}
 import scodec.{Attempt, DecodeResult}
 import shapeless.tag
@@ -12,14 +13,14 @@ class FetchCodecSpec extends CodecSpec {
 
   val kRequest = SerializationTestUtils.createTestFetchRequest
   val sRequest = RequestMessage(
-    version = ProtocolVersion.Kafka_0_10_2
-    , correlationId = kRequest.correlationId
-    , clientId = kRequest.clientId
+    version = ProtocolVersion.Kafka_0_8
+    , correlationId = 1
+    , clientId = "client"
     , request = FetchRequest(
       replica = tag[Broker](kRequest.replicaId)
       , maxWaitTime = kRequest.maxWait.millis
       , minBytes = kRequest.minBytes
-      , maxBytes = Some(Int.MaxValue)
+      , maxBytes = None
       , topics = Vector(
         (tag[TopicName]("test1"), Vector(
           (tag[PartitionId](0),tag[Offset](1000),100)
@@ -39,7 +40,7 @@ class FetchCodecSpec extends CodecSpec {
 
 
   "Fetch API" - {
-    "De-Serialize request" in {
+    "De-Serialize request - fetch" in {
 
       val serialized1 = serializeRequest(kRequest)
       val result = MessageCodec.requestCodec.decode(serialized1)
@@ -53,8 +54,14 @@ class FetchCodecSpec extends CodecSpec {
     }
 
     "Serializes request" in {
-      MessageCodec.requestCodec.encode(sRequest).map(bv => kafka.api.FetchRequest.readFrom(bv.bytes.drop(4+2).toByteBuffer)) shouldBe
-      Attempt.successful { kRequest }
+      MessageCodec.requestCodec.encode(sRequest).map { bv =>
+        val bytes = bv.bytes.drop(4).toByteBuffer
+
+        val _ = RequestHeader.parse(bytes)
+
+        // We are in java world, objects do not equal
+        org.apache.kafka.common.requests.FetchRequest.parse(bytes, 0).toString
+      } shouldBe Attempt.successful { kRequest.toString }
     }
 
     "De-Serialize large request with incomplete offset" in {

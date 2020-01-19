@@ -1,45 +1,27 @@
 package spinoco.protocol.kafka.codec
 
-import java.nio.ByteBuffer
-
-import kafka.api._
+import org.apache.kafka.common.requests._
 import org.scalacheck.{Arbitrary, Gen}
 import scodec.bits.{BitVector, ByteVector}
 import spinoco.protocol.common.ProtocolSpec
-import spinoco.protocol.kafka.{ApiKey, ProtocolVersion}
+import spinoco.protocol.kafka.ProtocolVersion
 
 
 class CodecSpec extends ProtocolSpec {
 
-
   implicit val pvGen = Arbitrary(Gen.oneOf(ProtocolVersion.values.toSeq))
 
-  def serializeRequest(rq:RequestOrResponse): BitVector = {
-    val sz = rq.sizeInBytes
-    val buffer = ByteBuffer.allocate(sz)
-
-    val apiId =
-      rq match {
-        case _: TopicMetadataRequest => ApiKey.MetadataRequest.id
-        case _: ProducerRequest => ApiKey.ProduceRequest.id
-        case _: FetchRequest => ApiKey.FetchRequest.id
-        case _: OffsetRequest => ApiKey.OffsetRequest.id
-      }
-
-    rq.writeTo(buffer)
-    buffer.rewind()
-    (ByteVector.fromInt(sz+2) ++
-      ByteVector.fromShort(apiId.toShort) ++
-      ByteVector.view(buffer)).toBitVector
+  def serializeRequest(rq: AbstractRequest): BitVector = {
+    val bytes = rq.serialize(new RequestHeader(rq.api, 0, "client", 1))
+    bytes.rewind()
+    (ByteVector.fromInt(bytes.remaining()) ++ ByteVector.view(bytes)).toBitVector
   }
 
 
-  def serializeResponse(resp:RequestOrResponse): BitVector = {
-    val sz = resp.sizeInBytes
-    val buffer = ByteBuffer.allocate(sz)
-    resp.writeTo(buffer)
-    buffer.rewind()
-    (ByteVector.fromInt(sz) ++ ByteVector.view(buffer)).toBitVector
+  def serializeResponse(resp: AbstractResponse, version: Short): BitVector = {
+    val bytes = resp.serialize(version, new ResponseHeader(1, 0.toShort))
+    bytes.rewind()
+    (ByteVector.fromInt(bytes.remaining()) ++ ByteVector.view(bytes)).toBitVector
   }
 
 

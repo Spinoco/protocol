@@ -1,19 +1,21 @@
 package spinoco.protocol.kafka.codec
 
-import java.util.Date
+import java.util
+import java.util.{Date, Optional}
 
-import kafka.api._
-import kafka.cluster.{Broker, EndPoint}
-import kafka.common.{OffsetAndMetadata, OffsetMetadata, TopicAndPartition}
-import kafka.controller.LeaderIsrAndControllerEpoch
-import kafka.message._
+import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.network.ListenerName
-import org.apache.kafka.common.protocol.{Errors, SecurityProtocol}
-import org.apache.kafka.common.record.TimestampType
+import org.apache.kafka.common.protocol.Errors
+import org.apache.kafka.common.record.{CompressionType, MemoryRecords, SimpleRecord, TimestampType}
 import scodec.bits.ByteVector
 import shapeless.tag
 import shapeless.tag.@@
-import spinoco.protocol.kafka.{Compression, MessageVersion, PartitionId, TimeData, TopicName}
+import spinoco.protocol.kafka.{MessageVersion, PartitionId, TimeData, TopicName}
+import org.apache.kafka.common.requests._
+import org.apache.kafka.common.security.auth.SecurityProtocol
+
+import collection.JavaConverters._
+
 
 /**
   * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,23 +41,53 @@ object SerializationTestUtils {
   private val isr1 = List(0, 1, 2)
   private val leader2 = 0
   private val isr2 = List(0, 2, 3)
-  private val partitionDataFetchResponse0 = new FetchResponsePartitionData(messages = new ByteBufferMessageSet(new Message("first message".getBytes)))
-  private val partitionDataFetchResponse1 = new FetchResponsePartitionData(messages = new ByteBufferMessageSet(new Message("second message".getBytes)))
-  private val partitionDataFetchResponse2 = new FetchResponsePartitionData(messages = new ByteBufferMessageSet(new Message("third message".getBytes)))
-  private val partitionDataFetchResponse3 = new FetchResponsePartitionData(messages = new ByteBufferMessageSet(new Message("fourth message".getBytes)))
+
+  private val partitionDataFetchResponse0 = {
+    import FetchResponse.PartitionData
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "first message".getBytes))
+    val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
+    val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
+    dataMap.put(new TopicPartition(topic1, 0), partitionData)
+    new FetchResponse[MemoryRecords](Errors.NONE, dataMap,0, 0)
+  }
+  private val partitionDataFetchResponse1 = {
+    import FetchResponse.PartitionData
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "second message".getBytes))
+    val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
+    val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
+    dataMap.put(new TopicPartition(topic1, 0), partitionData)
+    new FetchResponse[MemoryRecords](Errors.NONE, dataMap,0, 0)
+  }
+  private val partitionDataFetchResponse2 = {
+    import FetchResponse.PartitionData
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "third message".getBytes))
+    val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
+    val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
+    dataMap.put(new TopicPartition(topic1, 0), partitionData)
+    new FetchResponse[MemoryRecords](Errors.NONE, dataMap,0, 0)
+  }
+  private val partitionDataFetchResponse3 = {
+    import FetchResponse.PartitionData
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "fourth message".getBytes))
+    val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
+    val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
+    dataMap.put(new TopicPartition(topic1, 0), partitionData)
+    new FetchResponse[MemoryRecords](Errors.NONE, dataMap,0, 0)
+  }
+
   private val partitionDataFetchResponseMap = Map((0, partitionDataFetchResponse0), (1, partitionDataFetchResponse1), (2, partitionDataFetchResponse2), (3, partitionDataFetchResponse3))
 
   private val topicDataFetchResponse = {
     val groupedData = Array(topic1, topic2).flatMap(topic =>
       partitionDataFetchResponseMap.map(partitionAndData =>
-        (TopicAndPartition(topic, partitionAndData._1), partitionAndData._2)))
+        (new TopicPartition(topic, partitionAndData._1), partitionAndData._2)))
     groupedData.toSeq
   }
 
-  private val partitionDataMessage0 = new ByteBufferMessageSet(new Message("first message".getBytes))
-  private val partitionDataMessage1 = new ByteBufferMessageSet(new Message("second message".getBytes))
-  private val partitionDataMessage2 = new ByteBufferMessageSet(new Message("third message".getBytes))
-  private val partitionDataMessage3 = new ByteBufferMessageSet(new Message("fourth message".getBytes))
+  private val partitionDataMessage0 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "first message".getBytes))
+  private val partitionDataMessage1 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "second message".getBytes))
+  private val partitionDataMessage2 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "third message".getBytes))
+  private val partitionDataMessage3 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "fourth message".getBytes))
   private val partitionDataProducerRequestArray = Array(partitionDataMessage0, partitionDataMessage1, partitionDataMessage2, partitionDataMessage3)
 
   val topicDataProducerRequest = {
@@ -63,180 +95,83 @@ object SerializationTestUtils {
       partitionDataProducerRequestArray.zipWithIndex.map
       {
         case(partitionDataMessage, partition) =>
-          (TopicAndPartition(topic, partition), partitionDataMessage)
+          (new TopicPartition(topic, partition), partitionDataMessage)
       })
     collection.mutable.Map(groupedData:_*)
   }
 
   private val requestInfos = Seq(
-    TopicAndPartition(topic1, 0) -> PartitionFetchInfo(1000, 100),
-    TopicAndPartition(topic1, 1) -> PartitionFetchInfo(2000, 100),
-    TopicAndPartition(topic1, 2) -> PartitionFetchInfo(3000, 100),
-    TopicAndPartition(topic1, 3) -> PartitionFetchInfo(4000, 100),
-    TopicAndPartition(topic2, 0) -> PartitionFetchInfo(1000, 100),
-    TopicAndPartition(topic2, 1) -> PartitionFetchInfo(2000, 100),
-    TopicAndPartition(topic2, 2) -> PartitionFetchInfo(3000, 100),
-    TopicAndPartition(topic2, 3) -> PartitionFetchInfo(4000, 100)
+    new TopicPartition(topic1, 0) -> new FetchRequest.PartitionData(1000, 100, 100, Optional.empty()),
+    new TopicPartition(topic1, 1) ->  new FetchRequest.PartitionData(2000, 100, 100, Optional.empty()),
+    new TopicPartition(topic1, 2) ->  new FetchRequest.PartitionData(3000, 100, 100, Optional.empty()),
+    new TopicPartition(topic1, 3) ->  new FetchRequest.PartitionData(4000, 100, 100, Optional.empty()),
+    new TopicPartition(topic2, 0) ->  new FetchRequest.PartitionData(1000, 100, 100, Optional.empty()),
+    new TopicPartition(topic2, 1) ->  new FetchRequest.PartitionData(2000, 100, 100, Optional.empty()),
+    new TopicPartition(topic2, 2) ->  new FetchRequest.PartitionData(3000, 100, 100, Optional.empty()),
+    new TopicPartition(topic2, 3) ->  new FetchRequest.PartitionData(4000, 100, 100, Optional.empty())
   )
 
   val listenerName =  ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT)
 
-  private val brokers = List(
-    new Broker(0, Seq(EndPoint("localhost", 1011, listenerName,  SecurityProtocol.PLAINTEXT)), rack = None),
-    new Broker(1, Seq(EndPoint("localhost", 1012, listenerName, SecurityProtocol.PLAINTEXT)), rack = None),
-    new Broker(2, Seq(EndPoint("localhost", 1013, listenerName, SecurityProtocol.PLAINTEXT)), rack = None)
-  )
-  private val brokerEndpoints = brokers.map(_.getBrokerEndPoint(listenerName))
-
-  private val partitionMetaData0 = new PartitionMetadata(0, Some(brokerEndpoints.head), replicas = brokerEndpoints, isr = brokerEndpoints, errorCode = 0)
-  private val partitionMetaData1 = new PartitionMetadata(1, Some(brokerEndpoints.head), replicas = brokerEndpoints, isr = brokerEndpoints.tail, errorCode = 1)
-  private val partitionMetaData2 = new PartitionMetadata(2, Some(brokerEndpoints.head), replicas = brokerEndpoints, isr = brokerEndpoints, errorCode = 2)
-  private val partitionMetaData3 = new PartitionMetadata(3, Some(brokerEndpoints.head), replicas = brokerEndpoints, isr = brokerEndpoints.tail.tail, errorCode = 3)
-  private val partitionMetaDataSeq = Seq(partitionMetaData0, partitionMetaData1, partitionMetaData2, partitionMetaData3)
-  private val topicmetaData1 = new TopicMetadata(topic1, partitionMetaDataSeq)
-  private val topicmetaData2 = new TopicMetadata(topic2, partitionMetaDataSeq)
-
-  private val leaderAndIsr0 = new LeaderAndIsr(leader = brokers.head.id, isr = brokers.map(_.id))
-  private val leaderAndIsr1 = new LeaderAndIsr(leader = brokers.head.id, isr = brokers.tail.map(_.id))
-  private val leaderAndIsr2 = new LeaderAndIsr(leader = brokers.head.id, isr = brokers.map(_.id))
-  private val leaderAndIsr3 = new LeaderAndIsr(leader = brokers.head.id, isr = brokers.tail.map(_.id))
-
-  private val leaderIsrAndControllerEpoch0 = new LeaderIsrAndControllerEpoch(leaderAndIsr0, controllerEpoch = 0)
-  private val leaderIsrAndControllerEpoch1 = new LeaderIsrAndControllerEpoch(leaderAndIsr1, controllerEpoch = 0)
-  private val leaderIsrAndControllerEpoch2 = new LeaderIsrAndControllerEpoch(leaderAndIsr2, controllerEpoch = 0)
-  private val leaderIsrAndControllerEpoch3 = new LeaderIsrAndControllerEpoch(leaderAndIsr3, controllerEpoch = 0)
-
-  private val partitionStateInfo0 = new PartitionStateInfo(leaderIsrAndControllerEpoch0, brokers.map(_.id).toSet)
-  private val partitionStateInfo1 = new PartitionStateInfo(leaderIsrAndControllerEpoch1, brokers.map(_.id).toSet)
-  private val partitionStateInfo2 = new PartitionStateInfo(leaderIsrAndControllerEpoch2, brokers.map(_.id).toSet)
-  private val partitionStateInfo3 = new PartitionStateInfo(leaderIsrAndControllerEpoch3, brokers.map(_.id).toSet)
-
-  private val updateMetadataRequestPartitionStateInfo = collection.immutable.Map(
-    TopicAndPartition(topic1,0) -> partitionStateInfo0,
-    TopicAndPartition(topic1,1) -> partitionStateInfo1,
-    TopicAndPartition(topic1,2) -> partitionStateInfo2,
-    TopicAndPartition(topic1,3) -> partitionStateInfo3
-  )
-
-  def createTestProducerRequest: ProducerRequest = {
-    new ProducerRequest(1, "client 1", 0, 1000, topicDataProducerRequest)
+  def createTestProducerRequest: ProduceRequest = {
+    ProduceRequest.Builder.forCurrentMagic(0, 0, topicDataProducerRequest.asJava).build(0)
   }
 
-  def createTestProducerResponse: ProducerResponse =
-    ProducerResponse(1, Map(
-      TopicAndPartition(topic1, 0) -> ProducerResponseStatus(0.toShort, 10001),
-      TopicAndPartition(topic2, 0) -> ProducerResponseStatus(0.toShort, 20001)
-    ), ProducerRequest.CurrentVersion, 100)
+  def createTestProducerResponse: ProduceResponse = {
+    new ProduceResponse(Map(
+      new TopicPartition(topic1, 0) -> new ProduceResponse.PartitionResponse(Errors.NONE, 10001, 0, 0),
+      new TopicPartition(topic2, 0) -> new ProduceResponse.PartitionResponse(Errors.NONE, 20001, 0, 0)
+    ).asJava)
+  }
 
   def createTestFetchRequest: FetchRequest = {
-    new FetchRequest(requestInfo = requestInfos)
+    val data = {
+      val map = new util.LinkedHashMap[TopicPartition, FetchRequest.PartitionData]()
+      requestInfos.foreach { case (topicPartition, data) => map.put(topicPartition, data)}
+      map
+    }
+    FetchRequest.Builder.forConsumer(1000, 100, data).build(0)
   }
 
-  def createTestFetchResponse: FetchResponse = {
-    FetchResponse(1, topicDataFetchResponse)
+  def createTestOffsetFetchRequest: ListOffsetRequest = {
+    ListOffsetRequest.Builder.forConsumer(false, IsolationLevel.READ_COMMITTED)
+    .setTargetTimes(Map(new TopicPartition(topic1, 1) -> new ListOffsetRequest.PartitionData(-1L, Optional.empty[Integer]())).asJava)
+    .build(0)
   }
 
-  def createTestOffsetRequest = new OffsetRequest(
-    collection.immutable.Map(TopicAndPartition(topic1, 1) -> PartitionOffsetRequestInfo(1000, 200)),
-    replicaId = 0
-  )
-
-  def createTestOffsetResponse: OffsetResponse = {
-    new OffsetResponse(0, collection.immutable.Map(
-      TopicAndPartition(topic1, 1) -> PartitionOffsetsResponse(Errors.NONE.code, Seq(1000l, 2000l, 3000l, 4000l)))
-    )
+  def createTestOffsetFetchResponse: ListOffsetResponse = {
+    new ListOffsetResponse(Map(
+      new TopicPartition(topic1, 1) -> new ListOffsetResponse.PartitionData(Errors.NONE, List[java.lang.Long](0L, 10L, 20L).asJava)
+    ).asJava)
   }
 
-  def createTestOffsetCommitRequestV2: OffsetCommitRequest = {
-    new OffsetCommitRequest(
-      groupId = "group 1",
-      retentionMs = System.currentTimeMillis(),
-      requestInfo=collection.immutable.Map(
-        TopicAndPartition(topic1, 0) -> OffsetAndMetadata(42L, "some metadata"),
-        TopicAndPartition(topic1, 1) -> OffsetAndMetadata(100L, OffsetMetadata.NoMetadata)
-      ))
-  }
-
-  def createTestOffsetCommitRequestV1: OffsetCommitRequest = {
-    new OffsetCommitRequest(
-      versionId = 1,
-      groupId = "group 1",
-      requestInfo = collection.immutable.Map(
-        TopicAndPartition(topic1, 0) -> OffsetAndMetadata(42L, "some metadata", System.currentTimeMillis()),
-        TopicAndPartition(topic1, 1) -> OffsetAndMetadata(100L, OffsetMetadata.NoMetadata, System.currentTimeMillis())
-      ))
-  }
-
-  def createTestOffsetCommitRequestV0: OffsetCommitRequest = {
-    new OffsetCommitRequest(
-      versionId = 0,
-      groupId = "group 1",
-      requestInfo = collection.immutable.Map(
-        TopicAndPartition(topic1, 0) -> OffsetAndMetadata(42L, "some metadata"),
-        TopicAndPartition(topic1, 1) -> OffsetAndMetadata(100L, OffsetMetadata.NoMetadata)
-      ))
-  }
-
-  def createTestOffsetCommitResponse: OffsetCommitResponse = {
-    new OffsetCommitResponse(collection.immutable.Map(TopicAndPartition(topic1, 0) -> Errors.NONE.code,
-      TopicAndPartition(topic1, 1) -> Errors.NONE.code))
-  }
-
-  def createTestOffsetFetchRequest: OffsetRequest = {
-    new OffsetRequest(
-      requestInfo = Map(
-        TopicAndPartition(topic1, 1) -> PartitionOffsetRequestInfo(-1l, 10)
-      )
-    )
-  }
-
-  def createTestOffsetFetchResponse: OffsetResponse = {
-    new OffsetResponse(
-      correlationId = 1
-      , partitionErrorAndOffsets =  Map[TopicAndPartition, PartitionOffsetsResponse](
-        TopicAndPartition(topic1, 1) -> PartitionOffsetsResponse(Errors.NONE.code, Seq(0l, 10l, 20l) )
-      )
-    )
-  }
-
-  def createConsumerMetadataRequest: GroupCoordinatorRequest = {
-    GroupCoordinatorRequest("group 1", clientId = "client 1")
-  }
-
-  def createConsumerMetadataResponse: GroupCoordinatorResponse = {
-    GroupCoordinatorResponse(Some(brokers.head.getBrokerEndPoint(listenerName)), Errors.NONE.code, 0)
-  }
-
-
-  def kafka2SpinocoData(in:collection.mutable.Map[TopicAndPartition, ByteBufferMessageSet])
-  :Vector[(String @@ TopicName,Vector[(Int @@ PartitionId,Vector[spinoco.protocol.kafka.Message])])] = {
-
+  def kafka2SpinocoData(
+    in: collection.mutable.Map[TopicPartition, MemoryRecords]
+  ): Vector[(String @@ TopicName,Vector[(Int @@ PartitionId,Vector[spinoco.protocol.kafka.Message])])] = {
     in.toVector
     .map ({ case (tap,messages) =>
-      val msgs =
-      messages.iterator.toVector.map { case MessageAndOffset(msg, offset) =>
-        val ts =
-          if (msg.timestamp == Message.NoTimestamp) None
-          else {
-            msg.timestampType match {
-              case TimestampType.NO_TIMESTAMP_TYPE => None
-              case TimestampType.CREATE_TIME => Some(TimeData.CreateTime(new Date(msg.timestamp)))
-              case TimestampType.LOG_APPEND_TIME => Some(TimeData.LogAppendTime(new Date(msg.timestamp)))
-            }
+      val messageVector = {
+        messages.records().asScala.toVector
+      }
+
+      val msgs = {
+        messageVector.map { record =>
+          val ts = {
+            if (record.hasTimestampType(TimestampType.NO_TIMESTAMP_TYPE)) None
+            else if (record.hasTimestampType(TimestampType.CREATE_TIME)) Some(TimeData.CreateTime(new Date(record.timestamp)))
+            else if (record.hasTimestampType(TimestampType.LOG_APPEND_TIME)) Some(TimeData.LogAppendTime(new Date(record.timestamp)))
+            else Some(TimeData.CreateTime(new Date(record.timestamp)))
           }
-        val comp = msg.compressionCodec match {
-          case GZIPCompressionCodec =>  Some(Compression.GZIP)
-          case SnappyCompressionCodec => Some(Compression.Snappy)
-          case LZ4CompressionCodec => Some(Compression.LZ4)
-          case _ => None
-        }
 
-        comp match {
-          case None =>
-            spinoco.protocol.kafka.Message.SingleMessage(offset,MessageVersion(msg.magic),ts,if (msg.key == null) ByteVector.empty else ByteVector(msg.key), ByteVector(msg.payload))
-          case Some(compression) => throw new Exception("Compressed messages to yet supported")
-        }
+          val ma = {
+            if (record.hasMagic(0)) MessageVersion.V0
+            else MessageVersion.V1
+          }
 
+          if (record.isCompressed) throw new Exception("Compressed messages to yet supported")
+          else spinoco.protocol.kafka.Message.SingleMessage(record.offset(), ma,ts,if (record.hasKey) ByteVector.view(record.key) else ByteVector.empty, ByteVector.view(record.value()))
+
+        }
       }
       (tap.topic, tap.partition, msgs)
     })
