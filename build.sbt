@@ -195,12 +195,13 @@ lazy val kafka =
   project.in(file("kafka"))
   .settings(commonSettings)
   .settings(
-    crossScalaVersions := Seq(Scala211, Scala212),
     name := "protocol-kafka"
     , libraryDependencies ++= Seq(
       "org.xerial.snappy" % "snappy-java" % "1.1.7.3"  // for supporting a Snappy compression of message sets
-      , "org.apache.kafka" %% "kafka" % "0.10.2.2" % Test
+      , "org.apache.kafka" %% "kafka" % "2.4.0" % Test
     )
+    // We have to disable fatal warnings as we need to use kafka api that is Deprecated (old protocol version) in tests
+    , scalacOptions in (Test, compile) := (scalacOptions in (Compile, console)).value.filter(_ != "-Xfatal-warnings"),
   ).dependsOn(
     common
     , common % "test->test"
