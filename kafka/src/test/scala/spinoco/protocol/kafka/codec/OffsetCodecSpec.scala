@@ -23,7 +23,7 @@ class OffsetCodecSpec extends CodecSpec {
       replicaId = tag[Broker](kRequest.replicaId)
       , topics = Vector(
         (tag[TopicName]("test1"), Vector(
-          (tag[PartitionId](1), new Date(-1l), Some(1))
+          (tag[PartitionId](1), new Date(-1L), Some(1))
         ))
         )
       )
@@ -35,7 +35,7 @@ class OffsetCodecSpec extends CodecSpec {
     correlationId = 1
     , Response.OffsetResponse(
       Vector((tag[TopicName]("test1"), Vector(
-        PartitionOffsetResponse(tag[PartitionId](1), None, new Date(0), Vector(tag[Offset](0l), tag[Offset](10l), tag[Offset](20l)))
+        PartitionOffsetResponse(tag[PartitionId](1), None, new Date(0), Vector(tag[Offset](0L), tag[Offset](10L), tag[Offset](20L)))
       )))
     )
   )

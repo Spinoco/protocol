@@ -44,7 +44,7 @@ object SerializationTestUtils {
 
   private val partitionDataFetchResponse0 = {
     import FetchResponse.PartitionData
-    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "first message".getBytes))
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "first message".getBytes))
     val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
     val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
     dataMap.put(new TopicPartition(topic1, 0), partitionData)
@@ -52,7 +52,7 @@ object SerializationTestUtils {
   }
   private val partitionDataFetchResponse1 = {
     import FetchResponse.PartitionData
-    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "second message".getBytes))
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "second message".getBytes))
     val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
     val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
     dataMap.put(new TopicPartition(topic1, 0), partitionData)
@@ -60,7 +60,7 @@ object SerializationTestUtils {
   }
   private val partitionDataFetchResponse2 = {
     import FetchResponse.PartitionData
-    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "third message".getBytes))
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "third message".getBytes))
     val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
     val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
     dataMap.put(new TopicPartition(topic1, 0), partitionData)
@@ -68,7 +68,7 @@ object SerializationTestUtils {
   }
   private val partitionDataFetchResponse3 = {
     import FetchResponse.PartitionData
-    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "fourth message".getBytes))
+    val data = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "fourth message".getBytes))
     val partitionData = new PartitionData[MemoryRecords](Errors.NONE, 0, 0, 0, List[FetchResponse.AbortedTransaction]().asJava, data)
     val dataMap = new util.LinkedHashMap[TopicPartition, PartitionData[MemoryRecords]]()
     dataMap.put(new TopicPartition(topic1, 0), partitionData)
@@ -84,10 +84,10 @@ object SerializationTestUtils {
     groupedData.toSeq
   }
 
-  private val partitionDataMessage0 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "first message".getBytes))
-  private val partitionDataMessage1 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "second message".getBytes))
-  private val partitionDataMessage2 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "third message".getBytes))
-  private val partitionDataMessage3 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0l, "fourth message".getBytes))
+  private val partitionDataMessage0 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "first message".getBytes))
+  private val partitionDataMessage1 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "second message".getBytes))
+  private val partitionDataMessage2 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "third message".getBytes))
+  private val partitionDataMessage3 = MemoryRecords.withRecords(CompressionType.NONE, new SimpleRecord(0L, "fourth message".getBytes))
   private val partitionDataProducerRequestArray = Array(partitionDataMessage0, partitionDataMessage1, partitionDataMessage2, partitionDataMessage3)
 
   val topicDataProducerRequest = {

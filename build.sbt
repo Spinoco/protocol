@@ -201,7 +201,8 @@ lazy val kafka =
       , "org.apache.kafka" %% "kafka" % "2.4.0" % Test
     )
     // We have to disable fatal warnings as we need to use kafka api that is Deprecated (old protocol version) in tests
-    , scalacOptions in (Test, compile) := (scalacOptions in (Compile, console)).value.filter(_ != "-Xfatal-warnings"),
+    , scalacOptions in (Test, compile) := (scalacOptions in (Compile, console)).value.filter(_ != "-Xfatal-warnings")
+    , scalacOptions in (Test, doc) := (scalacOptions in (Compile, console)).value.filter(_ != "-Xfatal-warnings")
   ).dependsOn(
     common
     , common % "test->test"
