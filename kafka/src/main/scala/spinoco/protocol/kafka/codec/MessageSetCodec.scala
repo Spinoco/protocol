@@ -48,7 +48,7 @@ object MessageSetCodec {
     val timeCodec:Codec[Option[Date]] = {
       int64.xmap(
         { t => if (t < 0) None else Some(new Date(t)) }
-        , { _.map(_.getTime).getOrElse(-1l) }
+        , { _.map(_.getTime).getOrElse(-1L) }
       )
     }
 
