@@ -111,7 +111,7 @@ object EmailHeaderSpec extends  Properties("EmailHeader") {
            , Subject("Před těmihle klobouk dolů!")
            , `Content-Type`(ContentType.TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`)))
            , `Content-Transfer-Encoding`(TransferEncoding.Base64)
-           , `Auto-Submitted`(`Auto-Submitted`.AutoType.AutoNotified)
+           , `Auto-Submitted`(`Auto-Submitted`.AutoType.AutoNotified, None)
          )
        )
     }.fold(err => { println(s"FAILED: $err"); falsified }, identity)
