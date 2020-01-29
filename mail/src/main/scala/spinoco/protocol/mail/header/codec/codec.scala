@@ -38,13 +38,14 @@ package object codec {
   def commaSeparated[A](codec: Codec[A], fold: Boolean): Codec[(A, List[A])] = {
     val encodeDelimiter = if (fold) foldingComma else `,`
     val separator = constantString1(",") ~> ignoreWS
+    val ignoreSeparator = ignoreBytes(_.toChar == ',')
     val listCodec = listDelimited(encodeDelimiter.bits, codec)
 
 
     def decodeList(bits: BitVector): Attempt[DecodeResult[(A, List[A])]] = {
       @tailrec
       def go(bits: BitVector, acc: List[A]): Attempt[Seq[A]] = {
-        (codec ~ optional(lookahead2(constantString1(",")), separator)).decode(bits) match {
+        ((ignoreSeparator ~> codec) ~ optional(lookahead2(constantString1(",")), separator)).decode(bits) match {
           case Attempt.Successful(rslt) =>
             rslt.value match {
               case (a, Some(_)) => go(rslt.remainder, acc :+ a)
@@ -92,8 +93,8 @@ package object codec {
           val start = bytes.dropWhile { b => b.toChar.isWhitespace }
           if (start.isEmpty) Attempt.successful(acc)
           else {
-            val toDecode = start.takeWhile { b => !b.toChar.isWhitespace }
-            val next = start.drop(toDecode.length).dropWhile { b => b.toChar.isWhitespace }
+            val toDecode = start.takeWhile { b => !b.toChar.isWhitespace && b.toChar != ',' }
+            val next = start.drop(toDecode.length).dropWhile { b => b.toChar.isWhitespace || b.toChar == ',' }
             codec.decode(toDecode.bits) match {
               case Attempt.Successful(rslt) =>
                 if (rslt.remainder.nonEmpty) Attempt.failure(Err(s"Decoded successfully, but remainder was not processed: $rslt"))

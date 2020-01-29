@@ -13,11 +13,11 @@ object EmailAddressCodec {
 
   val codec: Codec[EmailAddress] = {
 
-    val emailAddress = (ignoreWS ~> choice(dotAtomString, quotedString)) ~ (constantString1("@") ~> dotAtomString)
+    val emailAddress = (ignoreWS ~> choice(dotAtomString, quotedString)) ~ (constantString1("@") ~> (dotAtomString <~ ignoreWS))
     val bracketAddress = constantString1("<") ~> emailAddress <~ constantString1(">")
 
     val quotedDisplay = (choice(dotAtomString, quotedString) <~ WSP).widen[Option[String]](
-      Some(_).map(_.trim).filter(_.nonEmpty)
+      Some(_).map(_.trim.dropWhile(_ == '\'').takeWhile(_ != '\'')).filter(_.nonEmpty)
       , Attempt.fromOption(_, Err("Failed to create email address without display segment"))
     )
 
