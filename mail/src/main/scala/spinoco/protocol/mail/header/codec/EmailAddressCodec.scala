@@ -17,7 +17,7 @@ object EmailAddressCodec {
     val bracketAddress = constantString1("<") ~> emailAddress <~ constantString1(">")
 
     val quotedDisplay = (choice(dotAtomString, quotedString) <~ SPACE).widen[Option[String]](
-      Some(_).map(_.trim.dropWhile(_ == '\'').takeWhile(_ != '\'')).filter(_.nonEmpty)
+      Some(_).map(_.trim).filter(_.nonEmpty)
       , Attempt.fromOption(_, Err("Failed to create email address without display segment"))
     )
 
