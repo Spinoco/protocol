@@ -33,8 +33,8 @@ object DestinationSpec extends Properties("Destination") {
   property("multiple-email-wrong-quotation") = protect {
     verify(
       "\"'John Doe'\" <john.doe@spinoco.com>,\t\"'jannet.doe@spinoco.com'\" <jannet.doe@spinoco.com >"
-      , Destination(DestinationType.To, EmailAddress("john.doe", "spinoco.com", Some("John Doe")), List(EmailAddress("jannet.doe", "spinoco.com", Some("jannet.doe@spinoco.com"))))
-      , "\"John Doe\" <john.doe@spinoco.com>,\r\n \"jannet.doe@spinoco.com\" <jannet.doe@spinoco.com>"
+      , Destination(DestinationType.To, EmailAddress("john.doe", "spinoco.com", Some("'John Doe'")), List(EmailAddress("jannet.doe", "spinoco.com", Some("'jannet.doe@spinoco.com'"))))
+      , "\"'John Doe'\" <john.doe@spinoco.com>,\r\n \"'jannet.doe@spinoco.com'\" <jannet.doe@spinoco.com>"
     )
   }
 
