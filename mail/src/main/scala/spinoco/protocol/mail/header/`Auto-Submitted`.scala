@@ -1,11 +1,15 @@
 package spinoco.protocol.mail.header
 
+import scodec.bits.BitVector
+import scodec.codecs._
 import scodec.{Attempt, Err}
+import spinoco.protocol.common.codec._
 
 import scala.util.Try
 
 case class `Auto-Submitted`(
   tpe: `Auto-Submitted`.AutoType.Value
+  , parameters: Option[Seq[String]]
 ) extends DefaultEmailHeaderField
 
 
@@ -20,18 +24,20 @@ object `Auto-Submitted` extends DefaultHeaderDescription[`Auto-Submitted`] {
 
   }
 
-
-  val codec = scodec.codecs.ascii.exmap[`Auto-Submitted`]( a => {
-    Attempt.fromEither(
-      Try(AutoType.withName(a)).toOption
-      .toRight(Err("Could not parse Auto-Submitted header due to invalid tpe: " + a))
-      .right.map(`Auto-Submitted`(_))
+  val codec = {
+    (asciiToken ~ optional(lookahead2(constantString1(" ("))
+      , constantString1(" (") ~> takeWhileChar(listDelimited(BitVector.view("; ".getBytes), ascii))( ')') <~ constantString1(")"))
+    ).exmap[`Auto-Submitted`]( {case (a, params) =>
+      Attempt.fromEither(
+        Try(AutoType.withName(a)).toOption
+          .toRight(Err("Could not parse Auto-Submitted header due to invalid tpe: " + a))
+          .map(`Auto-Submitted`(_, params))
+      )
+    }
+      , b => {
+        Attempt.successful(b.tpe.toString -> b.parameters.map(_.toList))
+      }
     )
   }
-  , b => {
-    Attempt.successful(b.tpe.toString)
-  })
-
-
 
 }

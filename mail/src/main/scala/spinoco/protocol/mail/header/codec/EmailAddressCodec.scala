@@ -13,7 +13,7 @@ object EmailAddressCodec {
 
   val codec: Codec[EmailAddress] = {
 
-    val emailAddress = (ignoreWS ~> choice(dotAtomString, quotedString)) ~ (constantString1("@") ~> dotAtomString)
+    val emailAddress = (ignoreWS ~> choice(dotAtomString, quotedString)) ~ (constantString1("@") ~> (dotAtomString <~ ignoreWS))
     val bracketAddress = constantString1("<") ~> emailAddress <~ constantString1(">")
 
     val quotedDisplay = (choice(dotAtomString, quotedString) <~ WSP).widen[Option[String]](
