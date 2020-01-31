@@ -99,7 +99,7 @@ object IMAPBodyPartCodec {
       val mailbox: Codec[Option[String]] = nstring
       val host: Codec[Option[String]] = nstring
 
-      (`(` ~> (
+      ((ignoreWS ~> `(`) ~> (
         name :: SP ::
         adl :: SP ::
         mailbox :: SP ::
