@@ -32,8 +32,8 @@ object AutoSubmittedSpec extends Properties("AutoSubmitted") {
 
   property("auto-replied.vacation") = protect {
     verify(
-      "auto-replied (vacation; wtf)"
-      , `Auto-Submitted`(`Auto-Submitted`.AutoType.AutoReplied, Some(Seq("vacation", "wtf")))
+      "auto-replied (vacation; vacation2)"
+      , `Auto-Submitted`(`Auto-Submitted`.AutoType.AutoReplied, Some(Seq("vacation", "vacation2")))
     )
   }
 
