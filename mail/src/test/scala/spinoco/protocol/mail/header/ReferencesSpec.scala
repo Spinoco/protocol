@@ -23,7 +23,6 @@ object ReferencesSpec  extends Properties("References") {
 
 
   property("multiple-ids") = protect {
-
     verify(
       "<123456@foo.com>\r\n " +
         "<12345678@foo.com> <123456789@foo.com> \r\n    <12345678AB@foo.com> "
@@ -37,7 +36,22 @@ object ReferencesSpec  extends Properties("References") {
         "<123456789@foo.com>\r\n " +
         "<12345678AB@foo.com>"
     )
+  }
 
+  property("multiple-ids-comma-separated") = protect {
+    verify(
+      "<123456@foo.com>\r\n " +
+        "<12345678@foo.com>,<123456789@foo.com> \r\n    <12345678AB@foo.com> "
+      , References(tag[`Message-ID`]("123456@foo.com"), List(
+        tag[`Message-ID`]("12345678@foo.com")
+        , tag[`Message-ID`]("123456789@foo.com")
+        , tag[`Message-ID`]("12345678AB@foo.com")
+      ))
+      , "<123456@foo.com>\r\n " +
+        "<12345678@foo.com>\r\n " +
+        "<123456789@foo.com>\r\n " +
+        "<12345678AB@foo.com>"
+    )
   }
 
 }
