@@ -67,7 +67,7 @@ object RFC2047Codec {
 
   object impl {
 
-    val EncodedWord = "=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
+    val EncodedWord = "\\s?=\\?([^\\?]+)\\?([^\\?]+)\\?([^\\?]*)\\?=".r //"=?" charset "?" encoding "?" encoded-text "?="
     val MaxLineSize = 75 // max size of line before put FWS and new word when encoding
 
     /*
@@ -95,23 +95,24 @@ object RFC2047Codec {
       }
 
       @tailrec
-      def go(words: Seq[Regex.Match], acc: String): Attempt[String] = {
+      def go(words: Seq[Regex.Match], result: String): Attempt[String] = {
         words.headOption match {
           case Some(word) => decodeWord(word) match {
-            case Attempt.Successful(decoded) =>
-              go(words.tail, acc + decoded)
+            case Attempt.Successful(decoded) => go(words.tail, result.replace(word.group(0), decoded))
             case Attempt.Failure(err) => Attempt.failure(err)
           }
 
-          case None => Attempt.successful(acc)
+          case None => Attempt.successful(result)
         }
       }
 
-      val words = EncodedWord.findAllMatchIn(decode)
+      val singleLine = decode.replace("\r\n", "")
+
+      val words = EncodedWord.findAllMatchIn(singleLine)
       if (words.isEmpty) {
-        Attempt.successful(decode)
+        Attempt.successful(singleLine)
       } else {
-        go(words.toSeq, "")
+        go(words.toSeq, singleLine)
       }
     }
 
