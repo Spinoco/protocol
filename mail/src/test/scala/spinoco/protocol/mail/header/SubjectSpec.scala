@@ -90,4 +90,13 @@ object SubjectSpec extends Properties("Subject") {
     )
   }
 
+  property("encoded.not-encoded") = protect {
+    verify(
+      "=?utf-8?Q?Petr_Poled=C5=88=C3=A1k?= not encoded text"
+      , Subject("Petr Poledňák not encoded text")
+      , "=?UTF-8?Q?Petr_Poled=C5=88=C3=A1k_not_encoded_text?="
+
+    )
+  }
+
 }
