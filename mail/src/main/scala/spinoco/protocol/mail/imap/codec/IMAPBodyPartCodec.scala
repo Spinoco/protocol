@@ -8,7 +8,7 @@ import scodec.bits.BitVector
 import scodec.codecs._
 import shapeless.{::, HNil}
 import spinoco.protocol.common.codec._
-import spinoco.protocol.mail.EmailAddress
+import spinoco.protocol.mail.{EmailAddress, header}
 import spinoco.protocol.mail.header.codec.{DateTimeCodec, RFC2047Codec}
 import spinoco.protocol.mail.imap.BodyStructure._
 
@@ -58,6 +58,12 @@ object IMAPBodyPartCodec {
         , string.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
       )
 
+    lazy val optionalRFC2047 = choice(
+      NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[String]]
+      , header.codec.RFC2047Codec.quotedCodec.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
+      , header.codec.RFC2047Codec.codec.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
+    )
+
     lazy val uidCodec: Codec[Unit] = {
       optional(lookahead2(SP), SP ~> constantString1CaseInsensitive("UID") ~> SP ~> intNumber).xmap(_ => (), _ => None)
     }
@@ -94,7 +100,7 @@ object IMAPBodyPartCodec {
     }
 
     private def emailAddress: Codec[EmailAddress] = {
-      val name: Codec[Option[String]] = nstring
+      val name: Codec[Option[String]] = optionalRFC2047
       val adl: Codec[Option[String]] = nstring
       val mailbox: Codec[Option[String]] = nstring
       val host: Codec[Option[String]] = nstring
@@ -134,7 +140,7 @@ object IMAPBodyPartCodec {
 
     def envInReplyTo: Codec[Option[String]] = nstring
     def envMessageId: Codec[Option[String]] = nstring
-    def envSubject: Codec[Option[String]] = nstring
+    def envSubject: Codec[Option[String]] = optionalRFC2047
 
 
     def singleBodyPart : Codec[SingleBodyPart] = {

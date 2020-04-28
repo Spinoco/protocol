@@ -112,7 +112,7 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
 
   property("simple-body-structure.RFC822") = protect {
     IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
-      """(BODYSTRUCTURE (((("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "7BIT" 483 10 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "7BIT" 1745 35 NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "001a114697ae45d6000565298052") NIL NIL)("IMAGE" "PNG" ("NAME" "icon.png") "<icon.png>" NIL "BASE64" 1986 NIL ("ATTACHMENT" ("FILENAME" "icon.png")) NIL) "RELATED" ("BOUNDARY" "001a114697ae45d5f40565298051") NIL NIL)("MESSAGE" "DELIVERY-STATUS" NIL NIL NIL "7BIT" 609 NIL NIL NIL)("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 3292 ("Wed, 14 Feb 2018 11:23:22 +0100" "=?UTF-8?Q?[User_Notification]:_Milan_Raul=C3=ADm?=" (("=?UTF-8?Q?Milan_Raul=C3=ADm?=" NIL "zakaznik" "spinoco.com")) (("=?UTF-8?Q?Milan_Raul=C3=ADm?=" NIL "zakaznik" "spinoco.com")) ((NIL NIL "zakaznik" "spinoco.com")) ((NIL NIL "kayakoadmin" "spinoco.com")) NIL NIL NIL "<1518603802.5a840e1a1e5cc@zakaznik.spinoco.com>") ("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "QUOTED-PRINTABLE" 789 16 NIL NIL NIL) 66 NIL NIL NIL) "REPORT" ("BOUNDARY" "001a114697ae45cdb30565298050" "REPORT-TYPE" "delivery-status") NIL NIL))""".getBytes
+      """(BODYSTRUCTURE (((("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "7BIT" 483 10 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "7BIT" 1745 35 NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "001a114697ae45d6000565298052") NIL NIL)("IMAGE" "PNG" ("NAME" "icon.png") "<icon.png>" NIL "BASE64" 1986 NIL ("ATTACHMENT" ("FILENAME" "icon.png")) NIL) "RELATED" ("BOUNDARY" "001a114697ae45d5f40565298051") NIL NIL)("MESSAGE" "DELIVERY-STATUS" NIL NIL NIL "7BIT" 609 NIL NIL NIL)("MESSAGE" "RFC822" NIL NIL NIL "7BIT" 3292 ("Wed, 14 Feb 2018 11:23:22 +0100" "=?UTF-8?Q?[User_Notification]:_Milan_Raul=C3=ADm?=" (("=?UTF-8?Q?Milan_Raul=C3=ADm?=" NIL "zakaznik" "spinoco.com")) (("Milan" NIL "zakaznik" "spinoco.com")) ((NIL NIL "zakaznik" "spinoco.com")) ((NIL NIL "kayakoadmin" "spinoco.com")) NIL NIL NIL "<1518603802.5a840e1a1e5cc@zakaznik.spinoco.com>") ("TEXT" "HTML" ("CHARSET" "utf-8") NIL NIL "QUOTED-PRINTABLE" 789 16 NIL NIL NIL) 66 NIL NIL NIL) "REPORT" ("BOUNDARY" "001a114697ae45cdb30565298050" "REPORT-TYPE" "delivery-status") NIL NIL))""".getBytes
     )) ?= Attempt.successful(
       MultiBodyPart(
         Vector(
@@ -149,9 +149,9 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
               BodyFields(Vector(), None, None, "7BIT", 3292)
               , Envelope(
                 LocalDate.of(2018, 2, 14)
-                , Some("=?UTF-8?Q?[User_Notification]:_Milan_Raul=C3=ADm?=")
-                , Vector(EmailAddress("zakaznik", "spinoco.com", Some("=?UTF-8?Q?Milan_Raul=C3=ADm?=")))
-                , Vector(EmailAddress("zakaznik", "spinoco.com", Some("=?UTF-8?Q?Milan_Raul=C3=ADm?=")))
+                , Some("[User Notification]: Milan Raulím")
+                , Vector(EmailAddress("zakaznik", "spinoco.com", Some("Milan Raulím")))
+                , Vector(EmailAddress("zakaznik", "spinoco.com", Some("Milan")))
                 , Vector(EmailAddress("zakaznik", "spinoco.com", None))
                 , Vector(EmailAddress("kayakoadmin", "spinoco.com", None))
                 , Vector(), Vector(), None, Some("<1518603802.5a840e1a1e5cc@zakaznik.spinoco.com>")
