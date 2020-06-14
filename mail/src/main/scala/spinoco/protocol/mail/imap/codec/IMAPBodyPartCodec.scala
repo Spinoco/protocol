@@ -95,9 +95,9 @@ object IMAPBodyPartCodec {
       }
 
       choice(
-        NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[LocalDate]]
-        , (DQUOTE ~> date <~ DQUOTE).xmap[Some[LocalDate]](Some(_), _.get).upcast[Option[LocalDate]]
+        (DQUOTE ~> date <~ DQUOTE).xmap[Some[LocalDate]](Some(_), _.get).upcast[Option[LocalDate]]
         , date.xmap[Some[LocalDate]](Some(_), _.get).upcast[Option[LocalDate]]
+        , NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[LocalDate]]
       )
     }
 
