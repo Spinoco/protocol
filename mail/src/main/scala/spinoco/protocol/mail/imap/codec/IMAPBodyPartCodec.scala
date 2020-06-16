@@ -84,7 +84,7 @@ object IMAPBodyPartCodec {
     }
 
 
-    def envDate: Codec[LocalDate] = {
+    def envDate: Codec[Option[LocalDate]] = {
       val format = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss Z")
       val date: Codec[LocalDate] = {
         takeWhile(ascii)(_ != '"').narrow(
@@ -94,8 +94,9 @@ object IMAPBodyPartCodec {
       }
 
       choice(
-        DQUOTE ~> date <~ DQUOTE
-        , date
+        (DQUOTE ~> date <~ DQUOTE).xmap[Some[LocalDate]](Some(_), _.get).upcast[Option[LocalDate]]
+        , date.xmap[Some[LocalDate]](Some(_), _.get).upcast[Option[LocalDate]]
+        , NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[LocalDate]]
       )
     }
 
