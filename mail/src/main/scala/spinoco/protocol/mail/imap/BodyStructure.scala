@@ -101,7 +101,7 @@ object BodyStructure {
 
   /** resposne to imap ENVELOPE command **/
   case class Envelope(
-    date: LocalDate
+    date: Option[LocalDate]
     , subject: Option[String]
     , from: Vector[EmailAddress]
     , sender: Vector[EmailAddress]

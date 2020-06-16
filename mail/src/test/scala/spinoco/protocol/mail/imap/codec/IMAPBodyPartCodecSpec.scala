@@ -148,7 +148,7 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
             BodyTypeMessage(
               BodyFields(Vector(), None, None, "7BIT", 3292)
               , Envelope(
-                LocalDate.of(2018, 2, 14)
+                Some(LocalDate.of(2018, 2, 14))
                 , Some("[User Notification]: Milan Raulím")
                 , Vector(EmailAddress("zakaznik", "spinoco.com", Some("Milan Raulím")))
                 , Vector(EmailAddress("zakaznik", "spinoco.com", Some("Milan")))
