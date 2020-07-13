@@ -236,6 +236,9 @@ property("Accept-Ranges Header") = secure {
       , ("Content-Disposition: attachment; filename=file%20name.jpg"
         , `Content-Disposition`(ContentDisposition(ContentDispositionType.Attachment, Map("filename" -> "file name.jpg")))
         , "Content-Disposition: attachment; filename=file%20name.jpg")
+      , ("Content-Disposition: attachment; filename=\"file name.jpg\""
+        , `Content-Disposition`(ContentDisposition(ContentDispositionType.Attachment, Map("filename" -> "file name.jpg")))
+        , "Content-Disposition: attachment; filename=file%20name.jpg")
       , ("Content-Disposition: form-data; name=\"fieldName\"; filename=\"file%20name.jpg\""
         , `Content-Disposition`(ContentDisposition(ContentDispositionType.IETFToken("form-data"), Map("name" -> "fieldName", "filename" -> "file name.jpg")))
         , "Content-Disposition: form-data; name=fieldName; filename=file%20name.jpg")
