@@ -1,9 +1,12 @@
 package spinoco.protocol.mime
 
+import java.net.{URLDecoder, URLEncoder}
+
 import scodec.Codec
 import scodec.codecs._
 import spinoco.protocol.common.codec._
 import spinoco.protocol.common.Terminator
+import spinoco.protocol.common.util.attempt
 import spinoco.protocol.mime.codec.RFC2184Codec
 
 sealed case class ContentDisposition(dispositionType: ContentDispositionType, parameters: Map[String, String])
@@ -59,7 +62,10 @@ object ContentDisposition {
 
     val paramsCodec: Codec[(String, String)] =    {
       ignoreWS ~> terminated(asciiToken, Terminator.constantString1("=")) ~
-        (ignoreWS ~> httpMaybeQuotedUTF8String <~ ignoreWS)
+        (ignoreWS ~> httpMaybeQuotedUTF8String <~ ignoreWS).exmap(
+          encoded => attempt(URLDecoder.decode(encoded, "utf-8"))
+          , decoded => attempt(URLEncoder.encode(decoded, "utf-8").replace("+", "%20"))
+        )
     }
 
     val semicolon = Codec(constantString1("; "), constantString1(";"))
