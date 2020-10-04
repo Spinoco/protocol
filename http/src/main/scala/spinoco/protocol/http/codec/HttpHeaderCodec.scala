@@ -38,6 +38,30 @@ object HttpHeaderCodec {
     )
   }
 
+  /**
+    * Encodes// decodes arbitrary header line for mime header.
+    * @param otherHeaders If you need to supply own headers to be encoded/decoded,
+    *                     Supply them here. First is header name (may be upper/lowercase) and second
+    *                     is decoder of the header.
+    *                     This may also override default supplied codecs.
+    * @return
+    */
+  def contentCodec(maxHeaderLength: Int, otherHeaders: (String, Codec[ContentHeaderField]) *): Codec[ContentHeaderField] = {
+    val allCodecs = allContentHeadersCodecs ++ otherHeaders.map { case (hdr,codec) => hdr.toLowerCase -> codec }.toMap
+    implicit val ascii = Charset.forName("ASCII") // only ascii allowed in http header
+
+    takeWhile(ByteVector(':'), ByteVector(':',' '), string, maxHeaderLength).flatZip[ContentHeaderField] { name =>
+      val trimmed = name.trim
+      ignoreWS ~>
+        (allCodecs.get(trimmed.toLowerCase) match {
+          case Some(codec) => codec
+          case None => utf8.xmap[GenericHeader](s => GenericHeader(trimmed, s), _.value).upcast[ContentHeaderField]
+        })
+    }.xmap (
+      { case (_, header) => header }
+      , (header: ContentHeaderField) => header.name -> header
+    )
+  }
 
   val allHeaderCodecs : Map[String, Codec[HttpHeader]] = Seq[HeaderCodecDefinition[HttpHeader]](
    Accept.codec
@@ -95,5 +119,13 @@ object HttpHeaderCodec {
     , `X-Real-IP`.codec
   ).map { codec => codec.headerName.toLowerCase -> codec.headerCodec }.toMap
 
+
+  val allContentHeadersCodecs: Map[String, Codec[ContentHeaderField]] = {
+    Seq(
+      `Content-Disposition`.codec
+      , `Content-Type`.codec
+      , `Content-Transfer-Encoding`.codec
+    ).map { codec => codec.headerName.toLowerCase -> codec.contentField}.toMap
+  }
 
 }

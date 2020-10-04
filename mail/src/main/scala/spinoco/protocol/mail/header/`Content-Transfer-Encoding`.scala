@@ -1,7 +1,7 @@
 package spinoco.protocol.mail.header
 
 import scodec.Codec
-import spinoco.protocol.mail.mime.TransferEncoding
+import spinoco.protocol.mime.TransferEncoding
 
 case class `Content-Transfer-Encoding`(value: TransferEncoding)
   extends  ContentHeaderField with DefaultEmailHeaderField
