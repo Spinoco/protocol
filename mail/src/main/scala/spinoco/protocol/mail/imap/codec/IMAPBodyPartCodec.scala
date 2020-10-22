@@ -203,10 +203,14 @@ object IMAPBodyPartCodec {
 
     def bodyFldLines: Codec[Int] = intNumber
 
+
     def bodyFldParam: Codec[Vector[(String, String)]] = {
+      /** Drop everything and return "unknown" value */
+      val dropEverything: Codec[String] = token(ascii, ')').xmap(_ => "unknown", identity)
+
       choice(
         nilVector
-        , `(` ~> vectorVDelimited(string ~ (SP ~> choice(RFC2047Codec.quotedCodec, literalString, nilString)), SP) <~ `)`
+        , `(` ~> vectorVDelimited(string ~ (SP ~> choice(RFC2047Codec.quotedCodec, literalString, nilString, dropEverything)), SP) <~ `)`
       )
     }
 
