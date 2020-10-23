@@ -16,7 +16,7 @@ object IMAPBodyPartCodec {
   import impl._
 
   lazy val bodyStructure: Codec[BodyPart] = {
-    `(` ~> constantString1CaseInsensitive("BODYSTRUCTURE") ~> SP ~> codec <~ uidCodec <~ `)`
+    `(` ~> uidStartCodec ~> constantString1CaseInsensitive("BODYSTRUCTURE") ~> SP ~> codec <~ uidEndCodec <~ `)`
   }
 
   lazy val codec: Codec[BodyPart] = {
@@ -43,7 +43,7 @@ object IMAPBodyPartCodec {
     def nilVector[A]: Codec[Vector[A]] = NIL.widen[Vector[A]](_ => Vector.empty, v => if(v.isEmpty) Attempt.successful(()) else Attempt.failure(Err("Empty list required")))
     val DQUOTE  : Codec[Unit] = "DQUOTE" | constantString1("\"")
 
-    lazy val intNumber = takeWhile(intAsString)(b => b >= '0' && b <= '9')
+    lazy val intNumber = takeWhile(intAsString)(b => b >= '0' && b <= '9' || b == '-')
 
     val literalString  : Codec[String] = {
       val sz: Codec[Int] = `{` ~> ( intNumber <~ `}crlf`)
@@ -64,8 +64,13 @@ object IMAPBodyPartCodec {
       , header.codec.RFC2047Codec.codec.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
     )
 
-    lazy val uidCodec: Codec[Unit] = {
+    lazy val uidEndCodec: Codec[Unit] = {
       optional(lookahead2(SP), SP ~> constantString1CaseInsensitive("UID") ~> SP ~> intNumber).xmap(_ => (), _ => None)
+    }
+
+    lazy val uidStartCodec: Codec[Unit] = {
+      val codec: Codec[Unit] = (constantString1CaseInsensitive("UID") ~> SP ~> intNumber.xmap[Unit](_ => (), _ => 0) ~> SP)
+      optional(lookahead2(codec), codec).xmap(_ => (), _ => None)
     }
 
     def envelope: Codec[Envelope] = {
@@ -157,11 +162,29 @@ object IMAPBodyPartCodec {
 
 
     def  multiBodyPart : Codec[MultiBodyPart] = {
-      (
-        ("parts"             | minItems(1)(vectorV(lazily(codec)))) ::
-        ("media-sub-type"  | (SP ~> mediaSubtype)) ::
-        ("extension"       | optional(lookahead2(SP), SP ~> multiBodyExtension))
-      ).as
+
+      // Fully structured body structure
+      val fullBody: Codec[MultiBodyPart] = {
+        (
+          ("parts"           | minItems(1)(vectorV(lazily(codec)))) ::
+          ("media-sub-type"  | (SP ~> mediaSubtype)) ::
+          ("extension"       | optional(lookahead2(SP), SP ~> multiBodyExtension))
+        ).as
+      }
+
+      // Some multi part bodies do not contain any parts
+      val withoutParts: Codec[MultiBodyPart] = {
+        (
+          ("parts"           | provide(Vector.empty[BodyPart])) ::
+          ("media-sub-type"  | mediaSubtype) ::
+          ("extension"       | optional(lookahead2(SP), SP ~> multiBodyExtension))
+        ).as
+      }
+
+      choice(
+        fullBody
+        , withoutParts
+      )
     }
 
 
@@ -181,14 +204,29 @@ object IMAPBodyPartCodec {
         ("body"           | (SP ~> lazily(codec))) ::
         ("body-lines"     | (SP ~> bodyFldLines))
       ).as
-
     }
 
     def bodyTypeBasic: Codec[BodyTypeBasic] = {
-      (
-        ("media-basic"    | mediaBasic) ::
-        ("body-fields"    | (SP ~> bodyFields))
-      ).as
+
+      val basic: Codec[BodyTypeBasic] = {
+        (
+          ("media-basic"    | mediaBasic) ::
+          ("body-fields"    | (SP ~> bodyFields))
+        ).as
+      }
+
+      // Some servers think that Nil Nil is a valid media type
+      val basicWithNils: Codec[BodyTypeBasic] = {
+        (
+          ("media-basic"    | nilMedia) ::
+          ("body-fields"    | (SP ~> bodyFields))
+        ).as
+      }
+
+      choice(
+        basic
+        , basicWithNils
+      )
     }
 
     def bodyFields: Codec[BodyFields] = {
@@ -341,6 +379,10 @@ object IMAPBodyPartCodec {
         , listExt.upcast
         , intExt.upcast
       )
+    }
+
+    def nilMedia: Codec[BasicMedia] = {
+      (NIL ~> SP ~> NIL).xmap(_ => BasicMedia("Nil", "Nil"), _ => ())
     }
 
     def mediaBasic: Codec[BasicMedia] = {

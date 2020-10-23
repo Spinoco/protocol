@@ -362,7 +362,34 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
         , Some(MultiBodyExtension(Vector("boundary" -> "----=_=-_OpenGroupware_org_NGMime-10893-1551275996.406374-0------"), None, Some(List()), None, Vector.empty))
       )
     )
+  }
 
+  property("multi-body-structure-no-part") = protect {
+    IMAPBodyPartCodec.codec.decodeValue(BitVector.view(
+      """("MIXED" ("BOUNDARY" "----=_Part_438_2128411623.1603271686483") NIL NIL)""".getBytes
+    )) ?= Attempt.Successful(MultiBodyPart(
+      parts = Vector.empty
+      , mediaSubType = "MIXED"
+      , ext = Some(MultiBodyExtension(Vector("BOUNDARY" -> "----=_Part_438_2128411623.1603271686483"), None, Some(List()), None, Vector.empty))
+    ))
+  }
+
+  property("multi-body-structure-no-media ") = protect {
+    IMAPBodyPartCodec.codec.decodeValue(BitVector.view(
+      """(NIL NIL NIL NIL NIL "7BIT" 513 NIL NIL NIL NIL)""".getBytes
+    )) ?= Attempt.Successful(SingleBodyPart(
+      tpe = BodyTypeBasic(BasicMedia("Nil", "Nil"), BodyFields(Vector.empty, None, None, "7BIT", 513))
+      , ext = Some(SingleBodyExtension(None, None, Some(List()), None, Vector.empty))
+    ))
+  }
+
+  property("multi-body-structure-no-media  222") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(BODYSTRUCTURE ("multipart" "signed" ("protocol" "application/x-pkcs7-signature" "micalg" "SHA1" "boundary" "----=_NextPart_000_0014_01D69E57.F90CB030") NIL NIL "7BIT" -1 NIL NIL "cs-CZ" NIL) UID 14656)""".getBytes
+    )) ?= Attempt.Successful(SingleBodyPart(
+      tpe = BodyTypeBasic(BasicMedia("multipart", "signed"), BodyFields(Vector(("protocol", "application/x-pkcs7-signature"), ("micalg", "SHA1"), ("boundary", "----=_NextPart_000_0014_01D69E57.F90CB030")), None, None, "7BIT", -1))
+      , ext = Some(SingleBodyExtension(None, None, Some(List("cs-CZ")), None, Vector.empty))
+    ))
   }
 
   property("rfc822-envelope-from") = protect {
