@@ -41,6 +41,7 @@ object RFC2047Codec {
 
       def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
         `ISO-8859-1`.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+          println("XXXX GOTTEN: " + s)
           impl.decodeRFC2047(s.trim).fold(_ => r, s0 => DecodeResult(s0, remainder))
         }
       }
@@ -59,6 +60,22 @@ object RFC2047Codec {
 
       def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
         quotedAsciiString.decode(bits) map { case (r@DecodeResult(s, remainder)) =>
+          impl.decodeRFC2047(s.trim.replaceAll("\".*\"", "")).fold(_ => r, s0 => DecodeResult(s0, remainder))
+        }
+      }
+    }
+  }
+
+  val commaCodec: Codec[String] = {
+    new Codec[String] {
+      def encode(value: String): Attempt[BitVector] = {
+        impl.encodeRFC2047(value).flatMap(quotedAsciiString.encode)
+      }
+
+      def sizeBound: SizeBound = SizeBound.unknown
+
+      def decode(bits: BitVector): Attempt[DecodeResult[String]] = {
+        quotedByBytesString(Charset.forName("ISO-8859-1"), ByteVector.view(", ".getBytes)).decode(bits) map { case (r@DecodeResult(s, remainder)) =>
           impl.decodeRFC2047(s.trim.replaceAll("\".*\"", "")).fold(_ => r, s0 => DecodeResult(s0, remainder))
         }
       }
