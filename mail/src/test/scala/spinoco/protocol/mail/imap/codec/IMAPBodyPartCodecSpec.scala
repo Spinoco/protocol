@@ -420,4 +420,28 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
     )) ?= Attempt.Successful(Some("[User Notification]: Milan Raulím"))
   }
 
+  property("dsp-has-string") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(BODYSTRUCTURE (("text" "html" ("charset" "UTF-8") NIL "HTML text" "Quoted-printable" 14985 350 NIL ("inline" NIL) NIL NIL) "mixed" ("boundary" "00293856_1B3689E9_Synapse_boundary") "Multipart message" NIL) UID 20653)""".getBytes
+    )) ?= Attempt.Successful(
+      MultiBodyPart(
+        parts = Vector(
+          SingleBodyPart(
+            tpe = BodyTypeText("html", BodyFields(Vector(("charset", "UTF-8")), None, Some("HTML text"), "Quoted-printable", 14985), 350)
+            , ext = Some(SingleBodyExtension(None, Some(("inline", Vector())), Some(List.empty), None, Vector.empty))
+          )
+        )
+        , mediaSubType = "mixed"
+        , ext = Some(MultiBodyExtension(
+          params = Vector(("boundary", "00293856_1B3689E9_Synapse_boundary"))
+          , dsp = None
+          , lang = Some(Nil)
+          , loc = None
+          , extensions = Vector.empty
+        ))
+      )
+
+    )
+  }
+
 }
