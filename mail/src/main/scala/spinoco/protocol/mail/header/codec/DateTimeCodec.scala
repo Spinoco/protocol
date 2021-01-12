@@ -41,8 +41,14 @@ object DateTimeCodec {
       else s.take(start).trim
     }
 
-    attempt(ZonedDateTime.parse(woZoneName, EmailReadDateFormatter)) orElse
-      attempt(ZonedDateTime.parse(woZoneName, nonRFCFormatter))
+    attempt(ZonedDateTime.parse(woZoneName, EmailReadDateFormatter))
+    .orElse(attempt(ZonedDateTime.parse(woZoneName, nonRFCFormatter)))
+    .recoverWith { case _ if woZoneName.lift(3).contains(',') =>
+      // If the exact date is wrong, try to strip it.
+      // Dropping the "EEE, " part from EmailReadDateFormatter.
+      attempt(ZonedDateTime.parse(woZoneName.drop(5), EmailReadDateFormatter))
+    }
+
   }
 
 }

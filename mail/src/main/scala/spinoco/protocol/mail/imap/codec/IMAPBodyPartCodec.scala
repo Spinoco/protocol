@@ -269,6 +269,7 @@ object IMAPBodyPartCodec {
         ,  (`(` ~> (string ~ (SP ~> bodyFldParam)) <~ `)`)
            .xmap[Some[(String, Vector[(String, String)])]](Some(_), _.get)
            .upcast
+        , string.xmap[None.type](_ => None, _ => "").upcast[Option[(String, Vector[(String, String)])]]
       )
     }
 

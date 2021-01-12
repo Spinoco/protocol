@@ -7,6 +7,7 @@ import org.scalacheck.Properties
 import scodec.Attempt
 import scodec.bits.BitVector
 import spinoco.protocol.mail.EmailAddress
+import spinoco.protocol.mail.imap.BodyStructure
 import spinoco.protocol.mail.imap.BodyStructure._
 
 object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
@@ -409,6 +410,107 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
       , EmailAddress("create", "spinoco.com", Some("Spinoco Dev"))
       , EmailAddress("no-reply", "spinoco.com", None)
     ))
+  }
+
+  property("dsp-has-string") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(BODYSTRUCTURE (("text" "html" ("charset" "UTF-8") NIL "HTML text" "Quoted-printable" 14985 350 NIL ("inline" NIL) NIL NIL) "mixed" ("boundary" "00293856_1B3689E9_Synapse_boundary") "Multipart message" NIL) UID 20653)""".getBytes
+    )) ?= Attempt.Successful(
+      MultiBodyPart(
+        parts = Vector(
+          SingleBodyPart(
+            tpe = BodyTypeText("html", BodyFields(Vector(("charset", "UTF-8")), None, Some("HTML text"), "Quoted-printable", 14985), 350)
+            , ext = Some(SingleBodyExtension(None, Some(("inline", Vector())), Some(List.empty), None, Vector.empty))
+          )
+        )
+        , mediaSubType = "mixed"
+        , ext = Some(MultiBodyExtension(
+          params = Vector(("boundary", "00293856_1B3689E9_Synapse_boundary"))
+          , dsp = None
+          , lang = Some(Nil)
+          , loc = None
+          , extensions = Vector.empty
+        ))
+      )
+    )
+  }
+
+  property("wrong-time-in-envelope") = protect {
+    IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
+      """(UID 936193 BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "us-ascii") NIL "Notification" "7BIT" 493 14 NIL NIL NIL)("MESSAGE" "DELIVERY-STATUS" NIL NIL "Delivery report" "7BIT" 403 NIL NIL NIL)("MESSAGE" "RFC822" NIL NIL "Undelivered Message" "7BIT" 43485 ("Tue, 16 Dec 2020 18:33:48 +0100" "" (("" NIL "example" "example.com")) (("" NIL "example" "example.com")) (("" NIL "example" "example.com")) (("" NIL "example" "example.com")) NIL NIL NIL "") ((("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "BASE64" 7018 95 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "BASE64" 34276 464 NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "----") NIL NIL) "MIXED" ("BOUNDARY" "----") NIL NIL) 609 NIL NIL NIL) "REPORT" ("REPORT-TYPE" "delivery-status" "BOUNDARY" "------") NIL NIL))""".getBytes
+    )) ?= Attempt.Successful(
+      MultiBodyPart(
+        parts = Vector(
+          SingleBodyPart(
+            tpe = BodyTypeText("PLAIN", BodyFields(Vector(("CHARSET", "us-ascii")), None, Some("Notification"), "7BIT", 493), 14)
+            , ext = Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          )
+          , SingleBodyPart(
+            tpe = BodyTypeBasic(BasicMedia("MESSAGE", "DELIVERY-STATUS"), BodyFields(Vector.empty, None, Some("Delivery report"), "7BIT", 403))
+            , ext = Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          )
+          , SingleBodyPart(
+            tpe = BodyTypeMessage(
+              fields = BodyFields(Vector.empty, None, Some("Undelivered Message"), "7BIT", 43485)
+              , envelope = BodyStructure.Envelope(
+                date = Some(LocalDate.of(2020, 12, 16))
+                , subject = Some("")
+                , from = Vector(EmailAddress("example", "example.com", Some("")))
+                , sender = Vector(EmailAddress("example", "example.com", Some("")))
+                , replyTo = Vector(EmailAddress("example", "example.com", Some("")))
+                , to = Vector(EmailAddress("example", "example.com", Some("")))
+                , ccc = Vector.empty
+                , bcc = Vector.empty
+                , inReplyTo = None
+                , messageId = Some("")
+              )
+              , body = MultiBodyPart(
+                parts = Vector(
+                  MultiBodyPart(
+                    parts = Vector(
+                      SingleBodyPart(
+                        tpe = BodyTypeText("PLAIN", BodyFields(Vector(("CHARSET", "UTF-8")), None, None, "BASE64", 7018), 95)
+                        , ext = Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+                      )
+                      , SingleBodyPart(
+                        tpe = BodyTypeText("HTML", BodyFields(Vector(("CHARSET", "UTF-8")), None, None, "BASE64", 34276), 464)
+                        , ext = Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+                      )
+                    )
+                    , mediaSubType = "ALTERNATIVE"
+                    , ext = Some(MultiBodyExtension(
+                      params = Vector(("BOUNDARY", "----"))
+                      , dsp = None
+                      , lang = Some(Nil)
+                      , loc = None
+                      , extensions = Vector.empty
+                    ))
+                  )
+                )
+                , mediaSubType = "MIXED"
+                , ext = Some(MultiBodyExtension(
+                  params = Vector(("BOUNDARY", "----"))
+                  , dsp = None
+                  , lang = Some(Nil)
+                  , loc = None
+                  , extensions = Vector.empty
+                ))
+              )
+              , lines = 609
+            )
+            , ext = Some(SingleBodyExtension(None, None, Some(List.empty), None, Vector.empty))
+          )
+        )
+        , mediaSubType = "REPORT"
+        , ext = Some(MultiBodyExtension(
+          params = Vector(("REPORT-TYPE", "delivery-status"),("BOUNDARY", "------"))
+          , dsp = None
+          , lang = Some(Nil)
+          , loc = None
+          , extensions = Vector.empty
+        ))
+      )
+    )
   }
 
 }
