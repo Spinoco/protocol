@@ -146,13 +146,7 @@ object IMAPBodyPartCodec {
 
     def envInReplyTo: Codec[Option[String]] = nstring
     def envMessageId: Codec[Option[String]] = nstring
-    def envSubject: Codec[Option[String]] = {
-      choice(
-        NIL.xmap[None.type](_ => None, _ => ()).upcast[Option[String]]
-        , header.codec.RFC2047Codec.quotedCodec.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
-        , header.codec.RFC2047Codec.commaCodec.xmap[Some[String]](Some(_), _.get).upcast[Option[String]]
-      )
-    }
+    def envSubject: Codec[Option[String]] = optionalRFC2047
 
 
     def singleBodyPart : Codec[SingleBodyPart] = {

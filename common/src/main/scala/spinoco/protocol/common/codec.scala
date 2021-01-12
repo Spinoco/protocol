@@ -143,48 +143,6 @@ object codec {
     }
   }
 
-  /**
-    * A string quoted by given bytes.
-    *
-    * @param charset      Charset of the string. Must be ASCII backward compatible, not using first 7 bits of
-    *                     each byte for the characters except the ascii ones.
-    * @param bytes        The bytes via which the string is quoted.
-    */
-  def quotedByBytesString(charset: Charset, bytes: ByteVector): Codec[String] = {
-    val bits = bytes.toBitVector
-    new Codec[String] {
-      def decode(bits: BitVector) = {
-        if (!bits.startsWith(bits)) Attempt.failure(Err(s"Quoted string does not start with $bytes"))
-        else {
-          def go(rem: ByteVector): Attempt[(BitVector, BitVector)] = {
-            val cleanIdx = rem.indexOfSlice(bytes)
-            if (cleanIdx < 0) {
-              Attempt.failure(Err(s"Unterminated string constant, required termination with $bytes"))
-            } else {
-              val (out, nextWithBytes) = rem.splitAt(cleanIdx)
-              Attempt.successful((out.bits, nextWithBytes.drop(bytes.size).toBitVector))
-            }
-          }
-
-          go(bits.bytes.drop(bytes.size)).flatMap { case (stringBits, rem) =>
-            attempt { charset.decode(stringBits.bytes.toByteBuffer) } map { s =>
-              DecodeResult(s.toString, rem) }
-          }
-        }
-      }
-
-      def encode(value: String): Attempt[BitVector] = {
-        Attempt.successful {
-          bits ++
-          BitVector.view(value.getBytes(charset)) ++
-          bits
-        }
-      }
-
-      val sizeBound = SizeBound.unknown
-    }
-  }
-
   /** codec for ascii strings that may be quoted **/
   val quotedAsciiString: Codec[String] = quotedString(StandardCharsets.US_ASCII)
   val quotedUTF8String: Codec[String] = quotedString(StandardCharsets.UTF_8)
