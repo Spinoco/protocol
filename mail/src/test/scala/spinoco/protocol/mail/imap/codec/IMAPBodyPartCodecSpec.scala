@@ -384,7 +384,7 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
     ))
   }
 
-  property("multi-body-structure-no-media  222") = protect {
+  property("multi-body-structure-signed") = protect {
     IMAPBodyPartCodec.bodyStructure.decodeValue(BitVector.view(
       """(BODYSTRUCTURE ("multipart" "signed" ("protocol" "application/x-pkcs7-signature" "micalg" "SHA1" "boundary" "----=_NextPart_000_0014_01D69E57.F90CB030") NIL NIL "7BIT" -1 NIL NIL "cs-CZ" NIL) UID 14656)""".getBytes
     )) ?= Attempt.Successful(SingleBodyPart(
@@ -410,6 +410,15 @@ object IMAPBodyPartCodecSpec extends Properties("IMAPBodyPartCodec") {
       , EmailAddress("create", "spinoco.com", Some("Spinoco Dev"))
       , EmailAddress("no-reply", "spinoco.com", None)
     ))
+  }
+
+  property("rfc822-envelope-subject") = protect {
+    val str = {
+      """, =?UTF-8?Q?[User_Notification]:_Milan_Raul=C3=ADm?=, """.stripMargin
+    }
+    IMAPBodyPartCodec.impl.envSubject.decodeValue(BitVector.view(
+      str.getBytes()
+    )) ?= Attempt.Successful(Some("[User Notification]: Milan Raulím"))
   }
 
   property("dsp-has-string") = protect {
