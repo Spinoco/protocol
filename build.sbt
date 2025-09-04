@@ -1,5 +1,3 @@
-import com.typesafe.sbt.pgp.PgpKeys.publishSigned
-
 val ReleaseTag = """^release/([\d\.]+a?)$""".r
 
 lazy val contributors = Seq(
@@ -12,8 +10,8 @@ lazy val contributors = Seq(
 
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
-   scalaVersion := "2.12.1",
-  crossScalaVersions := Seq("2.11.8", "2.12.1"),
+   scalaVersion := "2.12.20",
+  crossScalaVersions := Seq("2.12.20"),
    scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -22,17 +20,15 @@ lazy val commonSettings = Seq(
     "-language:existentials",
     "-language:postfixOps",
     "-Xfatal-warnings",
-    "-Yno-adapted-args",
-    "-Ywarn-value-discard",
-    "-Ywarn-unused-import"
+    "-Ywarn-value-discard"
    ),
-   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-   scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
+   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _).filterNot("-Ywarn-value-discard" == _)},
+   scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
    libraryDependencies ++= Seq(
-     "org.scodec" %% "scodec-bits" % "1.1.5"
-     , "org.scodec" %% "scodec-core" % "1.10.3"
-     , "org.scalatest" %% "scalatest" % "3.0.0" % "test"
-     , "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+     "org.scodec" %% "scodec-bits" % "1.2.4"
+     , "org.scodec" %% "scodec-core" % "1.11.11"
+     , "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+     , "org.scalacheck" %% "scalacheck" % "1.14.3" % "test"
    ),
    scmInfo := Some(ScmInfo(url("https://github.com/Spinoco/protocol"), "git@github.com:Spinoco/protocol.git")),
    homepage := None,
@@ -44,7 +40,8 @@ lazy val commonSettings = Seq(
 lazy val testSettings = Seq(
   parallelExecution in Test := false,
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  publishArtifact in Test := true
+  publishArtifact in Test := true,
+  Test / fork := true
 )
 
 lazy val scaladocSettings = Seq(
@@ -102,9 +99,8 @@ lazy val releaseSettings = Seq(
 )
 
 lazy val noPublish = Seq(
-  publish := (),
-  publishLocal := (),
-  publishSigned := (),
+  publish := {},
+  publishLocal := {},
   publishArtifact := false
 )
 
@@ -187,10 +183,34 @@ lazy val kafka =
   .settings(commonSettings)
   .settings(
     name := "protocol-kafka"
+    , crossScalaVersions := Seq("2.12.20")
+    , scalaVersion := "2.12.20"
     , libraryDependencies ++= Seq(
       "org.xerial.snappy" % "snappy-java" % "1.1.2.1"  // for supporting a Snappy compression of message sets
       , "org.apache.kafka" %% "kafka" % "0.10.2.0" % "test"
     )
+    , Test / javaHome := {
+      // Try to find JDK 1.8 in common locations
+      val jdk8Paths = Seq(
+        Some("/Library/Java/JavaVirtualMachines/jdk1.8.0_202.jdk/Contents/Home"),
+        Some("/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home"),
+        Some("/usr/lib/jvm/java-8-openjdk"),
+        Some("/usr/lib/jvm/java-1.8.0-openjdk"),
+        sys.env.get("JAVA_8_HOME")
+      ).flatten
+      
+      jdk8Paths.find(path => new java.io.File(path).exists()) match {
+        case Some(jdk8Path) => 
+          println(s"Using JDK 1.8 for Kafka tests: $jdk8Path")
+          Some(file(jdk8Path))
+        case None => 
+          println("Warning: JDK 1.8 not found, using system default for Kafka tests")
+          None
+      }
+    }
+    , Test / javaOptions := Seq() // Clear the Java 9+ options for this project
+    , javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+    , scalacOptions ++= Seq("-target:jvm-1.8")
   ).dependsOn(
     common
     , common % "test->test"

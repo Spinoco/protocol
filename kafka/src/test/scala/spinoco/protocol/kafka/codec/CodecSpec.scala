@@ -1,6 +1,6 @@
 package spinoco.protocol.kafka.codec
 
-import java.nio.ByteBuffer
+import java.nio.{Buffer, ByteBuffer}
 
 import kafka.api._
 import org.scalacheck.{Arbitrary, Gen}
@@ -27,7 +27,8 @@ class CodecSpec extends ProtocolSpec {
       }
 
     rq.writeTo(buffer)
-    buffer.rewind()
+    // Java 8/11 compatibility fix: ByteBuffer.rewind() returns Buffer in Java 8, ByteBuffer in Java 9+
+    buffer.asInstanceOf[Buffer].rewind()
     (ByteVector.fromInt(sz+2) ++
       ByteVector.fromShort(apiId.toShort) ++
       ByteVector.view(buffer)).toBitVector
@@ -38,7 +39,8 @@ class CodecSpec extends ProtocolSpec {
     val sz = resp.sizeInBytes
     val buffer = ByteBuffer.allocate(sz)
     resp.writeTo(buffer)
-    buffer.rewind()
+    // Java 8/11 compatibility fix: ByteBuffer.rewind() returns Buffer in Java 8, ByteBuffer in Java 9+
+    buffer.asInstanceOf[Buffer].rewind()
     (ByteVector.fromInt(sz) ++ ByteVector.view(buffer)).toBitVector
   }
 
