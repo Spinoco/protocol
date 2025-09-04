@@ -96,4 +96,4 @@ jobs:
         
     - name: Run Kafka tests
       run: |
-        sbt -Dfile.encoding=UTF8 -J-Xmx2G "project kafkaTests" test
+        sbt -Dfile.encoding=UTF8 -J-Xmx2G ++2.12.20 kafkaTests/test
