@@ -29,7 +29,7 @@ object LDAPMessageSpec extends Properties("LDAPMessage"){
       , BindRequest(
         3
         , LdapDN.decode("dc=admin").require
-        , BindRequest.Simple(ByteVector.encodeUtf8("admin").right.get)
+        , BindRequest.Simple(ByteVector.encodeUtf8("admin").toOption.get)
       )
       , None
     ), BitVector.fromValidHex("30190201016014020103040864633d61646d696e800561646d696e"))(LdapMessage.codec)
@@ -65,7 +65,7 @@ object LDAPMessageSpec extends Properties("LDAPMessage"){
         , sizeLimit = 50
         , timeLimit = 0
         , typesOnly = false
-        , filter = Filter.And(Set(Filter.Present(AttributeDescription.Recognised(AttributeDescription.AttributeType.commonName)), Filter.SubstringFilter(AttributeDescription.TextDescriptor("sn"), SubStrings(Some(SubStrings.Initial(ByteVector.encodeUtf8("J").right.get)), Vector.empty, None))))
+        , filter = Filter.And(Set(Filter.Present(AttributeDescription.Recognised(AttributeDescription.AttributeType.commonName)), Filter.SubstringFilter(AttributeDescription.TextDescriptor("sn"), SubStrings(Some(SubStrings.Initial(ByteVector.encodeUtf8("J").toOption.get)), Vector.empty, None))))
         , attributes = Vector(
           AttributeSelector.Description(AttributeDescription.Recognised(AttributeDescription.AttributeType.commonName))
           , AttributeSelector.Description(AttributeDescription.TextDescriptor("sn"))

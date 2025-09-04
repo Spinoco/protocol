@@ -23,7 +23,7 @@ object `Return-Path` extends DefaultHeaderDescription[`Return-Path`] {
           `Return-Path`(s0.trim)
         }
       }
-      , rp => '<' + rp.path + '>'
+      , rp => s"<${rp.path}>"
     )
   }
 

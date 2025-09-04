@@ -19,16 +19,16 @@ object BerSpec extends Properties("BER"){
   }
 
   property("length.less.127") = protect {
-    verify(Option(120l), BitVector.fromInt(0x78, 8))(length)
+    verify(Option(120L), BitVector.fromInt(0x78, 8))(length)
   }
 
   property("length.128") = protect {
-    verify(Option(128l), BitVector.fromInt(0x8180, 16))(length)
+    verify(Option(128L), BitVector.fromInt(0x8180, 16))(length)
   }
 
   property("length.3383") = protect {
     // Tests proper encoding of "D37" <- partial octet
-    verify(Option(3383l), BitVector.fromInt(0x820D37 , 24))(length)
+    verify(Option(3383L), BitVector.fromInt(0x820D37 , 24))(length)
   }
 
   property("length.long-max") = protect {

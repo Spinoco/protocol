@@ -143,7 +143,7 @@ object Uri {
         // avoid URLDecoder turning a + into a space
         val segment = PlusRegex.replaceAllIn(s, "%2B")
         URLDecoder.decode(segment, "UTF-8")
-      }
+      }.toIndexedSeq
       Path(
         initialSlash =  trimmed.startsWith("/")
         , segments = segments

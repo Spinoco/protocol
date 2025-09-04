@@ -187,27 +187,55 @@ property("Accept-Ranges Header") = secure {
   }
 
   property("Authorization Header") = secure {
-    checkExamples(Seq(
-      ("Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
-        , Authorization(HttpCredentials.BasicHttpCredentials("Aladdin", "open sesame"))
-        , "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
-      , ("Authorization: Bearer mF_9.B5f-4.1JqM"
-        , Authorization(HttpCredentials.OAuthToken("Bearer", "mF_9.B5f-4.1JqM"))
-        , "Authorization: Bearer mF_9.B5f-4.1JqM")
-      , ("Authorization: Digest username=\"Mufasa\",\n                 realm=\"testrealm@host.com\",\n                 nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\",\n                 uri=\"/dir/index.html\",\n                 qop=auth,\n                 nc=00000001,\n         cnonce=\"0a4f113b\",\n                 response=\"6629fae49393a05397450978507c4ef1\",\n                 opaque=\"5ccc069c403ebaf9f0171e9517f40e41\""
-        , Authorization(HttpCredentials.DigestHttpCredentials("Digest", Map(
-        "username" -> "Mufasa"
-        , "realm" -> "testrealm@host.com"
-        , "nonce" -> "dcd98b7102dd2f0e8b11d0f600bfb0c093"
-        , "uri" -> "/dir/index.html"
-        , "qop" -> "auth"
-        , "nc" -> "00000001"
-        , "cnonce" -> "0a4f113b"
-        , "response" -> "6629fae49393a05397450978507c4ef1"
-        , "opaque" -> "5ccc069c403ebaf9f0171e9517f40e41"
-      )))
-        , "Authorization: Digest nc=00000001, nonce=dcd98b7102dd2f0e8b11d0f600bfb0c093, username=Mufasa, uri=\"/dir/index.html\", cnonce=0a4f113b, qop=auth, response=6629fae49393a05397450978507c4ef1, opaque=5ccc069c403ebaf9f0171e9517f40e41, realm=\"testrealm@host.com\"")
-    ))
+    val basicAuth = ("Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+      , Authorization(HttpCredentials.BasicHttpCredentials("Aladdin", "open sesame"))
+      , "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")
+    val bearerAuth = ("Authorization: Bearer mF_9.B5f-4.1JqM"
+      , Authorization(HttpCredentials.OAuthToken("Bearer", "mF_9.B5f-4.1JqM"))
+      , "Authorization: Bearer mF_9.B5f-4.1JqM")
+    
+    // Test basic and bearer auth with exact string matching
+    val basicBearerProp = checkExamples(Seq(basicAuth, bearerAuth))
+    
+    // Test digest auth with round-trip encoding (parameter order may vary between Scala versions)
+    val digestInput = "Authorization: Digest username=\"Mufasa\",\n                 realm=\"testrealm@host.com\",\n                 nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\",\n                 uri=\"/dir/index.html\",\n                 qop=auth,\n                 nc=00000001,\n         cnonce=\"0a4f113b\",\n                 response=\"6629fae49393a05397450978507c4ef1\",\n                 opaque=\"5ccc069c403ebaf9f0171e9517f40e41\""
+    val digestHeader = Authorization(HttpCredentials.DigestHttpCredentials("Digest", Map(
+      "username" -> "Mufasa"
+      , "realm" -> "testrealm@host.com"
+      , "nonce" -> "dcd98b7102dd2f0e8b11d0f600bfb0c093"
+      , "uri" -> "/dir/index.html"
+      , "qop" -> "auth"
+      , "nc" -> "00000001"
+      , "cnonce" -> "0a4f113b"
+      , "response" -> "6629fae49393a05397450978507c4ef1"
+      , "opaque" -> "5ccc069c403ebaf9f0171e9517f40e41"
+    )))
+    
+    val digestDecodeProp = ("Decode Digest: " + digestInput) |: (
+      codec.decode(BitVector.view(digestInput.getBytes())) ?= Attempt.Successful(
+        DecodeResult(digestHeader, BitVector.empty)
+      )
+    )
+    
+    val digestRoundtripProp = ("Encode-Decode Digest roundtrip") |: (
+      codec.encode(digestHeader).flatMap(encoded => 
+        codec.decode(encoded)
+      ).map(_.value) ?= Attempt.Successful(digestHeader)
+    )
+    
+    // Verify all expected parameters are present in the encoded string (order-independent)
+    val expectedKeys = Set("username", "realm", "nonce", "uri", "qop", "nc", "cnonce", "response", "opaque")
+    val digestEncodingProp = ("Encode Digest contains all parameters") |: {
+      codec.encode(digestHeader).map(_.decodeAscii.fold(_.getMessage, identity)) match {
+        case Attempt.Successful(encodedStr) =>
+          val foundKeys = expectedKeys.filter(key => encodedStr.contains(s"$key="))
+          (foundKeys ?= expectedKeys) :| s"Missing keys: ${expectedKeys -- foundKeys}, Found in: $encodedStr"
+        case Attempt.Failure(err) =>
+          false :| s"Failed to encode: $err"
+      }
+    }
+    
+    basicBearerProp && digestDecodeProp && digestRoundtripProp && digestEncodingProp
   }
 
   property("Cache-Control Header") = secure {

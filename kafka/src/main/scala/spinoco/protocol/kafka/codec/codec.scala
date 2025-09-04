@@ -20,7 +20,7 @@ package object codec {
         case Some(s) => Attempt.fromEither(
           ByteVector.encodeUtf8(s)
           .left.map(ex => Err(ex.getMessage))
-          .right.map(bv => (bv.size.toInt,bv))
+          .map(bv => (bv.size.toInt,bv))
         )
       }
     }
@@ -29,7 +29,7 @@ package object codec {
       else Attempt.fromEither{
         data.decodeUtf8
         .left.map(ex => Err(ex.getMessage))
-        .right.map(s => Some(s))
+        .map(s => Some(s))
       }
     }
 

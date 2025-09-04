@@ -10,8 +10,8 @@ lazy val contributors = Seq(
 
 lazy val commonSettings = Seq(
    organization := "com.spinoco",
-   scalaVersion := "2.12.20",
-  crossScalaVersions := Seq("2.12.20"),
+   scalaVersion := "2.13.16",
+   crossScalaVersions := Seq("2.12.20", "2.13.16"),
    scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -183,37 +183,33 @@ lazy val kafka =
   .settings(commonSettings)
   .settings(
     name := "protocol-kafka"
+    , libraryDependencies ++= Seq(
+      "org.xerial.snappy" % "snappy-java" % "1.1.8.4"  // Updated for JDK 11 compatibility
+    )
+  ).dependsOn(
+    common
+  )
+
+// we need kafka tests to be run only in scala 2.12, as kafka 0.10.2 does not support 2.13+
+lazy val kafkaTests =
+  project.in(file("kafka-tests"))
+  .settings(commonSettings)
+  .settings(
+    name := "protocol-kafka-tests"
+    // Only cross-compile for Scala 2.12, skip other versions for Kafka tests
     , crossScalaVersions := Seq("2.12.20")
     , scalaVersion := "2.12.20"
     , libraryDependencies ++= Seq(
-      "org.xerial.snappy" % "snappy-java" % "1.1.2.1"  // for supporting a Snappy compression of message sets
+      "org.xerial.snappy" % "snappy-java" % "1.1.8.4"  // Updated for JDK 11 compatibility
       , "org.apache.kafka" %% "kafka" % "0.10.2.0" % "test"
     )
-    , Test / javaHome := {
-      // Try to find JDK 1.8 in common locations
-      val jdk8Paths = Seq(
-        Some("/Library/Java/JavaVirtualMachines/jdk1.8.0_202.jdk/Contents/Home"),
-        Some("/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home"),
-        Some("/usr/lib/jvm/java-8-openjdk"),
-        Some("/usr/lib/jvm/java-1.8.0-openjdk"),
-        sys.env.get("JAVA_8_HOME")
-      ).flatten
-      
-      jdk8Paths.find(path => new java.io.File(path).exists()) match {
-        case Some(jdk8Path) => 
-          println(s"Using JDK 1.8 for Kafka tests: $jdk8Path")
-          Some(file(jdk8Path))
-        case None => 
-          println("Warning: JDK 1.8 not found, using system default for Kafka tests")
-          None
-      }
-    }
-    , Test / javaOptions := Seq() // Clear the Java 9+ options for this project
-    , javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
-    , scalacOptions ++= Seq("-target:jvm-1.8")
+    , Test / fork := true
+    // This project only has test sources, no main sources
+    , Compile / sources := Seq.empty
+    , Compile / resources := Seq.empty
   ).dependsOn(
-    common
-    , common % "test->test"
+    kafka,
+    common % "test->test"
   )
 
 lazy val asn1 =

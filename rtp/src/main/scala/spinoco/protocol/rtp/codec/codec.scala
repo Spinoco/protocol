@@ -27,6 +27,6 @@ package object codec {
     , 0 -> ByteVector.empty
   )
 
-  val paddingMapBits = paddingMapBytes.mapValues(_.bits)
+  val paddingMapBits = paddingMapBytes.map { case (k, v) => k -> v.bits }
 
 }

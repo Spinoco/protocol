@@ -134,7 +134,7 @@ object MGCPParameterCodec {
 
     val echoCancelCodec: Codec[EchoCancel] =
       mappedEnum(ascii, Map(true -> "on", false -> "off" ))
-        .as[EchoCancel]
+        .xmap(EchoCancel, _.enable)
 
     val packetizationPeriodCodec: Codec[PacketizationPeriod] =
       intAsString.as[PacketizationPeriod]
@@ -147,7 +147,7 @@ object MGCPParameterCodec {
 
     val silenceSuppressionCodec: Codec[SilenceSuppression] =
       mappedEnum(ascii, Map(true -> "on", false -> "off" ))
-        .as[SilenceSuppression]
+        .xmap(SilenceSuppression, _.enable)
 
 
     val typeOfServiceCodec: Codec[TypeOfService] =
@@ -314,7 +314,7 @@ object MGCPParameterCodec {
 
 
   val reasonCodeCodec: Codec[ReasonCode] = {
-    stringEnumerated(ascii, ReasonCodeType).as[ReasonCode]
+    stringEnumerated(ascii, ReasonCodeType).xmap(ReasonCode, _.code)
   }
 
   val specificEndpointIDCodec: Codec[SpecificEndpointID] =
@@ -341,7 +341,7 @@ object MGCPParameterCodec {
     listOfParametrizedEvents.as[DetectEvents]
 
   val restartMethodCodec: Codec[RestartMethod] =
-    stringEnumerated(ascii, RestartMethodType).as[RestartMethod]
+    stringEnumerated(ascii, RestartMethodType).xmap(RestartMethod, _.method)
 
   val restartDelayCodec: Codec[RestartDelay] =
     intAsString.xmap[FiniteDuration](_.seconds, _.toSeconds.toInt).as[RestartDelay]

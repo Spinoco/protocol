@@ -5,6 +5,9 @@ import scodec.codecs._
 import scodec.{Attempt, Codec, Err}
 import spinoco.protocol.common.codec._
 import spinoco.protocol.mail.EmailAddress
+import spinoco.protocol.mail.header.codec.{quotedString => mailQuotedString}
+
+import java.nio.charset.{Charset, StandardCharsets}
 
 /**
   * Codec for email address
@@ -13,10 +16,10 @@ object EmailAddressCodec {
 
   val codec: Codec[EmailAddress] = {
 
-    val emailAddress = (ignoreWS ~> choice(dotAtomString, quotedString)) ~ (constantString1("@") ~> (dotAtomString <~ ignoreWS))
+    val emailAddress = (ignoreWS ~> choice(dotAtomString, mailQuotedString)) ~ (constantString1("@") ~> (dotAtomString <~ ignoreWS))
     val bracketAddress = constantString1("<") ~> emailAddress <~ constantString1(">")
 
-    val quotedDisplay = (choice(dotAtomString, quotedString) <~ WSP).widen[Option[String]](
+    val quotedDisplay = (choice(dotAtomString, mailQuotedString) <~ WSP).widen[Option[String]](
       Some(_).map(_.trim).filter(_.nonEmpty)
       , Attempt.fromOption(_, Err("Failed to create email address without display segment"))
     )
