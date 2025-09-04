@@ -2,12 +2,13 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+import scodec.Codec
 
 
 object KeywordsSpec extends Properties("Keywords") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = Keywords.codec
+  implicit val HeaderCodec: Codec[Keywords] = Keywords.codec
 
   property("single") = protect {
     verify(

@@ -2,11 +2,12 @@ package spinoco.protocol.mail.header.codec
 
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+import scodec.Codec
 
 object RFC2047CodecSpec extends Properties("RFC2047Codec") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val codec = RFC2047Codec.quotedCodec
+  implicit val codec: Codec[String] = RFC2047Codec.quotedCodec
 
   property("decode.quoted.text") = protect {
     verify(

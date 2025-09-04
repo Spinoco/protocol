@@ -161,9 +161,6 @@ lazy val http =
   )
   .dependsOn(common, mime)
 
-
-
-
 lazy val sdp =
   project.in(file("sdp"))
     .settings(commonSettings)
@@ -225,8 +222,6 @@ lazy val ldap =
   .settings(
     name := "protocol-ldap"
   ).dependsOn(common, asn1)
-
-
 
 lazy val allProtocols =
   project.in(file("."))

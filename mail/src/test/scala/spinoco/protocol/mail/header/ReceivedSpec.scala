@@ -4,6 +4,7 @@ import java.time.{ZoneId, ZoneOffset, ZonedDateTime}
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.Codec
 
 /**
   * Created by pach on 23/10/17.
@@ -11,7 +12,7 @@ import org.scalacheck.Properties
 object ReceivedSpec extends Properties("Received") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = Received.codec
+  implicit val HeaderCodec: Codec[Received] = Received.codec
 
   property("single-line") = protect {
     verify(

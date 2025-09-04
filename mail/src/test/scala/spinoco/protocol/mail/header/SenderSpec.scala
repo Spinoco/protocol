@@ -2,6 +2,7 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Properties
 import org.scalacheck.Prop._
+import scodec.Codec
 import spinoco.protocol.mail.EmailAddress
 
 /**
@@ -10,7 +11,7 @@ import spinoco.protocol.mail.EmailAddress
 object SenderSpec extends Properties("Sender") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = Sender.codec
+  implicit val HeaderCodec: Codec[Sender] = Sender.codec
 
 
   property("single-email") = protect {

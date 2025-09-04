@@ -50,13 +50,8 @@ jobs:
       
     - name: Run tests
       run: |
-        sbt -Dfile.encoding=UTF8 -J-Xmx2G ++${{ matrix.scala }} test
+        sbt -Dfile.encoding=UTF8 -J-Xmx2G ++${{ matrix.scala }} allProtocols/test
       
-    - name: Check formatting (Scala 2.13 only)
-      if: matrix.scala == '2.13.16' && matrix.java == '11'
-      run: |
-        # Only run formatting check on one matrix combination to avoid redundancy
-        echo "Formatting check would go here if scalafmt is configured"
 
   # Additional job for Kafka tests (Scala 2.12 only)
   kafka-tests:

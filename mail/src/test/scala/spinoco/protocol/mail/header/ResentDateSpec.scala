@@ -4,13 +4,14 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.Codec
 
 /**
   * Created by pach on 23/10/17.
   */
 object ResentDateSpec extends Properties("ResentDate") {
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = `Resent-Date`.codec
+  implicit val HeaderCodec: Codec[`Resent-Date`] = `Resent-Date`.codec
 
   property("full-time") = protect {
     verify(

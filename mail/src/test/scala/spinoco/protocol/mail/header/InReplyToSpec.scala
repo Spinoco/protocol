@@ -2,6 +2,7 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.Codec
 import shapeless.tag
 /**
   * Created by pach on 20/10/17.
@@ -9,7 +10,7 @@ import shapeless.tag
 object InReplyToSpec extends Properties("InReplyTo") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = `In-Reply-To`.codec
+  implicit val HeaderCodec: Codec[`In-Reply-To`] = `In-Reply-To`.codec
 
 
   property("phrase-id") = protect {

@@ -2,13 +2,14 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.Codec
 import scodec.bits.ByteVector
 
 
 object SubjectSpec extends Properties("Subject") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = Subject.codec
+  implicit val HeaderCodec: Codec[Subject] = Subject.codec
 
 
   property("simple") = protect {

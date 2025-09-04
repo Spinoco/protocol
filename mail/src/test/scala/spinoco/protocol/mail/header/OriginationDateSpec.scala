@@ -4,10 +4,11 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+import scodec.Codec
 
 object OriginationDateSpec extends Properties("OriginationDate") {
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = OriginationDate.codec
+  implicit val HeaderCodec: Codec[OriginationDate] = OriginationDate.codec
 
   property("full-time") = protect {
     verify(

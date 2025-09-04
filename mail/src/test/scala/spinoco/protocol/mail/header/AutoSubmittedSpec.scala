@@ -2,11 +2,12 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.Codec
 
 object AutoSubmittedSpec extends Properties("AutoSubmitted") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = `Auto-Submitted`.codec
+  implicit val HeaderCodec: Codec[`Auto-Submitted`] = `Auto-Submitted`.codec
 
 
   property("no") = protect {

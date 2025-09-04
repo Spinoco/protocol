@@ -2,6 +2,7 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+import scodec.Codec
 import shapeless.tag
 
 /**
@@ -10,7 +11,7 @@ import shapeless.tag
 object MessageIdSpec  extends Properties("MessageId") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = `Message-ID`.codec
+  implicit val HeaderCodec: Codec[`Message-ID`] = `Message-ID`.codec
 
   property("single-id") = protect {
 

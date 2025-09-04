@@ -2,12 +2,13 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+import scodec.Codec
 
 
 object CommentsSpec extends Properties("Comments") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = Comments.codec
+  implicit val HeaderCodec: Codec[Comments] = Comments.codec
 
 
   property("simple") = protect {

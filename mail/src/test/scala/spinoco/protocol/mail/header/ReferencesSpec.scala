@@ -2,6 +2,7 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop.protect
 import org.scalacheck.Properties
+import scodec.Codec
 import shapeless.tag
 
 /**
@@ -10,7 +11,7 @@ import shapeless.tag
 object ReferencesSpec  extends Properties("References") {
 
   import spinoco.protocol.mail.SpecUtil._
-  implicit val HeaderCodec = References.codec
+  implicit val HeaderCodec: Codec[References] = References.codec
 
   property("single-id") = protect {
 

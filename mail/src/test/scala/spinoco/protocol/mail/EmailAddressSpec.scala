@@ -2,6 +2,7 @@ package spinoco.protocol.mail
 
 import org.scalacheck.Properties
 import org.scalacheck.Prop._
+import scodec.Codec
 import spinoco.protocol.mail.header.codec.EmailAddressCodec
 
 /**
@@ -10,7 +11,7 @@ import spinoco.protocol.mail.header.codec.EmailAddressCodec
 object EmailAddressSpec extends Properties("EmailAddress") {
   import SpecUtil._
 
-  implicit val codec = EmailAddressCodec.codec
+  implicit val codec: Codec[EmailAddress] = EmailAddressCodec.codec
 
   property("plain-email") = protect {
     verify("john.doe@spinoco.com", EmailAddress("john.doe", "spinoco.com", None))

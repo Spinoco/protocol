@@ -2,6 +2,7 @@ package spinoco.protocol.mail.header
 
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+import scodec.Codec
 import spinoco.protocol.mime.ContentType
 import spinoco.protocol.mime.MediaType.MultipartMediaType
 
@@ -14,7 +15,7 @@ object ContentTypeSpec extends Properties("ContentType") {
 
   import spinoco.protocol.mail.SpecUtil._
 
-  implicit val ContentTypeCodec = `Content-Type`.codec
+  implicit val ContentTypeCodec: Codec[`Content-Type`] = `Content-Type`.codec
 
   property("simple") = protect {
     verify(
