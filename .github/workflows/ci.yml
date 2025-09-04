@@ -21,10 +21,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up JDK ${{ matrix.java }}
-      uses: actions/setup-java@v4
+    - name: Setup Scala and SBT
+      uses: olafurpg/setup-scala@v14
       with:
-        distribution: 'temurin'
         java-version: ${{ matrix.java }}
         
     - name: Cache SBT and dependencies
@@ -39,11 +38,19 @@ jobs:
           ${{ runner.os }}-sbt-${{ matrix.scala }}-
           ${{ runner.os }}-sbt-
           
+    - name: Verify setup
+      run: |
+        java -version
+        sbt --version
+        echo "JAVA_HOME: $JAVA_HOME"
+        
     - name: Compile
-      run: sbt ++${{ matrix.scala }} compile
+      run: |
+        sbt -Dfile.encoding=UTF8 -J-Xmx2G ++${{ matrix.scala }} compile
       
     - name: Run tests
-      run: sbt ++${{ matrix.scala }} test
+      run: |
+        sbt -Dfile.encoding=UTF8 -J-Xmx2G ++${{ matrix.scala }} test
       
     - name: Check formatting (Scala 2.13 only)
       if: matrix.scala == '2.13.16' && matrix.java == '11'
@@ -64,10 +71,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up JDK ${{ matrix.java }}
-      uses: actions/setup-java@v4
+    - name: Setup Scala and SBT
+      uses: olafurpg/setup-scala@v14
       with:
-        distribution: 'temurin'
         java-version: ${{ matrix.java }}
         
     - name: Cache SBT and dependencies
@@ -82,5 +88,12 @@ jobs:
           ${{ runner.os }}-sbt-kafka-
           ${{ runner.os }}-sbt-
           
+    - name: Verify setup
+      run: |
+        java -version
+        sbt --version
+        echo "JAVA_HOME: $JAVA_HOME"
+        
     - name: Run Kafka tests
-      run: sbt "project kafkaTests" test
+      run: |
+        sbt -Dfile.encoding=UTF8 -J-Xmx2G "project kafkaTests" test
