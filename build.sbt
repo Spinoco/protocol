@@ -1,3 +1,5 @@
+import xerial.sbt.Sonatype.sonatypeCentralHost
+
 val ReleaseTag = """^release/([\d\.]+a?)$""".r
 
 lazy val contributors = Seq(
@@ -5,6 +7,7 @@ lazy val contributors = Seq(
   , "mrauilm" -> "Milan Raulim"
   , "eikek" -> "Eike Kettner"
   , "d6y" -> "Richard Dallaway"
+  , "AdamChlupacek" -> "Adam Chlupáček"
 )
 
 
@@ -56,41 +59,27 @@ lazy val scaladocSettings = Seq(
 )
 
 lazy val publishingSettings = Seq(
-  publishTo := {
-   val nexus = "https://oss.sonatype.org/"
-   if (version.value.trim.endsWith("SNAPSHOT"))
-     Some("snapshots" at nexus + "content/repositories/snapshots")
-   else
-     Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
-  credentials ++= (for {
-   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
-   password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
-  } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
-  publishMavenStyle := true,
-  pomIncludeRepository := { _ => false },
-  pomExtra := {
-    <url>https://github.com/Spinoco/protocol</url>
-    <developers>
-      {for ((username, name) <- contributors) yield
-      <developer>
-        <id>{username}</id>
-        <name>{name}</name>
-        <url>http://github.com/{username}</url>
-      </developer>
-      }
-    </developers>
-  },
-  pomPostProcess := { node =>
-   import scala.xml._
-   import scala.xml.transform._
-   def stripIf(f: Node => Boolean) = new RewriteRule {
-     override def transform(n: Node) =
-       if (f(n)) NodeSeq.Empty else n
-   }
-   val stripTestScope = stripIf { n => n.label == "dependency" && (n \ "scope").text == "test" }
-   new RuleTransformer(stripTestScope).transform(node)(0)
-  }
+  sonatypeCredentialHost := sonatypeCentralHost,
+  publishTo := sonatypePublishToBundle.value,
+  versionScheme := Some("early-semver"),
+  organization := "com.spinoco",
+  homepage := Some(url("https://github.com/spinoco/protocol")),
+  licenses := List("MIT" -> url("http://opensource.org/licenses/MIT")),
+  developers := {
+    for ((username, name) <- contributors) yield
+      Developer(
+        username,
+        name,
+        "",
+        url(s"https://github.com/$username")
+      )
+  }.toList,
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/spinoco/protocol"),
+      "scm:git@github.com:spinoco/protocol.git"
+    )
+  )
 )
 
 lazy val releaseSettings = Seq(
@@ -101,7 +90,9 @@ lazy val releaseSettings = Seq(
 lazy val noPublish = Seq(
   publish := {},
   publishLocal := {},
-  publishArtifact := false
+  publishArtifact := false,
+  publish / skip := true,
+  publishLocal / skip := true
 )
 
 
